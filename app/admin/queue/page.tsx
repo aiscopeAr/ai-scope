@@ -1,0 +1,411 @@
+"use client";
+
+import * as React from "react";
+import { format } from "date-fns";
+import {
+  Search, Loader2, CheckCircle, XCircle, RefreshCw,
+  ExternalLink, ChevronDown, ChevronUp,
+} from "lucide-react";
+
+import { useToast } from "@/components/ui/toast";
+import {
+  QUEUE_STATUS_LABELS,
+  QUEUE_STATUS_COLORS,
+  type QueueItemWithSource,
+  type QueueStatus,
+} from "@/types/pipeline";
+
+type Category = { id: string; nameAr: string; name: string; slug: string };
+
+type StatusCounts = Partial<Record<QueueStatus, number>>;
+
+const STATUS_TABS: Array<{ value: string; label: string }> = [
+  { value: "", label: "الكل" },
+  { value: "processed", label: "جاهز للمراجعة" },
+  { value: "pending", label: "قيد الانتظار" },
+  { value: "failed", label: "فشل" },
+  { value: "approved", label: "معتمد" },
+  { value: "rejected", label: "مرفوض" },
+];
+
+function ItemRow({
+  item,
+  categories,
+  onAction,
+}: {
+  item: QueueItemWithSource;
+  categories: Category[];
+  onAction: () => void;
+}) {
+  const { toast } = useToast();
+  const [expanded, setExpanded] = React.useState(false);
+  const [acting, setActing] = React.useState(false);
+  const [approveForm, setApproveForm] = React.useState({
+    categoryId: categories[0]?.id ?? "",
+    slug: item.slug ?? "",
+    title: item.titleAr ?? item.rawTitle ?? "",
+    published: true,
+  });
+
+  const statusKey = item.status as QueueStatus;
+  const statusBadge = QUEUE_STATUS_COLORS[statusKey] ?? "bg-slate-100 text-slate-600";
+  const statusLabel = QUEUE_STATUS_LABELS[statusKey] ?? item.status;
+
+  async function doAction(body: Record<string, unknown>) {
+    setActing(true);
+    try {
+      const res = await fetch(`/api/admin/queue/${item.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast(data.error ?? "فشل الإجراء", "error");
+        return;
+      }
+      toast(body.action === "approve" ? "تم اعتماد المقال ونشره" : body.action === "reject" ? "تم رفض المقال" : "تمت إعادة المحاولة");
+      onAction();
+    } catch {
+      toast("فشل الاتصال", "error");
+    } finally {
+      setActing(false);
+    }
+  }
+
+  return (
+    <div className="rounded-[1.75rem] bg-white shadow-md shadow-slate-200/50 overflow-hidden">
+      {/* Row header */}
+      <div className="flex items-start gap-3 p-5">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusBadge}`}>
+              {statusLabel}
+            </span>
+            {item.source && (
+              <span className="text-xs text-slate-400">{item.source.name}</span>
+            )}
+            {item.suggestedCategory && (
+              <span className="rounded-full bg-[#667eea]/10 px-2 py-0.5 text-xs text-[#667eea]">
+                {item.suggestedCategory}
+              </span>
+            )}
+          </div>
+          <p className="font-bold text-slate-900 line-clamp-1">
+            {item.titleAr || item.rawTitle || "بدون عنوان"}
+          </p>
+          {item.rawTitle && item.titleAr && item.rawTitle !== item.titleAr && (
+            <p className="text-xs text-slate-400 line-clamp-1 mt-0.5" dir="ltr">{item.rawTitle}</p>
+          )}
+          <p className="text-xs text-slate-400 mt-1">
+            {format(new Date(item.createdAt), "yyyy-MM-dd HH:mm")}
+            {item.failureReason && (
+              <span className="text-red-500 mr-2">• {item.failureReason}</span>
+            )}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href={item.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-xl bg-slate-100 p-2 text-slate-500 hover:text-[#667eea] transition"
+            title="المصدر الأصلي"
+          >
+            <ExternalLink className="size-4" />
+          </a>
+          <button
+            onClick={() => setExpanded((e) => !e)}
+            className="rounded-xl bg-slate-100 p-2 text-slate-500 hover:bg-slate-200 transition"
+          >
+            {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded preview */}
+      {expanded && (
+        <div className="border-t border-slate-100 px-5 pb-5 pt-4 space-y-4">
+          {item.summaryAr && (
+            <div>
+              <p className="text-xs font-semibold text-slate-500 mb-1">الملخص</p>
+              <p className="text-sm text-slate-700 leading-7">{item.summaryAr}</p>
+            </div>
+          )}
+
+          {item.contentAr && (
+            <div>
+              <p className="text-xs font-semibold text-slate-500 mb-1">المحتوى المترجم</p>
+              <div className="max-h-48 overflow-y-auto rounded-xl bg-slate-50 p-3 text-sm text-slate-700 leading-7 whitespace-pre-wrap">
+                {item.contentAr}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <p className="text-xs font-semibold text-slate-500 mb-1">المحتوى الأصلي</p>
+            <div className="max-h-36 overflow-y-auto rounded-xl bg-slate-50 p-3 text-xs text-slate-500 leading-6" dir="ltr">
+              {item.rawContent}
+            </div>
+          </div>
+
+          {item.tags && item.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {item.tags.map((tag) => (
+                <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Action bar */}
+          {item.status === "processed" && (
+            <div className="rounded-2xl bg-slate-50 p-4 space-y-3">
+              <p className="text-sm font-semibold text-slate-700">اعتماد ونشر المقال</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">التصنيف *</label>
+                  <select
+                    value={approveForm.categoryId}
+                    onChange={(e) => setApproveForm((f) => ({ ...f, categoryId: e.target.value }))}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-[#667eea] focus:outline-none"
+                  >
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>{c.nameAr}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">Slug *</label>
+                  <input
+                    value={approveForm.slug}
+                    onChange={(e) => setApproveForm((f) => ({ ...f, slug: e.target.value }))}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-[#667eea] focus:outline-none"
+                    dir="ltr"
+                    placeholder="article-slug"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-600">العنوان العربي</label>
+                <input
+                  value={approveForm.title}
+                  onChange={(e) => setApproveForm((f) => ({ ...f, title: e.target.value }))}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-[#667eea] focus:outline-none"
+                  dir="rtl"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={approveForm.published}
+                    onChange={(e) => setApproveForm((f) => ({ ...f, published: e.target.checked }))}
+                    className="rounded"
+                  />
+                  نشر فوراً
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => doAction({ action: "reject" })}
+                    disabled={acting}
+                    className="flex items-center gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50"
+                  >
+                    <XCircle className="size-4" /> رفض
+                  </button>
+                  <button
+                    onClick={() => doAction({ action: "approve", ...approveForm })}
+                    disabled={acting || !approveForm.categoryId || !approveForm.slug}
+                    className="flex items-center gap-1.5 rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
+                  >
+                    {acting ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle className="size-4" />}
+                    اعتماد
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {item.status === "pending" && (
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => doAction({ action: "reject" })}
+                disabled={acting}
+                className="flex items-center gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50"
+              >
+                <XCircle className="size-4" /> رفض
+              </button>
+            </div>
+          )}
+
+          {item.status === "failed" && item.retryCount < 3 && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => doAction({ action: "retry" })}
+                disabled={acting}
+                className="flex items-center gap-1.5 rounded-xl bg-[#667eea]/10 px-3 py-2 text-sm font-semibold text-[#667eea] hover:bg-[#667eea]/20 disabled:opacity-50"
+              >
+                {acting ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                إعادة المحاولة
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function AdminQueuePage() {
+  const { toast } = useToast();
+  const [items, setItems] = React.useState<QueueItemWithSource[]>([]);
+  const [categories, setCategories] = React.useState<Category[]>([]);
+  const [total, setTotal] = React.useState(0);
+  const [statusCounts, setStatusCounts] = React.useState<StatusCounts>({});
+  const [loading, setLoading] = React.useState(true);
+  const [status, setStatus] = React.useState("");
+  const [search, setSearch] = React.useState("");
+  const [page, setPage] = React.useState(1);
+  const limit = 20;
+
+  const fetchData = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        status,
+        search,
+        page: String(page),
+        limit: String(limit),
+      });
+      const [queueRes, catRes] = await Promise.all([
+        fetch(`/api/admin/queue?${params}`),
+        fetch("/api/admin/categories"),
+      ]);
+      if (queueRes.ok) {
+        const data = await queueRes.json();
+        setItems(data.items);
+        setTotal(data.total);
+        setStatusCounts(data.statusCounts ?? {});
+      }
+      if (catRes.ok) setCategories(await catRes.json());
+    } catch {
+      toast("فشل تحميل البيانات", "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [status, search, page, toast]);
+
+  React.useEffect(() => {
+    const t = setTimeout(fetchData, search ? 350 : 0);
+    return () => clearTimeout(t);
+  }, [fetchData, search]);
+
+  const totalPages = Math.ceil(total / limit);
+
+  return (
+    <div className="container mx-auto px-4 py-8" dir="rtl">
+      {/* Header */}
+      <div className="mb-8 flex flex-col gap-4 rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="mb-2 text-sm font-semibold text-[#667eea]">لوحة الإدارة</p>
+          <h1 className="text-3xl font-black text-slate-900">طابور المراجعة</h1>
+          <p className="mt-1 text-slate-500">{total} عنصر</p>
+        </div>
+        <div className="flex gap-3">
+          <a href="/admin" className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
+            الرئيسية
+          </a>
+          <a href="/admin/sources" className="rounded-2xl bg-[#667eea]/10 px-4 py-2 text-sm font-semibold text-[#667eea] transition hover:bg-[#667eea]/20">
+            إدارة المصادر
+          </a>
+        </div>
+      </div>
+
+      {/* Status tabs */}
+      <div className="mb-5 flex flex-wrap gap-2">
+        {STATUS_TABS.map((tab) => {
+          const count = tab.value ? statusCounts[tab.value as QueueStatus] : total;
+          return (
+            <button
+              key={tab.value}
+              onClick={() => { setStatus(tab.value); setPage(1); }}
+              className={`flex items-center gap-1.5 rounded-2xl px-4 py-2 text-sm font-semibold transition ${
+                status === tab.value
+                  ? "bg-[#667eea] text-white"
+                  : "bg-white text-slate-600 shadow-sm hover:bg-slate-50"
+              }`}
+            >
+              {tab.label}
+              {count != null && count > 0 && (
+                <span className={`rounded-full px-1.5 py-0.5 text-xs ${status === tab.value ? "bg-white/20" : "bg-slate-100"}`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Search */}
+      <div className="mb-6 flex items-center gap-3 rounded-[1.75rem] bg-white p-4 shadow-md shadow-slate-200/60">
+        <div className="relative flex-1">
+          <Search className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="بحث بالعنوان أو المصدر..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pr-9 pl-3 text-sm focus:border-[#667eea] focus:outline-none"
+          />
+        </div>
+      </div>
+
+      {/* Items */}
+      {loading ? (
+        <div className="flex items-center justify-center py-32">
+          <Loader2 className="size-8 animate-spin text-[#667eea]" />
+        </div>
+      ) : items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-[2rem] bg-white py-24 shadow-lg shadow-slate-200/60">
+          <p className="text-lg font-semibold text-slate-700">لا توجد عناصر</p>
+          <p className="mt-1 text-sm text-slate-400">قم بمزامنة مصدر للبدء في جلب المقالات</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {items.map((item) => (
+            <ItemRow
+              key={item.id}
+              item={item}
+              categories={categories}
+              onAction={fetchData}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between rounded-[1.75rem] bg-white px-6 py-4 shadow-md shadow-slate-200/60">
+          <p className="text-sm text-slate-500">صفحة {page} من {totalPages}</p>
+          <div className="flex gap-2">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              السابق
+            </button>
+            <button
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              التالي
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

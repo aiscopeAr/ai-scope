@@ -1,0 +1,132 @@
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  const categories = await Promise.all([
+    prisma.category.create({
+      data: {
+        name: "AI Models",
+        nameAr: "نماذج الذكاء الاصطناعي",
+        slug: "ai-models",
+      },
+    }),
+    prisma.category.create({
+      data: {
+        name: "Research",
+        nameAr: "البحوث",
+        slug: "research",
+      },
+    }),
+    prisma.category.create({
+      data: {
+        name: "Companies",
+        nameAr: "الشركات",
+        slug: "companies",
+      },
+    }),
+  ]);
+
+  await Promise.all([
+    prisma.source.create({
+      data: {
+        name: "TechCrunch",
+        website: "https://techcrunch.com",
+        rssUrl: "https://techcrunch.com/category/artificial-intelligence/feed/",
+        priority: 9,
+        enabled: true,
+      },
+    }),
+    prisma.source.create({
+      data: {
+        name: "VentureBeat",
+        website: "https://venturebeat.com",
+        rssUrl: "https://venturebeat.com/category/ai/feed/",
+        priority: 8,
+        enabled: true,
+      },
+    }),
+    prisma.source.create({
+      data: {
+        name: "MIT Technology Review",
+        website: "https://technologyreview.com",
+        rssUrl: "https://technologyreview.com/feed/",
+        priority: 10,
+        enabled: true,
+      },
+    }),
+  ]);
+
+  const sampleArticles = [
+    {
+      title: "OpenAI announces GPT-5",
+      titleAr: "OpenAI تعلن عن GPT-5",
+      slug: "openai-announces-gpt-5",
+      content: "OpenAI has announced GPT-5, the latest version of their language model...",
+      contentAr:
+        "أعلنت OpenAI عن GPT-5، أحدث إصدار من نموذج اللغة الخاص بهم... يتميز النموذج الجديد بقدرات محسنة في الفهم والتوليد، مع دعم أفضل للغات المتعددة بما في ذلك العربية.",
+      excerpt: "أعلنت OpenAI عن GPT-5 بقدرات محسنة",
+      imageUrl: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800",
+      sourceUrl: "https://techcrunch.com/sample",
+      sourceName: "TechCrunch",
+      score: 9,
+      published: true,
+      publishedAt: new Date(),
+      categoryId: categories[0].id,
+    },
+    {
+      title: "Google DeepMind breakthrough in protein folding",
+      titleAr: "اختراق Google DeepMind في طي البروتين",
+      slug: "google-deepmind-protein-folding",
+      content: "Google DeepMind has achieved a major breakthrough...",
+      contentAr: "حققت Google DeepMind اختراقاً كبيراً في مجال طي البروتين باستخدام الذكاء الاصطناعي...",
+      excerpt: "اختراق جديد في علم البروتين",
+      imageUrl: "https://images.unsplash.com/photo-1576086213369-97a306d36557?w=800",
+      sourceUrl: "https://venturebeat.com/sample",
+      sourceName: "VentureBeat",
+      score: 8,
+      published: true,
+      publishedAt: new Date(Date.now() - 86400000),
+      categoryId: categories[1].id,
+    },
+    {
+      title: "Microsoft invests $10B in AI infrastructure",
+      titleAr: "Microsoft تستثمر 10 مليار دولار في البنية التحتية للذكاء الاصطناعي",
+      slug: "microsoft-ai-investment",
+      content: "Microsoft announces massive investment...",
+      contentAr: "أعلنت Microsoft عن استثمار ضخم بقيمة 10 مليار دولار...",
+      excerpt: "استثمار ضخم من Microsoft",
+      imageUrl: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800",
+      sourceUrl: "https://techcrunch.com/sample",
+      sourceName: "TechCrunch",
+      score: 8,
+      published: true,
+      publishedAt: new Date(Date.now() - 172800000),
+      categoryId: categories[2].id,
+    },
+  ];
+
+  for (const article of sampleArticles) {
+    await prisma.article.create({ data: article });
+  }
+
+  await prisma.settings.create({
+    data: {
+      autoPublish: true,
+      minScore: 7,
+      publishInterval: 60,
+      translationModel: "claude",
+    },
+  });
+
+  console.log("Seed data created successfully!");
+}
+
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Category {
+  id           String         @id @default(cuid())
+  name         String
+  nameAr       String
+  slug         String         @unique
+  articles     Article[]
+  sources      Source[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model Source {
+  id           String         @id @default(cuid())
+  name         String
+  rssUrl       String
+  website      String?
+  enabled      Boolean        @default(true)
+  priority     Int            @default(5)
+  categoryId   String?
+  category     Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  lastSyncedAt DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  queueItems   ArticleQueue[]
+
+  @@index([enabled])
+}
+
+model Article {
+  id          String    @id @default(cuid())
+  title       String
+  titleAr     String
+  slug        String    @unique
+  content     String    @db.Text
+  contentAr   String    @db.Text
+  excerpt     String?   @db.Text
+  imageUrl    String?
+  sourceUrl   String
+  sourceName  String
+  tags        String[]
+  score       Int       @default(0)
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([published, publishedAt])
+  @@index([categoryId])
+}
+
+model ArticleQueue {
+  id                 String    @id @default(cuid())
+  sourceUrl          String    @unique
+  rawTitle           String?
+  rawContent         String    @db.Text
+  rawPublishedAt     DateTime?
+  sourceName         String?
+  sourceId           String?
+  source             Source?   @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  titleAr            String?
+  summaryAr          String?   @db.Text
+  contentAr          String?   @db.Text
+  tags               String[]
+  seoTitle           String?
+  seoDescription     String?
+  suggestedCategory  String?
+  slug               String?
+  featuredImagePrompt String?
+  translatedContent  String?   @db.Text
+  status             String    @default("pending")
+  retryCount         Int       @default(0)
+  failureReason      String?
+  processedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  approvedAt         DateTime?
+
+  @@index([status])
+  @@index([sourceId])
+}
+
+model Settings {
+  id               String   @id @default(cuid())
+  autoPublish      Boolean  @default(true)
+  minScore         Int      @default(7)
+  publishInterval  Int      @default(60)
+  translationModel String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model TrendingKeyword {
+  id        String   @id @default(cuid())
+  keyword   String
+  count     Int      @default(1)
+  type      String   @default("tag")
+  createdAt DateTime @default(now())
+
+  @@unique([keyword, type])
+  @@index([type, count])
+}
