@@ -7,17 +7,19 @@ export type EnqueueInput = RssItem & {
   sourceName: string;
 };
 
-const UNSPLASH_CATEGORY_MAP: Record<string, string> = {
-  "ai-models": "artificial+intelligence,machine+learning",
-  "research": "science,research,technology",
-  "companies": "technology,startup,office",
-  "tools": "software,computer,technology",
-  "policy": "government,law,technology",
+// Picsum photos — stable, free, no API key needed
+// Each category gets a curated seed so images are consistent per category
+const PICSUM_SEEDS: Record<string, number> = {
+  "ai-models": 10,
+  "research": 20,
+  "companies": 30,
+  "tools": 40,
+  "policy": 50,
 };
 
-function unsplashFallback(category?: string): string {
-  const query = UNSPLASH_CATEGORY_MAP[category ?? ""] ?? "artificial+intelligence,technology";
-  return `https://source.unsplash.com/800x450/?${query}`;
+function imageFallback(category?: string): string {
+  const seed = PICSUM_SEEDS[category ?? ""] ?? 1;
+  return `https://picsum.photos/seed/${seed}/800/450`;
 }
 
 /** Enqueue a new RSS item. Returns null if it's a duplicate (by sourceUrl). */
@@ -110,7 +112,7 @@ export async function approveQueueItem(
   });
 
   const imageUrl =
-    item.imageUrl ?? unsplashFallback(overrides.categorySlug ?? item.suggestedCategory ?? undefined);
+    item.imageUrl ?? imageFallback(overrides.categorySlug ?? item.suggestedCategory ?? undefined);
 
   const article = await prisma.article.create({
     data: {
