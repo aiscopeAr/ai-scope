@@ -7,7 +7,7 @@ import { markProcessing, markProcessed, markFailed } from "@/lib/queue";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 10;
 const BATCH_SIZE = 2;
 
 function verifyCronSecret(request: Request): boolean {
