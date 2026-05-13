@@ -78,6 +78,7 @@ model ArticleQueue {
   suggestedCategory  String?
   slug               String?
   featuredImagePrompt String?
+  imageUrl           String?
   translatedContent  String?   @db.Text
   status             String    @default("pending")
   retryCount         Int       @default(0)

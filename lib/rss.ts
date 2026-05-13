@@ -6,6 +6,7 @@ export type RssItem = {
   description: string;
   pubDate?: string;
   content?: string;
+  imageUrl?: string;
 };
 
 const MIN_CONTENT_LENGTH = 400;
@@ -93,10 +94,32 @@ export async function fetchRssFeed(rssUrl: string): Promise<RssItem[]> {
       extractText(r.updated) ||
       undefined;
 
+    // Extract image from enclosure, media:content, media:thumbnail, or og image in content
+    let imageUrl: string | undefined;
+    const enclosure = (r.enclosure as Record<string, unknown>[] | undefined)?.[0];
+    if (enclosure) {
+      const enc = enclosure as Record<string, unknown>;
+      const attrs = enc.$ as Record<string, string> | undefined;
+      if (attrs?.type?.startsWith("image/") && attrs?.url) imageUrl = attrs.url;
+    }
+    if (!imageUrl) {
+      const media =
+        (r["media:content"] as Record<string, unknown>[] | undefined)?.[0] ??
+        (r["media:thumbnail"] as Record<string, unknown>[] | undefined)?.[0];
+      if (media) {
+        const attrs = (media as Record<string, unknown>).$ as Record<string, string> | undefined;
+        if (attrs?.url) imageUrl = attrs.url;
+      }
+    }
+    if (!imageUrl && rawContent) {
+      const match = rawContent.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (match?.[1]) imageUrl = match[1];
+    }
+
     if (!title || !link) continue;
     if (description.length < MIN_CONTENT_LENGTH) continue;
 
-    items.push({ title, link, description, pubDate, content: rawContent });
+    items.push({ title, link, description, pubDate, content: rawContent, imageUrl });
   }
 
   return items;
