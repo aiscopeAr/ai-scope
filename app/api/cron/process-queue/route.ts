@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const MAX_RETRIES = 3;
-const BATCH_SIZE = 5;
+const BATCH_SIZE = 2;
 
 function verifyCronSecret(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
