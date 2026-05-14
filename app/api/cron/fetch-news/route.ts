@@ -7,8 +7,8 @@ import { enqueueItem } from "@/lib/queue";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-// Take only the freshest article per source per run
-const ITEMS_PER_SOURCE = 1;
+// Take 3 fresh articles per source per daily run
+const ITEMS_PER_SOURCE = 3;
 
 function verifyCronSecret(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
