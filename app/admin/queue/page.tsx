@@ -4,8 +4,9 @@ import * as React from "react";
 import { format } from "date-fns";
 import {
   Search, Loader2, CheckCircle, XCircle, RefreshCw,
-  ExternalLink, ChevronDown, ChevronUp,
+  ExternalLink, ChevronDown, ChevronUp, ImageIcon, Wand2, Link2,
 } from "lucide-react";
+import Image from "next/image";
 
 import { useToast } from "@/components/ui/toast";
 import {
@@ -16,7 +17,6 @@ import {
 } from "@/types/pipeline";
 
 type Category = { id: string; nameAr: string; name: string; slug: string };
-
 type StatusCounts = Partial<Record<QueueStatus, number>>;
 
 const STATUS_TABS: Array<{ value: string; label: string }> = [
@@ -27,6 +27,144 @@ const STATUS_TABS: Array<{ value: string; label: string }> = [
   { value: "approved", label: "معتمد" },
   { value: "rejected", label: "مرفوض" },
 ];
+
+function ImagePanel({
+  itemId,
+  imageUrl,
+  imagePrompt,
+  onImageChange,
+}: {
+  itemId: string;
+  imageUrl: string | null;
+  imagePrompt: string | null;
+  onImageChange: (url: string) => void;
+}) {
+  const { toast } = useToast();
+  const [mode, setMode] = React.useState<"view" | "url" | "generate">("view");
+  const [urlInput, setUrlInput] = React.useState(imageUrl ?? "");
+  const [generating, setGenerating] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+
+  async function saveImageUrl(url: string) {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/queue/${itemId}/image`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: url }),
+      });
+      if (!res.ok) throw new Error("فشل الحفظ");
+      onImageChange(url);
+      setMode("view");
+      toast("تم تحديث الصورة");
+    } catch {
+      toast("فشل تحديث الصورة", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function generateImage() {
+    setGenerating(true);
+    try {
+      const res = await fetch(`/api/admin/queue/${itemId}/image`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ generate: true }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.imageUrl) throw new Error("فشل توليد الصورة");
+      onImageChange(data.imageUrl);
+      setUrlInput(data.imageUrl);
+      setMode("view");
+      toast("تم توليد الصورة بنجاح");
+    } catch {
+      toast("فشل توليد الصورة", "error");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-slate-500">الصورة</p>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setMode(mode === "url" ? "view" : "url")}
+            className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+              mode === "url" ? "bg-[#667eea] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            <Link2 className="size-3" /> رابط
+          </button>
+          <button
+            onClick={() => { setMode(mode === "generate" ? "view" : "generate"); }}
+            className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+              mode === "generate" ? "bg-[#667eea] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            <Wand2 className="size-3" /> توليد
+          </button>
+        </div>
+      </div>
+
+      {/* Image preview */}
+      {imageUrl ? (
+        <div className="relative h-48 w-full overflow-hidden rounded-xl bg-slate-100">
+          <Image src={imageUrl} alt="صورة المقال" fill className="object-cover" unoptimized />
+        </div>
+      ) : (
+        <div className="flex h-32 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+          <div className="text-center">
+            <ImageIcon className="mx-auto mb-1 size-8 opacity-40" />
+            <p className="text-xs">لا توجد صورة</p>
+          </div>
+        </div>
+      )}
+
+      {/* URL input */}
+      {mode === "url" && (
+        <div className="flex gap-2">
+          <input
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            placeholder="https://example.com/image.jpg"
+            dir="ltr"
+            className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:border-[#667eea] focus:outline-none"
+          />
+          <button
+            onClick={() => saveImageUrl(urlInput)}
+            disabled={saving || !urlInput}
+            className="flex items-center gap-1 rounded-xl bg-[#667eea] px-3 py-2 text-xs font-semibold text-white hover:bg-[#764ba2] disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="size-3 animate-spin" /> : "حفظ"}
+          </button>
+        </div>
+      )}
+
+      {/* Generate panel */}
+      {mode === "generate" && (
+        <div className="rounded-xl bg-slate-50 p-3 space-y-2">
+          {imagePrompt && (
+            <p className="text-xs text-slate-500 italic" dir="ltr">{imagePrompt}</p>
+          )}
+          <button
+            onClick={generateImage}
+            disabled={generating}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#667eea] to-[#764ba2] py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
+          >
+            {generating ? (
+              <><Loader2 className="size-4 animate-spin" /> جارٍ التوليد...</>
+            ) : (
+              <><Wand2 className="size-4" /> توليد صورة بالذكاء الاصطناعي</>
+            )}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ItemRow({
   item,
@@ -40,6 +178,9 @@ function ItemRow({
   const { toast } = useToast();
   const [expanded, setExpanded] = React.useState(false);
   const [acting, setActing] = React.useState(false);
+  const [currentImageUrl, setCurrentImageUrl] = React.useState<string | null>(
+    (item as QueueItemWithSource & { imageUrl?: string | null }).imageUrl ?? null
+  );
   const [approveForm, setApproveForm] = React.useState({
     categoryId: categories[0]?.id ?? "",
     slug: item.slug ?? "",
@@ -60,11 +201,11 @@ function ItemRow({
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) {
-        toast(data.error ?? "فشل الإجراء", "error");
-        return;
-      }
-      toast(body.action === "approve" ? "تم اعتماد المقال ونشره" : body.action === "reject" ? "تم رفض المقال" : "تمت إعادة المحاولة");
+      if (!res.ok) { toast(data.error ?? "فشل الإجراء", "error"); return; }
+      toast(
+        body.action === "approve" ? "تم اعتماد المقال ونشره" :
+        body.action === "reject" ? "تم رفض المقال" : "تمت إعادة المحاولة"
+      );
       onAction();
     } catch {
       toast("فشل الاتصال", "error");
@@ -77,14 +218,24 @@ function ItemRow({
     <div className="rounded-[1.75rem] bg-white shadow-md shadow-slate-200/50 overflow-hidden">
       {/* Row header */}
       <div className="flex items-start gap-3 p-5">
+        {/* Thumbnail */}
+        {currentImageUrl && (
+          <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+            <Image src={currentImageUrl} alt="" fill className="object-cover" unoptimized />
+          </div>
+        )}
+        {!currentImageUrl && (
+          <div className="flex h-16 w-24 shrink-0 items-center justify-center rounded-xl bg-slate-100">
+            <ImageIcon className="size-6 text-slate-300" />
+          </div>
+        )}
+
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusBadge}`}>
               {statusLabel}
             </span>
-            {item.source && (
-              <span className="text-xs text-slate-400">{item.source.name}</span>
-            )}
+            {item.source && <span className="text-xs text-slate-400">{item.source.name}</span>}
             {item.suggestedCategory && (
               <span className="rounded-full bg-[#667eea]/10 px-2 py-0.5 text-xs text-[#667eea]">
                 {item.suggestedCategory}
@@ -99,16 +250,13 @@ function ItemRow({
           )}
           <p className="text-xs text-slate-400 mt-1">
             {format(new Date(item.createdAt), "yyyy-MM-dd HH:mm")}
-            {item.failureReason && (
-              <span className="text-red-500 mr-2">• {item.failureReason}</span>
-            )}
+            {item.failureReason && <span className="text-red-500 mr-2">• {item.failureReason}</span>}
           </p>
         </div>
+
         <div className="flex items-center gap-2 shrink-0">
           <a
-            href={item.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={item.sourceUrl} target="_blank" rel="noopener noreferrer"
             className="rounded-xl bg-slate-100 p-2 text-slate-500 hover:text-[#667eea] transition"
             title="المصدر الأصلي"
           >
@@ -123,41 +271,45 @@ function ItemRow({
         </div>
       </div>
 
-      {/* Expanded preview */}
+      {/* Expanded */}
       {expanded && (
         <div className="border-t border-slate-100 px-5 pb-5 pt-4 space-y-4">
-          {item.summaryAr && (
-            <div>
-              <p className="text-xs font-semibold text-slate-500 mb-1">الملخص</p>
-              <p className="text-sm text-slate-700 leading-7">{item.summaryAr}</p>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {/* Left — content */}
+            <div className="space-y-4">
+              {item.summaryAr && (
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 mb-1">الملخص</p>
+                  <p className="text-sm text-slate-700 leading-7">{item.summaryAr}</p>
+                </div>
+              )}
+              {item.contentAr && (
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 mb-1">المحتوى المترجم</p>
+                  <div className="max-h-48 overflow-y-auto rounded-xl bg-slate-50 p-3 text-sm text-slate-700 leading-7 whitespace-pre-wrap">
+                    {item.contentAr}
+                  </div>
+                </div>
+              )}
+              {item.tags && item.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {item.tags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">#{tag}</span>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
 
-          {item.contentAr && (
+            {/* Right — image panel */}
             <div>
-              <p className="text-xs font-semibold text-slate-500 mb-1">المحتوى المترجم</p>
-              <div className="max-h-48 overflow-y-auto rounded-xl bg-slate-50 p-3 text-sm text-slate-700 leading-7 whitespace-pre-wrap">
-                {item.contentAr}
-              </div>
-            </div>
-          )}
-
-          <div>
-            <p className="text-xs font-semibold text-slate-500 mb-1">المحتوى الأصلي</p>
-            <div className="max-h-36 overflow-y-auto rounded-xl bg-slate-50 p-3 text-xs text-slate-500 leading-6" dir="ltr">
-              {item.rawContent}
+              <ImagePanel
+                itemId={item.id}
+                imageUrl={currentImageUrl}
+                imagePrompt={(item as QueueItemWithSource & { featuredImagePrompt?: string | null }).featuredImagePrompt ?? null}
+                onImageChange={setCurrentImageUrl}
+              />
             </div>
           </div>
-
-          {item.tags && item.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {item.tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
 
           {/* Action bar */}
           {item.status === "processed" && (
@@ -183,7 +335,6 @@ function ItemRow({
                     onChange={(e) => setApproveForm((f) => ({ ...f, slug: e.target.value }))}
                     className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-[#667eea] focus:outline-none"
                     dir="ltr"
-                    placeholder="article-slug"
                   />
                 </div>
               </div>
@@ -220,26 +371,14 @@ function ItemRow({
                     className="flex items-center gap-1.5 rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
                   >
                     {acting ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle className="size-4" />}
-                    اعتماد
+                    اعتماد ونشر
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {item.status === "pending" && (
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => doAction({ action: "reject" })}
-                disabled={acting}
-                className="flex items-center gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50"
-              >
-                <XCircle className="size-4" /> رفض
-              </button>
-            </div>
-          )}
-
-          {item.status === "failed" && item.retryCount < 3 && (
+          {item.status === "failed" && (
             <div className="flex justify-end">
               <button
                 onClick={() => doAction({ action: "retry" })}
@@ -272,12 +411,7 @@ export default function AdminQueuePage() {
   const fetchData = React.useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        status,
-        search,
-        page: String(page),
-        limit: String(limit),
-      });
+      const params = new URLSearchParams({ status, search, page: String(page), limit: String(limit) });
       const [queueRes, catRes] = await Promise.all([
         fetch(`/api/admin/queue?${params}`),
         fetch("/api/admin/categories"),
@@ -305,7 +439,6 @@ export default function AdminQueuePage() {
 
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
-      {/* Header */}
       <div className="mb-8 flex flex-col gap-4 rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="mb-2 text-sm font-semibold text-[#667eea]">لوحة الإدارة</p>
@@ -313,16 +446,11 @@ export default function AdminQueuePage() {
           <p className="mt-1 text-slate-500">{total} عنصر</p>
         </div>
         <div className="flex gap-3">
-          <a href="/admin" className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
-            الرئيسية
-          </a>
-          <a href="/admin/sources" className="rounded-2xl bg-[#667eea]/10 px-4 py-2 text-sm font-semibold text-[#667eea] transition hover:bg-[#667eea]/20">
-            إدارة المصادر
-          </a>
+          <a href="/admin" className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200">الرئيسية</a>
+          <a href="/admin/sources" className="rounded-2xl bg-[#667eea]/10 px-4 py-2 text-sm font-semibold text-[#667eea] hover:bg-[#667eea]/20">إدارة المصادر</a>
         </div>
       </div>
 
-      {/* Status tabs */}
       <div className="mb-5 flex flex-wrap gap-2">
         {STATUS_TABS.map((tab) => {
           const count = tab.value ? statusCounts[tab.value as QueueStatus] : total;
@@ -331,23 +459,18 @@ export default function AdminQueuePage() {
               key={tab.value}
               onClick={() => { setStatus(tab.value); setPage(1); }}
               className={`flex items-center gap-1.5 rounded-2xl px-4 py-2 text-sm font-semibold transition ${
-                status === tab.value
-                  ? "bg-[#667eea] text-white"
-                  : "bg-white text-slate-600 shadow-sm hover:bg-slate-50"
+                status === tab.value ? "bg-[#667eea] text-white" : "bg-white text-slate-600 shadow-sm hover:bg-slate-50"
               }`}
             >
               {tab.label}
               {count != null && count > 0 && (
-                <span className={`rounded-full px-1.5 py-0.5 text-xs ${status === tab.value ? "bg-white/20" : "bg-slate-100"}`}>
-                  {count}
-                </span>
+                <span className={`rounded-full px-1.5 py-0.5 text-xs ${status === tab.value ? "bg-white/20" : "bg-slate-100"}`}>{count}</span>
               )}
             </button>
           );
         })}
       </div>
 
-      {/* Search */}
       <div className="mb-6 flex items-center gap-3 rounded-[1.75rem] bg-white p-4 shadow-md shadow-slate-200/60">
         <div className="relative flex-1">
           <Search className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
@@ -361,7 +484,6 @@ export default function AdminQueuePage() {
         </div>
       </div>
 
-      {/* Items */}
       {loading ? (
         <div className="flex items-center justify-center py-32">
           <Loader2 className="size-8 animate-spin text-[#667eea]" />
@@ -374,33 +496,21 @@ export default function AdminQueuePage() {
       ) : (
         <div className="space-y-4">
           {items.map((item) => (
-            <ItemRow
-              key={item.id}
-              item={item}
-              categories={categories}
-              onAction={fetchData}
-            />
+            <ItemRow key={item.id} item={item} categories={categories} onAction={fetchData} />
           ))}
         </div>
       )}
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-6 flex items-center justify-between rounded-[1.75rem] bg-white px-6 py-4 shadow-md shadow-slate-200/60">
           <p className="text-sm text-slate-500">صفحة {page} من {totalPages}</p>
           <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-              className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
+            <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}
+              className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40">
               السابق
             </button>
-            <button
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-              className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
+            <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}
+              className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40">
               التالي
             </button>
           </div>
