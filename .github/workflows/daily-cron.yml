@@ -1,0 +1,39 @@
+name: Daily News Pipeline
+
+on:
+  schedule:
+    - cron: "0 8 * * *"   # 08:00 UTC — fetch
+    - cron: "20 8 * * *"  # 08:20 UTC — process
+    - cron: "0 9 * * *"   # 09:00 UTC — trending
+  workflow_dispatch:       # allows manual trigger from GitHub UI
+
+jobs:
+  fetch-news:
+    if: github.event.schedule == '0 8 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch news from RSS sources
+        run: |
+          curl -f -s \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/cron/fetch-news"
+
+  process-queue:
+    if: github.event.schedule == '20 8 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Process queue — translate + generate image + publish
+        run: |
+          curl -f -s \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/cron/process-queue"
+
+  trending:
+    if: github.event.schedule == '0 9 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update trending keywords
+        run: |
+          curl -f -s \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/cron/trending"
