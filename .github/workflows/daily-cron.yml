@@ -22,9 +22,19 @@ jobs:
     if: github.event.schedule == '20 8 * * *' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - name: Process queue — translate + generate image + publish
+      - name: Process queue — batch 1
         run: |
-          curl -f -s \
+          curl -f -s --max-time 90 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/cron/process-queue"
+      - name: Process queue — batch 2
+        run: |
+          curl -f -s --max-time 90 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/cron/process-queue"
+      - name: Process queue — batch 3
+        run: |
+          curl -f -s --max-time 90 \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "${{ secrets.SITE_URL }}/api/cron/process-queue"
 
