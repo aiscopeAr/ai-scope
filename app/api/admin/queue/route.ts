@@ -15,6 +15,22 @@ async function requireAdmin() {
   return session;
 }
 
+export async function POST(request: Request) {
+  if (!(await requireAdmin())) return unauthorized();
+
+  const body = await request.json().catch(() => ({})) as Record<string, unknown>;
+
+  if (body.action === "reset-processing") {
+    const result = await prisma.articleQueue.updateMany({
+      where: { status: "processing" },
+      data: { status: "pending", failureReason: "Manually reset from admin" },
+    });
+    return NextResponse.json({ ok: true, reset: result.count });
+  }
+
+  return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+}
+
 export async function GET(request: Request) {
   if (!(await requireAdmin())) return unauthorized();
 

@@ -92,6 +92,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Reset stale "processing" items older than 3 minutes back to pending
+  const staleThreshold = new Date(Date.now() - 3 * 60 * 1000);
+  await prisma.articleQueue.updateMany({
+    where: { status: "processing", createdAt: { lt: staleThreshold } },
+    data: { status: "pending", failureReason: "Reset from stale processing" },
+  });
+
   // Check how many articles published today
   const publishedToday = await getPublishedTodayCount();
   const canPublish = Math.max(0, DAILY_PUBLISH_LIMIT - publishedToday);
