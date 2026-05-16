@@ -199,6 +199,13 @@ export default async function AdminDashboardPage() {
                 <span>طابور المراجعة</span>
                 <span>←</span>
               </Link>
+              <Link
+                href="/admin/ads"
+                className="flex items-center justify-between rounded-2xl bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700 transition hover:bg-violet-100"
+              >
+                <span>إدارة الإعلانات</span>
+                <span>←</span>
+              </Link>
             </div>
           </div>
         </div>

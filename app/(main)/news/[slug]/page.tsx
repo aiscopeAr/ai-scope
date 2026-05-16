@@ -9,6 +9,7 @@ import { ar } from "date-fns/locale";
 import { prisma } from "@/lib/db";
 import { mockArticles } from "@/lib/mock-data";
 import ViewTracker from "@/components/ViewTracker";
+import AdSlot from "@/components/AdSlot";
 import {
   SITE_URL,
   SITE_NAME,
@@ -195,6 +196,8 @@ export default async function ArticlePage({
           <span className="line-clamp-1">{article.titleAr}</span>
         </nav>
 
+        <AdSlot position="article-top" className="mb-6" />
+
         <Link
           href={`/category/${article.category.slug}`}
           className="gradient-primary mb-4 inline-block rounded-full px-4 py-1 text-sm font-medium text-white"
@@ -223,9 +226,13 @@ export default async function ArticlePage({
           </div>
         )}
 
+        <AdSlot position="article-mid" className="mb-8" />
+
         <div className="prose prose-lg mb-12 max-w-none">
           <div className="whitespace-pre-wrap leading-relaxed text-gray-800">{article.contentAr}</div>
         </div>
+
+        <AdSlot position="article-bottom" className="mb-8" />
 
         {articleTags.length > 0 && (
           <div className="mb-8 flex flex-wrap gap-2">

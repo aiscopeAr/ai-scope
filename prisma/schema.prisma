@@ -102,6 +102,19 @@ model Settings {
   updatedAt        DateTime @updatedAt
 }
 
+model AdSlot {
+  id        String   @id @default(cuid())
+  name      String
+  position  String
+  type      String   @default("script")
+  code      String   @db.Text
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([position, enabled])
+}
+
 model TrendingKeyword {
   id        String   @id @default(cuid())
   keyword   String

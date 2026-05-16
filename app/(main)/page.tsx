@@ -3,6 +3,7 @@ import NewsCard from "@/components/NewsCard";
 import { prisma } from "@/lib/db";
 import { mockArticles } from "@/lib/mock-data";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
+import AdSlot from "@/components/AdSlot";
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +81,8 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <AdSlot position="homepage-top" className="container mx-auto px-4 pt-4" />
+
       <div className="container mx-auto px-4 pb-16" dir="rtl">
         {/* Featured */}
         {news[0] && (
@@ -87,6 +90,8 @@ export default async function HomePage() {
             <NewsCard article={news[0]} featured />
           </div>
         )}
+
+        <AdSlot position="homepage-mid" className="mb-8" />
 
         {/* Grid */}
         {news.length > 1 && (
