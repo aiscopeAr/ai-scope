@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import type { ArticleWithCategory } from "@/types/articles";
 
-type SortField = "createdAt" | "publishedAt" | "title" | "titleAr" | "score";
+type SortField = "createdAt" | "publishedAt" | "title" | "titleAr" | "score" | "viewCount";
 type SortOrder = "asc" | "desc";
 
 function SortIcon({ field, current, order }: { field: SortField; current: SortField; order: SortOrder }) {
@@ -171,6 +171,11 @@ export default function AdminArticlesPage() {
                       تاريخ النشر <SortIcon field="publishedAt" current={sortBy} order={sortOrder} />
                     </button>
                   </th>
+                  <th className="px-4 py-4 font-semibold">
+                    <button className="flex items-center gap-1" onClick={() => handleSort("viewCount")}>
+                      المشاهدات <SortIcon field="viewCount" current={sortBy} order={sortOrder} />
+                    </button>
+                  </th>
                   <th className="px-4 py-4 font-semibold">إجراءات</th>
                 </tr>
               </thead>
@@ -200,6 +205,9 @@ export default function AdminArticlesPage() {
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-slate-500">
                       {article.publishedAt ? format(new Date(article.publishedAt), "yyyy-MM-dd") : "—"}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-slate-700 font-medium">
+                      {article.viewCount.toLocaleString("ar-EG")}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">

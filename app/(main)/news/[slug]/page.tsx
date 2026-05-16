@@ -8,6 +8,7 @@ import { ar } from "date-fns/locale";
 
 import { prisma } from "@/lib/db";
 import { mockArticles } from "@/lib/mock-data";
+import ViewTracker from "@/components/ViewTracker";
 import {
   SITE_URL,
   SITE_NAME,
@@ -180,6 +181,7 @@ export default async function ArticlePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(newsArticleJsonLd) }}
       />
+      <ViewTracker slug={article.slug} />
       <article className="container mx-auto max-w-4xl px-4 py-8" dir="rtl">
         <nav className="mb-6 flex items-center gap-2 text-sm text-gray-600">
           <Link href="/" className="hover:text-[#667eea]">

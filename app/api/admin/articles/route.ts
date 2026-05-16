@@ -44,7 +44,7 @@ export async function GET(request: Request) {
         : {}),
   };
 
-  const validSortFields = ["createdAt", "publishedAt", "title", "titleAr", "score"] as const;
+  const validSortFields = ["createdAt", "publishedAt", "title", "titleAr", "score", "viewCount"] as const;
   type SortField = (typeof validSortFields)[number];
   const orderField: SortField = validSortFields.includes(sortBy as SortField) ? (sortBy as SortField) : "createdAt";
 

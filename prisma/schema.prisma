@@ -49,6 +49,7 @@ model Article {
   sourceName  String
   tags        String[]
   score       Int       @default(0)
+  viewCount   Int       @default(0)
   published   Boolean   @default(false)
   publishedAt DateTime?
   categoryId  String

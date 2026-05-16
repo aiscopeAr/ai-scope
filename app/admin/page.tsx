@@ -9,12 +9,18 @@ import { prisma } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 async function getDashboardData() {
-  const [articleCount, recentArticles, categories, sources, settings, pendingQueue] = await Promise.all([
+  const [articleCount, recentArticles, topArticles, categories, sources, settings, pendingQueue] = await Promise.all([
     prisma.article.count(),
     prisma.article.findMany({
       orderBy: { publishedAt: "desc" },
       take: 10,
       include: { category: true },
+    }),
+    prisma.article.findMany({
+      where: { published: true },
+      orderBy: { viewCount: "desc" },
+      take: 5,
+      select: { id: true, titleAr: true, slug: true, viewCount: true, sourceName: true },
     }),
     prisma.category.count(),
     prisma.source.count(),
@@ -22,7 +28,7 @@ async function getDashboardData() {
     prisma.articleQueue.count({ where: { status: { in: ["pending", "processed"] } } }),
   ]);
 
-  return { articleCount, recentArticles, categories, sources, settings, pendingQueue };
+  return { articleCount, recentArticles, topArticles, categories, sources, settings, pendingQueue };
 }
 
 export default async function AdminDashboardPage() {
@@ -75,6 +81,38 @@ export default async function AdminDashboardPage() {
           <p className="text-sm text-amber-700">طابور المراجعة</p>
           <p className="mt-3 text-3xl font-black text-amber-800">{data.pendingQueue}</p>
         </Link>
+      </div>
+
+      {/* Top Articles by views */}
+      <div className="mb-8 rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60">
+        <h2 className="mb-4 text-xl font-black text-slate-900">الأكثر مشاهدة</h2>
+        {data.topArticles.length === 0 ? (
+          <p className="text-sm text-slate-400">لا توجد مشاهدات بعد</p>
+        ) : (
+          <ol className="space-y-3">
+            {data.topArticles.map((article, i) => (
+              <li key={article.id} className="flex items-center gap-4">
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#667eea]/10 text-xs font-black text-[#667eea]">
+                  {i + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <a
+                    href={`/news/${article.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block truncate text-sm font-semibold text-slate-800 hover:text-[#667eea]"
+                  >
+                    {article.titleAr}
+                  </a>
+                  <p className="text-xs text-slate-400">{article.sourceName}</p>
+                </div>
+                <span className="flex-shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                  {article.viewCount.toLocaleString("ar-EG")} مشاهدة
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
