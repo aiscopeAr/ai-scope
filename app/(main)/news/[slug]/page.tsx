@@ -138,6 +138,16 @@ export default async function ArticlePage({
   const createdAt: Date = "createdAt" in article ? (article.createdAt as Date) : new Date();
   const updatedAt: Date = "updatedAt" in article ? (article.updatedAt as Date) : new Date();
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "الرئيسية", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: article.category.nameAr, item: `${SITE_URL}/category/${article.category.slug}` },
+      { "@type": "ListItem", position: 3, name: article.titleAr, item: articleUrl },
+    ],
+  };
+
   const newsArticleJsonLd = {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
@@ -178,6 +188,10 @@ export default async function ArticlePage({
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(newsArticleJsonLd) }}
