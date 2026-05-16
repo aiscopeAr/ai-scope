@@ -1,8 +1,10 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
-import { SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+// Use the canonical production URL directly — avoids env var misconfiguration
+const SITE_URL = "https://ai-scope-sigma.vercel.app";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [articles, categories] = await Promise.all([
