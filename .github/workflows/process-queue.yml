@@ -2,7 +2,7 @@ name: Process Queue (Hourly)
 
 on:
   schedule:
-    - cron: "20 * * * *"   # every hour at :20 (after fetch finishes)
+    - cron: "10 * * * *"   # every hour at :10 (earlier, right after fetch)
   workflow_dispatch:
 
 jobs:
@@ -15,8 +15,8 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "https://ai-news-ar.vercel.app/api/cron/process-queue"
 
-      - name: Wait 30s
-        run: sleep 30
+      - name: Wait 20s
+        run: sleep 20
 
       - name: Call process-queue API (run 2)
         run: |
@@ -24,10 +24,28 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "https://ai-news-ar.vercel.app/api/cron/process-queue"
 
-      - name: Wait 30s
-        run: sleep 30
+      - name: Wait 20s
+        run: sleep 20
 
       - name: Call process-queue API (run 3)
+        run: |
+          curl -f -s -o /dev/null -w "Status: %{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ai-news-ar.vercel.app/api/cron/process-queue"
+
+      - name: Wait 20s
+        run: sleep 20
+
+      - name: Call process-queue API (run 4)
+        run: |
+          curl -f -s -o /dev/null -w "Status: %{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ai-news-ar.vercel.app/api/cron/process-queue"
+
+      - name: Wait 20s
+        run: sleep 20
+
+      - name: Call process-queue API (run 5)
         run: |
           curl -f -s -o /dev/null -w "Status: %{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \

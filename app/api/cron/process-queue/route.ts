@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const MAX_RETRIES = 10;
-const BATCH_SIZE = 2;
-const DAILY_PUBLISH_LIMIT = 30;
+const BATCH_SIZE = 5;
+const DAILY_PUBLISH_LIMIT = 50;
 
 function verifyCronSecret(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -54,7 +54,12 @@ async function autoPublishReady(remaining: number): Promise<number> {
       const existing = await prisma.article.findUnique({ where: { slug } });
       const finalSlug = existing ? `${slug}-${Date.now()}` : slug;
 
-      const imageUrl = item.imageUrl ?? `https://picsum.photos/seed/${Math.floor(Math.random() * 100)}/800/450`;
+      // Generate image if missing (shouldn't happen normally, but as safety net)
+      let imageUrl = item.imageUrl ?? null;
+      if (!imageUrl) {
+        const prompt = `${item.titleAr ?? item.rawTitle ?? "artificial intelligence"}, professional technology news illustration`;
+        imageUrl = await generateArticleImage(prompt);
+      }
 
       await prisma.article.create({
         data: {
@@ -177,15 +182,14 @@ export async function GET(request: Request) {
 
       const processed = await processArticleWithAI(item.rawTitle ?? "Untitled", item.rawContent);
 
-      // Generate image with Replicate if no image from RSS
-      let imageUrl = item.imageUrl ?? null;
-      if (!imageUrl && processed.featuredImagePrompt) {
+      // Always generate a new image with Replicate — never use RSS images
+      let imageUrl: string | null = null;
+      if (processed.featuredImagePrompt) {
         imageUrl = await generateArticleImage(processed.featuredImagePrompt);
       }
 
       await markProcessed(item.id, processed);
 
-      // Save image to queue item
       if (imageUrl) {
         await prisma.articleQueue.update({
           where: { id: item.id },
