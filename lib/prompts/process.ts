@@ -104,9 +104,10 @@ export async function autoPublishPrompt(queueId: string): Promise<void> {
 
   if (!category || !aiModel) return;
 
-  // Build slug from Arabic title + random suffix
-  const base = item.titleAr
-    .replace(/[^ء-يa-z0-9\s]/gi, "")
+  // Build slug from English title + random suffix (Arabic chars break URLs)
+  const base = item.rawTitle
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
     .trim()
     .replace(/\s+/g, "-")
     .slice(0, 60);
