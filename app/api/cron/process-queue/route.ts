@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { processArticleWithAI } from "@/lib/openai";
 import { generateArticleImage } from "@/lib/replicate";
 import { markProcessing, markProcessed, markFailed } from "@/lib/queue";
+import { generateAllCaptions } from "@/lib/social/generate";
+import type { SocialPlatform } from "@/lib/social";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -77,6 +79,45 @@ async function autoPublishReady(remaining: number): Promise<number> {
         where: { id: item.id },
         data: { status: "approved", approvedAt: new Date() },
       });
+
+      // Queue social posts for enabled accounts
+      try {
+        const accounts = await prisma.socialAccount.findMany({
+          where: { enabled: true },
+        });
+
+        if (accounts.length > 0) {
+          const captions = await generateAllCaptions(
+            {
+              titleAr: item.titleAr ?? item.rawTitle ?? "Untitled",
+              excerpt: item.summaryAr,
+              contentAr: item.contentAr ?? item.rawContent,
+              sourceName: item.sourceName ?? "",
+              tags: item.tags ?? [],
+            },
+            accounts.map((a) => a.platform as SocialPlatform)
+          );
+
+          const article = await prisma.article.findUnique({
+            where: { slug: finalSlug },
+            select: { id: true },
+          });
+
+          if (article) {
+            await prisma.socialPost.createMany({
+              data: accounts.map((account) => ({
+                articleId: article.id,
+                accountId: account.id,
+                platform: account.platform,
+                caption: captions[account.platform as SocialPlatform] ?? "",
+                status: "approved",
+              })),
+            });
+          }
+        }
+      } catch (socialErr) {
+        console.error(`[auto-publish] Social queue failed for ${finalSlug}:`, socialErr instanceof Error ? socialErr.message : socialErr);
+      }
 
       published++;
     } catch (err) {

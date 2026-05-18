@@ -64,8 +64,8 @@ export default function PrivacyPage() {
           <p>
             يحق لك في أي وقت طلب معرفة البيانات التي نحتفظ بها المتعلقة بزيارتك، أو طلب حذفها.
             للتواصل بشأن ذلك راسلنا على:{" "}
-            <a href="mailto:info@aiscope.news" className="text-[#667eea] hover:underline font-semibold">
-              info@aiscope.news
+            <a href="mailto:hanna.obead@gmail.com" className="text-[#667eea] hover:underline font-semibold">
+              hanna.obead@gmail.com
             </a>
           </p>
         </div>

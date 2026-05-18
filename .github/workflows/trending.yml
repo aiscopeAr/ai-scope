@@ -13,4 +13,4 @@ jobs:
         run: |
           curl -f -s -o /dev/null -w "Status: %{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-scope-sigma.vercel.app/api/cron/trending"
+            "https://ai-news-ar.vercel.app/api/cron/trending"

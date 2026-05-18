@@ -76,8 +76,8 @@ export default function TermsPage() {
         <div className="rounded-2xl bg-slate-50 border border-slate-100 p-6">
           <p className="text-sm text-slate-500">
             للاستفسار عن هذه الشروط تواصل معنا:{" "}
-            <a href="mailto:info@aiscope.news" className="font-semibold text-[#667eea] hover:underline">
-              info@aiscope.news
+            <a href="mailto:hanna.obead@gmail.com" className="font-semibold text-[#667eea] hover:underline">
+              hanna.obead@gmail.com
             </a>
           </p>
         </div>

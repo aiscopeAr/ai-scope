@@ -10,6 +10,7 @@ import {
   PlusCircle,
   ArrowLeft,
   Bot,
+  Share2,
 } from "lucide-react";
 
 import AdminSignOutButton from "@/components/AdminSignOutButton";
@@ -30,6 +31,8 @@ async function getDashboardData() {
     pendingQueue,
     totalViews,
     activeAds,
+    activeSocialAccounts,
+    pendingSocialPosts,
   ] = await Promise.all([
     prisma.article.count(),
     prisma.article.count({ where: { published: true } }),
@@ -50,6 +53,8 @@ async function getDashboardData() {
     prisma.articleQueue.count({ where: { status: { in: ["pending", "processed"] } } }),
     prisma.article.aggregate({ _sum: { viewCount: true } }),
     prisma.adSlot.count({ where: { enabled: true } }),
+    prisma.socialAccount.count({ where: { enabled: true } }),
+    prisma.socialPost.count({ where: { status: "pending" } }),
   ]);
 
   return {
@@ -63,6 +68,8 @@ async function getDashboardData() {
     pendingQueue,
     totalViews: totalViews._sum.viewCount ?? 0,
     activeAds,
+    activeSocialAccounts,
+    pendingSocialPosts,
   };
 }
 
@@ -128,6 +135,16 @@ export default async function AdminDashboardPage() {
       valueLabel: "",
       color: "slate",
     },
+    {
+      href: "/admin/social",
+      icon: Share2,
+      label: "السوشيال ميديا",
+      sub: `${data.activeSocialAccounts} حساب نشط`,
+      value: data.pendingSocialPosts,
+      valueLabel: "بانتظار النشر",
+      color: "pink",
+      urgent: data.pendingSocialPosts > 0,
+    },
   ];
 
   const colorMap: Record<string, { card: string; icon: string; badge: string }> = {
@@ -137,6 +154,7 @@ export default async function AdminDashboardPage() {
     emerald:{ card: "bg-emerald-50 hover:bg-emerald-100 border-emerald-100", icon: "bg-emerald-500/10 text-emerald-600", badge: "bg-emerald-100 text-emerald-700" },
     rose:   { card: "bg-rose-50   hover:bg-rose-100   border-rose-100",   icon: "bg-rose-500/10   text-rose-600",   badge: "bg-rose-100   text-rose-700"   },
     slate:  { card: "bg-slate-50  hover:bg-slate-100  border-slate-100",  icon: "bg-slate-200     text-slate-600",  badge: "bg-slate-200  text-slate-600"  },
+    pink:   { card: "bg-pink-50   hover:bg-pink-100   border-pink-100",   icon: "bg-pink-500/10   text-pink-600",   badge: "bg-pink-100   text-pink-700"   },
   };
 
   return (

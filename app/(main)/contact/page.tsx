@@ -19,19 +19,19 @@ export default function ContactPage() {
           {
             title: "الاستفسارات العامة",
             desc: "لأي سؤال عن المنصة أو محتواها",
-            email: "info@aiscope.news",
+            email: "hanna.obead@gmail.com",
             color: "violet",
           },
           {
             title: "الشراكات الإعلانية",
             desc: "للإعلان على المنصة والتعاون التجاري",
-            email: "ads@aiscope.news",
+            email: "hanna.obead@gmail.com",
             color: "emerald",
           },
           {
             title: "التصحيحات التحريرية",
             desc: "لاكتشفت خطأً في إحدى مقالاتنا؟ أخبرنا",
-            email: "editorial@aiscope.news",
+            email: "hanna.obead@gmail.com",
             color: "amber",
           },
         ].map((item) => (

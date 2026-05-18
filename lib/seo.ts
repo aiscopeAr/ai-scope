@@ -1,5 +1,5 @@
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://aiscope.news";
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://ai-news-ar.vercel.app";
 
 export const SITE_NAME = "AI Scope";
 export const SITE_NAME_AR = "نطاق الذكاء الاصطناعي";

@@ -102,6 +102,36 @@ model Settings {
   updatedAt        DateTime @updatedAt
 }
 
+model SocialAccount {
+  id           String       @id @default(cuid())
+  platform     String       // "twitter" | "instagram" | "telegram" | "facebook" | "tiktok"
+  name         String
+  enabled      Boolean      @default(false)
+  credentials  String       @db.Text // JSON — API keys (encrypted at app level)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  posts        SocialPost[]
+
+  @@index([platform, enabled])
+}
+
+model SocialPost {
+  id          String    @id @default(cuid())
+  articleId   String
+  accountId   String
+  account     SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  platform    String
+  caption     String    @db.Text
+  status      String    @default("pending") // "pending" | "approved" | "sent" | "failed" | "skipped"
+  sentAt      DateTime?
+  errorMsg    String?
+  createdAt   DateTime  @default(now())
+
+  @@index([status])
+  @@index([articleId])
+  @@index([accountId])
+}
+
 model AdSlot {
   id        String   @id @default(cuid())
   name      String

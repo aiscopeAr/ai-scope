@@ -1,0 +1,16 @@
+name: Social Queue
+
+on:
+  schedule:
+    - cron: "40 * * * *"   # every hour at :40
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send approved social posts
+        run: |
+          curl -s -X GET \
+            "https://ai-news-ar.vercel.app/api/cron/social-queue" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" | jq .

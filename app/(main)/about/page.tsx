@@ -57,8 +57,8 @@ export default function AboutPage() {
           <h2 className="mb-3 text-xl font-bold text-slate-900">تواصل معنا</h2>
           <p>
             للاستفسارات والشراكات الإعلانية والتعاون التحريري، يسعدنا التواصل عبر:{" "}
-            <a href="mailto:info@aiscope.news" className="font-semibold text-[#667eea] hover:underline">
-              info@aiscope.news
+            <a href="mailto:hanna.obead@gmail.com" className="font-semibold text-[#667eea] hover:underline">
+              hanna.obead@gmail.com
             </a>
           </p>
         </div>

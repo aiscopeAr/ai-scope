@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 
 export const revalidate = 3600;
 
-const SITE_URL = "https://ai-scope-sigma.vercel.app";
+const SITE_URL = "https://ai-news-ar.vercel.app";
 
 const staticPages: MetadataRoute.Sitemap = [
   { url: SITE_URL,                    lastModified: new Date(), changeFrequency: "hourly",  priority: 1.0 },
