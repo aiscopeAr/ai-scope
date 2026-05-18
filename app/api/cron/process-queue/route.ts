@@ -10,9 +10,10 @@ import type { SocialPlatform } from "@/lib/social";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const MAX_RETRIES = 10;
-const BATCH_SIZE = 5;
+const MAX_RETRIES = 5;
 const DAILY_PUBLISH_LIMIT = 50;
+// Process 1 item per call: OpenAI ~8s + Replicate ~20s = ~28s, well under 60s limit
+const BATCH_SIZE = 1;
 
 function verifyCronSecret(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -31,9 +32,10 @@ async function getPublishedTodayCount(): Promise<number> {
 async function autoPublishReady(remaining: number): Promise<number> {
   if (remaining <= 0) return 0;
 
+  // Only take items that have been AI-processed (have titleAr) but not yet published
   const readyItems = await prisma.articleQueue.findMany({
-    where: { status: "processed" },
-    orderBy: { createdAt: "asc" },
+    where: { status: "processed", titleAr: { not: null } },
+    orderBy: { processedAt: "asc" },
     take: remaining,
     include: { source: true },
   });
@@ -42,11 +44,10 @@ async function autoPublishReady(remaining: number): Promise<number> {
 
   for (const item of readyItems) {
     try {
-      // Resolve category
       const suggestedSlug = item.suggestedCategory ?? "ai-models";
-      const category = await prisma.category.findFirst({
-        where: { slug: suggestedSlug },
-      }) ?? await prisma.category.findFirst();
+      const category =
+        (await prisma.category.findFirst({ where: { slug: suggestedSlug } })) ??
+        (await prisma.category.findFirst());
 
       if (!category) continue;
 
@@ -54,12 +55,11 @@ async function autoPublishReady(remaining: number): Promise<number> {
       const existing = await prisma.article.findUnique({ where: { slug } });
       const finalSlug = existing ? `${slug}-${Date.now()}` : slug;
 
-      // Generate image if missing (shouldn't happen normally, but as safety net)
-      let imageUrl = item.imageUrl ?? null;
-      if (!imageUrl) {
-        const prompt = `${item.titleAr ?? item.rawTitle ?? "artificial intelligence"}, professional technology news illustration`;
-        imageUrl = await generateArticleImage(prompt);
-      }
+      // Generate a fresh Replicate image — never use RSS images
+      const imagePrompt =
+        item.featuredImagePrompt ??
+        `${item.titleAr ?? item.rawTitle ?? "artificial intelligence"}, futuristic technology concept`;
+      const imageUrl = await generateArticleImage(imagePrompt);
 
       await prisma.article.create({
         data: {
@@ -85,12 +85,9 @@ async function autoPublishReady(remaining: number): Promise<number> {
         data: { status: "approved", approvedAt: new Date() },
       });
 
-      // Queue social posts for enabled accounts
+      // Queue social posts if any accounts are connected
       try {
-        const accounts = await prisma.socialAccount.findMany({
-          where: { enabled: true },
-        });
-
+        const accounts = await prisma.socialAccount.findMany({ where: { enabled: true } });
         if (accounts.length > 0) {
           const captions = await generateAllCaptions(
             {
@@ -100,14 +97,12 @@ async function autoPublishReady(remaining: number): Promise<number> {
               sourceName: item.sourceName ?? "",
               tags: item.tags ?? [],
             },
-            accounts.map((a) => a.platform as SocialPlatform)
+            accounts.map((a) => a.platform as SocialPlatform),
           );
-
           const article = await prisma.article.findUnique({
             where: { slug: finalSlug },
             select: { id: true },
           });
-
           if (article) {
             await prisma.socialPost.createMany({
               data: accounts.map((account) => ({
@@ -121,12 +116,18 @@ async function autoPublishReady(remaining: number): Promise<number> {
           }
         }
       } catch (socialErr) {
-        console.error(`[auto-publish] Social queue failed for ${finalSlug}:`, socialErr instanceof Error ? socialErr.message : socialErr);
+        console.error(
+          `[auto-publish] Social queue failed for ${finalSlug}:`,
+          socialErr instanceof Error ? socialErr.message : socialErr,
+        );
       }
 
       published++;
     } catch (err) {
-      console.error(`[auto-publish] Failed item ${item.id}:`, err instanceof Error ? err.message : err);
+      console.error(
+        `[auto-publish] Failed item ${item.id}:`,
+        err instanceof Error ? err.message : err,
+      );
     }
   }
 
@@ -138,18 +139,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Reset stale "processing" items older than 3 minutes back to pending
-  const staleThreshold = new Date(Date.now() - 3 * 60 * 1000);
-  await prisma.articleQueue.updateMany({
-    where: { status: "processing", createdAt: { lt: staleThreshold } },
+  // Reset stale "processing" items older than 5 minutes back to pending
+  // Use updatedAt so items don't get stuck permanently
+  const staleThreshold = new Date(Date.now() - 5 * 60 * 1000);
+  const staleReset = await prisma.articleQueue.updateMany({
+    where: { status: "processing", updatedAt: { lt: staleThreshold } },
     data: { status: "pending", failureReason: "Reset from stale processing" },
   });
 
-  // Check how many articles published today
+  // Check daily publish budget
   const publishedToday = await getPublishedTodayCount();
   const canPublish = Math.max(0, DAILY_PUBLISH_LIMIT - publishedToday);
 
-  // Fetch pending/failed items to process
+  // Fetch one pending/failed item to process (text-only, fast)
   const items = await prisma.articleQueue.findMany({
     where: {
       OR: [
@@ -161,11 +163,7 @@ export async function GET(request: Request) {
     take: BATCH_SIZE,
   });
 
-  const results: Array<{
-    id: string;
-    status: "processed" | "failed" | "skipped";
-    error?: string;
-  }> = [];
+  const results: Array<{ id: string; status: "processed" | "failed" | "skipped"; error?: string }> = [];
 
   for (const item of items) {
     if (!item.rawContent || item.rawContent.trim().length < 400) {
@@ -180,23 +178,13 @@ export async function GET(request: Request) {
     try {
       await markProcessing(item.id);
 
-      const processed = await processArticleWithAI(item.rawTitle ?? "Untitled", item.rawContent);
-
-      // Always generate a new image with Replicate — never use RSS images
-      let imageUrl: string | null = null;
-      if (processed.featuredImagePrompt) {
-        imageUrl = await generateArticleImage(processed.featuredImagePrompt);
-      }
+      // Step 1: AI text processing (title, content, tags, slug, image prompt)
+      const processed = await processArticleWithAI(
+        item.rawTitle ?? "Untitled",
+        item.rawContent,
+      );
 
       await markProcessed(item.id, processed);
-
-      if (imageUrl) {
-        await prisma.articleQueue.update({
-          where: { id: item.id },
-          data: { imageUrl },
-        });
-      }
-
       results.push({ id: item.id, status: "processed" });
     } catch (err) {
       const message = err instanceof Error ? err.message : "AI processing failed";
@@ -206,11 +194,12 @@ export async function GET(request: Request) {
     }
   }
 
-  // Auto-publish up to daily limit
+  // Step 2: Publish one ready item (includes Replicate image generation)
   const autoPublished = await autoPublishReady(canPublish);
 
   return NextResponse.json({
     ok: true,
+    staleReset: staleReset.count,
     publishedToday: publishedToday + autoPublished,
     dailyLimit: DAILY_PUBLISH_LIMIT,
     canPublish: Math.max(0, canPublish - autoPublished),

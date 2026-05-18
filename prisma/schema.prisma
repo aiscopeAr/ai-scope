@@ -86,6 +86,7 @@ model ArticleQueue {
   failureReason      String?
   processedAt        DateTime?
   createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @default(now()) @updatedAt
   approvedAt         DateTime?
 
   @@index([status])
