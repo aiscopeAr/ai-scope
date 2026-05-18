@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   Bot,
   Share2,
+  Library,
 } from "lucide-react";
 
 import AdminSignOutButton from "@/components/AdminSignOutButton";
@@ -136,6 +137,15 @@ export default async function AdminDashboardPage() {
       color: "slate",
     },
     {
+      href: "/admin/prompts",
+      icon: Library,
+      label: "مكتبة Prompts",
+      sub: "إدارة الـ prompts والطابور",
+      value: null,
+      valueLabel: "",
+      color: "teal",
+    },
+    {
       href: "/admin/social",
       icon: Share2,
       label: "السوشيال ميديا",
@@ -155,6 +165,7 @@ export default async function AdminDashboardPage() {
     rose:   { card: "bg-rose-50   hover:bg-rose-100   border-rose-100",   icon: "bg-rose-500/10   text-rose-600",   badge: "bg-rose-100   text-rose-700"   },
     slate:  { card: "bg-slate-50  hover:bg-slate-100  border-slate-100",  icon: "bg-slate-200     text-slate-600",  badge: "bg-slate-200  text-slate-600"  },
     pink:   { card: "bg-pink-50   hover:bg-pink-100   border-pink-100",   icon: "bg-pink-500/10   text-pink-600",   badge: "bg-pink-100   text-pink-700"   },
+    teal:   { card: "bg-teal-50   hover:bg-teal-100   border-teal-100",   icon: "bg-teal-500/10   text-teal-600",   badge: "bg-teal-100   text-teal-700"   },
   };
 
   return (

@@ -145,6 +145,104 @@ model AdSlot {
   @@index([position, enabled])
 }
 
+model PromptCategory {
+  id          String   @id @default(cuid())
+  name        String
+  nameAr      String
+  slug        String   @unique
+  icon        String?
+  description String?
+  prompts     Prompt[]
+
+  @@index([slug])
+}
+
+model AIModel {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  icon        String?
+  description String?
+  prompts     Prompt[]
+
+  @@index([slug])
+}
+
+model Prompt {
+  id            String         @id @default(cuid())
+  title         String
+  titleAr       String
+  slug          String         @unique
+  description   String         @db.Text
+  descriptionAr String         @db.Text
+  promptText    String         @db.Text
+  promptTextAr  String         @db.Text
+  examples      Json?
+  useCases      Json?
+  culturalNotes String?        @db.Text
+  sourceUrl     String
+  sourceName    String
+  categoryId    String
+  category      PromptCategory @relation(fields: [categoryId], references: [id])
+  aiModelId     String
+  aiModel       AIModel        @relation(fields: [aiModelId], references: [id])
+  tags          String[]
+  difficulty    String         @default("intermediate")
+  viewCount     Int            @default(0)
+  copyCount     Int            @default(0)
+  featured      Boolean        @default(false)
+  published     Boolean        @default(true)
+  publishedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([categoryId])
+  @@index([aiModelId])
+  @@index([featured])
+  @@index([slug])
+  @@index([published, publishedAt])
+}
+
+model PromptQueue {
+  id            String    @id @default(cuid())
+  rawTitle      String
+  rawPrompt     String    @db.Text
+  rawCategory   String?
+  rawTags       String[]
+  sourceUrl     String
+  sourceName    String
+  titleAr       String?
+  descriptionAr String?   @db.Text
+  promptText    String?   @db.Text
+  promptTextAr  String?   @db.Text
+  examples      Json?
+  useCases      Json?
+  culturalNotes String?   @db.Text
+  score         Int       @default(0)
+  status        String    @default("pending")
+  difficulty    String?
+  tags          String[]
+  createdAt     DateTime  @default(now())
+  processedAt   DateTime?
+
+  @@index([status])
+  @@index([score])
+}
+
+model PromptSource {
+  id        String    @id @default(cuid())
+  name      String
+  type      String
+  url       String
+  config    Json?
+  active    Boolean   @default(true)
+  priority  Int       @default(5)
+  lastFetch DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([active])
+}
+
 model TrendingKeyword {
   id        String   @id @default(cuid())
   keyword   String

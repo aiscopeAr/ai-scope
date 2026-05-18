@@ -25,6 +25,7 @@ export default function Header() {
               { href: "/category/ai-models", label: "نماذج AI" },
               { href: "/category/research", label: "البحوث" },
               { href: "/category/companies", label: "الشركات" },
+              { href: "/tools", label: "مكتبة Prompts" },
               { href: "/about", label: "من نحن" },
             ].map((item) => (
               <Link

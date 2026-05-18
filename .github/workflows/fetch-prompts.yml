@@ -1,0 +1,16 @@
+name: Fetch Prompts (Every 12h)
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch prompts from sources
+        run: |
+          curl -f -s -o /dev/null -w "Status: %{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ai-news-ar.vercel.app/api/cron/fetch-prompts"
