@@ -1,0 +1,16 @@
+name: Fetch News (Hourly)
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # every hour at :00
+  workflow_dispatch:        # allow manual trigger from GitHub UI
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call fetch-news API
+        run: |
+          curl -f -s -o /dev/null -w "Status: %{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ai-scope-sigma.vercel.app/api/cron/fetch-news"

@@ -1,0 +1,34 @@
+name: Process Queue (Hourly)
+
+on:
+  schedule:
+    - cron: "20 * * * *"   # every hour at :20 (after fetch finishes)
+  workflow_dispatch:
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call process-queue API (run 1)
+        run: |
+          curl -f -s -o /dev/null -w "Status: %{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ai-scope-sigma.vercel.app/api/cron/process-queue"
+
+      - name: Wait 30s
+        run: sleep 30
+
+      - name: Call process-queue API (run 2)
+        run: |
+          curl -f -s -o /dev/null -w "Status: %{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ai-scope-sigma.vercel.app/api/cron/process-queue"
+
+      - name: Wait 30s
+        run: sleep 30
+
+      - name: Call process-queue API (run 3)
+        run: |
+          curl -f -s -o /dev/null -w "Status: %{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ai-scope-sigma.vercel.app/api/cron/process-queue"

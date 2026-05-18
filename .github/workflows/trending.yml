@@ -1,0 +1,16 @@
+name: Update Trending (Daily)
+
+on:
+  schedule:
+    - cron: "0 5 * * *"   # once a day at 05:00 UTC
+  workflow_dispatch:
+
+jobs:
+  trending:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call trending API
+        run: |
+          curl -f -s -o /dev/null -w "Status: %{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ai-scope-sigma.vercel.app/api/cron/trending"
