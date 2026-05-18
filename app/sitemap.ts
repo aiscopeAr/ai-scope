@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600; // rebuild sitemap cache every hour
 
 // Use the canonical production URL directly — avoids env var misconfiguration
 const SITE_URL = "https://ai-scope-sigma.vercel.app";
