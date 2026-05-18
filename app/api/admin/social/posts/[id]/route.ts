@@ -3,8 +3,9 @@ import { prisma } from "@/lib/db";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const body = await request.json() as { status?: string; caption?: string };
 
   const data: Record<string, unknown> = {};
@@ -12,7 +13,7 @@ export async function PATCH(
   if (body.caption) data.caption = body.caption;
 
   const post = await prisma.socialPost.update({
-    where: { id: params.id },
+    where: { id },
     data,
     select: { id: true, status: true },
   });
@@ -22,8 +23,9 @@ export async function PATCH(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  await prisma.socialPost.delete({ where: { id: params.id } });
+  const { id } = await params;
+  await prisma.socialPost.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }
