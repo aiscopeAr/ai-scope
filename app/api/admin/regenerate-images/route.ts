@@ -11,73 +11,76 @@ function verify(request: Request): boolean {
   return request.headers.get("authorization") === `Bearer ${secret}`;
 }
 
+function needsNewImage(imageUrl: string | null): boolean {
+  if (!imageUrl) return true;
+  // Keep only Cloudinary images — regenerate everything else
+  return !imageUrl.includes("res.cloudinary.com");
+}
+
 export async function GET(request: Request) {
   if (!verify(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Process up to 2 articles per call (each image ~15-20s, 2 = ~40s, under 60s limit)
-  const articles = await prisma.article.findMany({
-    where: {
-      published: true,
-      OR: [
-        { imageUrl: null },
-        // Non-Replicate images (from RSS sources — old articles)
-        {
-          AND: [
-            { imageUrl: { not: { contains: "replicate.delivery" } } },
-            { imageUrl: { not: { contains: "pbxt.replicate.delivery" } } },
-          ],
-        },
-      ],
-    },
+  const { searchParams } = new URL(request.url);
+  const debugOnly = searchParams.get("debug") === "1";
+
+  // Find articles that don't have a permanent Cloudinary image yet
+  const allArticles = await prisma.article.findMany({
+    where: { published: true },
+    select: { id: true, title: true, titleAr: true, imageUrl: true },
     orderBy: { createdAt: "desc" },
-    take: 2,
-    select: { id: true, title: true, titleAr: true, tags: true, imageUrl: true },
   });
 
-  if (articles.length === 0) {
-    return NextResponse.json({ ok: true, message: "All articles have Replicate images", updated: 0 });
+  const needsImage = allArticles.filter((a) => needsNewImage(a.imageUrl));
+
+  if (debugOnly) {
+    return NextResponse.json({
+      total: allArticles.length,
+      needsImage: needsImage.length,
+      cloudinaryOk: allArticles.length - needsImage.length,
+      cloudinaryEnvSet: !!process.env.CLOUDINARY_CLOUD_NAME,
+      replicateEnvSet: !!process.env.REPLICATE_API_TOKEN,
+      sample: needsImage.slice(0, 3).map((a) => ({ id: a.id, imageUrl: a.imageUrl })),
+    });
+  }
+
+  const toProcess = needsImage.slice(0, 2);
+
+  if (toProcess.length === 0) {
+    return NextResponse.json({
+      ok: true,
+      message: "All articles already have Cloudinary images",
+      updated: 0,
+      remaining: 0,
+    });
   }
 
   const results: Array<{ id: string; ok: boolean; url?: string; error?: string }> = [];
 
-  for (const article of articles) {
-    const prompt = `${article.title}, artificial intelligence technology concept, futuristic digital illustration`;
+  for (const article of toProcess) {
+    const prompt = `${article.title}, artificial intelligence technology news, futuristic digital concept`;
     try {
       const imageUrl = await generateArticleImage(prompt);
       if (imageUrl) {
         await prisma.article.update({ where: { id: article.id }, data: { imageUrl } });
         results.push({ id: article.id, ok: true, url: imageUrl });
       } else {
-        results.push({ id: article.id, ok: false, error: "No URL returned from Replicate" });
+        results.push({ id: article.id, ok: false, error: "generateArticleImage returned null" });
       }
     } catch (e) {
-      results.push({ id: article.id, ok: false, error: e instanceof Error ? e.message : "Unknown error" });
+      results.push({ id: article.id, ok: false, error: e instanceof Error ? e.message : String(e) });
     }
   }
 
-  const remaining = await prisma.article.count({
-    where: {
-      published: true,
-      OR: [
-        { imageUrl: null },
-        {
-          AND: [
-            { imageUrl: { not: { contains: "replicate.delivery" } } },
-            { imageUrl: { not: { contains: "pbxt.replicate.delivery" } } },
-          ],
-        },
-      ],
-    },
-  });
+  const remaining = needsImage.length - toProcess.length;
 
   return NextResponse.json({
     ok: true,
     processed: results.length,
     updated: results.filter((r) => r.ok).length,
     failed: results.filter((r) => !r.ok).length,
-    remainingAfter: remaining,
+    remaining,
     results,
   });
 }
