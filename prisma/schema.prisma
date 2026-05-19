@@ -37,25 +37,29 @@ model Source {
 }
 
 model Article {
-  id          String    @id @default(cuid())
-  title       String
-  titleAr     String
-  slug        String    @unique
-  content     String    @db.Text
-  contentAr   String    @db.Text
-  excerpt     String?   @db.Text
-  imageUrl    String?
-  sourceUrl   String
-  sourceName  String
-  tags        String[]
-  score       Int       @default(0)
-  viewCount   Int       @default(0)
-  published   Boolean   @default(false)
-  publishedAt DateTime?
-  categoryId  String
-  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  title        String
+  titleAr      String
+  slug         String    @unique
+  content      String    @db.Text
+  contentAr    String    @db.Text
+  excerpt      String?   @db.Text
+  imageUrl     String?
+  imageAlt     String?
+  sourceUrl    String
+  sourceName   String
+  tags         String[]
+  keywords     String[]
+  faq          Json?
+  relatedTopics String[]
+  score        Int       @default(0)
+  viewCount    Int       @default(0)
+  published    Boolean   @default(false)
+  publishedAt  DateTime?
+  categoryId   String
+  category     Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([published, publishedAt])
   @@index([categoryId])
@@ -74,6 +78,10 @@ model ArticleQueue {
   summaryAr          String?   @db.Text
   contentAr          String?   @db.Text
   tags               String[]
+  keywords           String[]
+  faq                Json?
+  imageAlt           String?
+  relatedTopics      String[]
   seoTitle           String?
   seoDescription     String?
   suggestedCategory  String?
@@ -253,4 +261,103 @@ model TrendingKeyword {
 
   @@unique([keyword, type])
   @@index([type, count])
+}
+
+// ─── Evergreen content ────────────────────────────────────────────────────────
+
+model AITool {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  tagline         String?
+  descriptionAr   String   @db.Text
+  website         String?
+  logoUrl         String?
+  category        String   // "chatbot" | "image" | "video" | "audio" | "code" | "productivity" | "other"
+  pricing         String   @default("freemium") // "free" | "freemium" | "paid"
+  pros            String[] // Arabic bullet points
+  cons            String[]
+  useCases        String[]
+  featuredAt      DateTime?
+  published       Boolean  @default(true)
+  viewCount       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  comparisons     ComparisonSide[]
+
+  @@index([category, published])
+  @@index([slug])
+}
+
+model Company {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  descriptionAr   String   @db.Text
+  website         String?
+  logoUrl         String?
+  country         String?
+  founded         Int?
+  specialties     String[] // Arabic tags
+  notableModels   String[]
+  published       Boolean  @default(true)
+  viewCount       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([slug])
+  @@index([published])
+}
+
+model Guide {
+  id              String   @id @default(cuid())
+  title           String
+  slug            String   @unique
+  excerpt         String   @db.Text
+  content         String   @db.Text
+  category        String   // "beginner" | "advanced" | "tutorial" | "how-to" | "comparison"
+  tags            String[]
+  difficulty      String   @default("beginner") // "beginner" | "intermediate" | "advanced"
+  faq             Json?
+  readingTime     Int?     // minutes
+  published       Boolean  @default(true)
+  publishedAt     DateTime @default(now())
+  viewCount       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([category, published])
+  @@index([slug])
+  @@index([published, publishedAt])
+}
+
+model Comparison {
+  id              String           @id @default(cuid())
+  slug            String           @unique
+  title           String
+  summaryAr       String           @db.Text
+  verdict         String?          @db.Text
+  criteria        Json?            // { name: string, weights: number }[]
+  published       Boolean          @default(true)
+  viewCount       Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  sides           ComparisonSide[]
+
+  @@index([slug])
+  @@index([published])
+}
+
+model ComparisonSide {
+  id           String     @id @default(cuid())
+  comparisonId String
+  comparison   Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  toolId       String
+  tool         AITool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  score        Int?       // 0–100 overall score
+  notes        String?    @db.Text
+
+  @@unique([comparisonId, toolId])
+  @@index([comparisonId])
+  @@index([toolId])
 }

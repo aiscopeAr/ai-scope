@@ -1,22 +1,33 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
+import { SITE_URL } from "@/lib/seo";
 
 export const revalidate = 3600;
 
-const SITE_URL = "https://ai-news-ar.vercel.app";
-
 const staticPages: MetadataRoute.Sitemap = [
-  { url: SITE_URL,                    lastModified: new Date(), changeFrequency: "hourly",  priority: 1.0 },
-  { url: `${SITE_URL}/search`,        lastModified: new Date(), changeFrequency: "weekly",  priority: 0.6 },
-  { url: `${SITE_URL}/about`,         lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
-  { url: `${SITE_URL}/contact`,       lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
-  { url: `${SITE_URL}/privacy`,       lastModified: new Date(), changeFrequency: "yearly",  priority: 0.2 },
-  { url: `${SITE_URL}/terms`,         lastModified: new Date(), changeFrequency: "yearly",  priority: 0.2 },
+  { url: SITE_URL,                      lastModified: new Date(), changeFrequency: "hourly",  priority: 1.0 },
+  { url: `${SITE_URL}/search`,          lastModified: new Date(), changeFrequency: "weekly",  priority: 0.6 },
+  { url: `${SITE_URL}/guides`,          lastModified: new Date(), changeFrequency: "daily",   priority: 0.9 },
+  { url: `${SITE_URL}/ai-tools`,        lastModified: new Date(), changeFrequency: "daily",   priority: 0.9 },
+  { url: `${SITE_URL}/companies`,       lastModified: new Date(), changeFrequency: "weekly",  priority: 0.8 },
+  { url: `${SITE_URL}/compare`,         lastModified: new Date(), changeFrequency: "weekly",  priority: 0.8 },
+  { url: `${SITE_URL}/tools`,           lastModified: new Date(), changeFrequency: "daily",   priority: 0.7 },
+  { url: `${SITE_URL}/about`,           lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
+  { url: `${SITE_URL}/contact`,         lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
+  { url: `${SITE_URL}/privacy`,         lastModified: new Date(), changeFrequency: "yearly",  priority: 0.2 },
+  { url: `${SITE_URL}/terms`,           lastModified: new Date(), changeFrequency: "yearly",  priority: 0.2 },
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
-    const [articles, categories] = await Promise.all([
+    const [
+      articles,
+      categories,
+      guides,
+      aiTools,
+      companies,
+      comparisons,
+    ] = await Promise.all([
       prisma.article.findMany({
         where: { published: true },
         select: { slug: true, updatedAt: true },
@@ -24,6 +35,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         take: 5000,
       }),
       prisma.category.findMany({
+        select: { slug: true, updatedAt: true },
+      }),
+      prisma.guide.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+      }),
+      prisma.aITool.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+      }),
+      prisma.company.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+      }),
+      prisma.comparison.findMany({
+        where: { published: true },
         select: { slug: true, updatedAt: true },
       }),
     ]);
@@ -42,9 +69,44 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-    return [...staticPages, ...categoryPages, ...articlePages];
+    const guidePages: MetadataRoute.Sitemap = guides.map((g) => ({
+      url: `${SITE_URL}/guides/${g.slug}`,
+      lastModified: g.updatedAt,
+      changeFrequency: "monthly",
+      priority: 0.85,
+    }));
+
+    const toolPages: MetadataRoute.Sitemap = aiTools.map((t) => ({
+      url: `${SITE_URL}/ai-tools/${t.slug}`,
+      lastModified: t.updatedAt,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    }));
+
+    const companyPages: MetadataRoute.Sitemap = companies.map((c) => ({
+      url: `${SITE_URL}/companies/${c.slug}`,
+      lastModified: c.updatedAt,
+      changeFrequency: "monthly",
+      priority: 0.75,
+    }));
+
+    const comparePages: MetadataRoute.Sitemap = comparisons.map((c) => ({
+      url: `${SITE_URL}/compare/${c.slug}`,
+      lastModified: c.updatedAt,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    }));
+
+    return [
+      ...staticPages,
+      ...categoryPages,
+      ...articlePages,
+      ...guidePages,
+      ...toolPages,
+      ...companyPages,
+      ...comparePages,
+    ];
   } catch {
-    // DB unavailable — return static pages only so Google gets valid XML
     return staticPages;
   }
 }

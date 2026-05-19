@@ -11,6 +11,11 @@ function getClient(): OpenAI {
   return _client;
 }
 
+export type FaqItem = {
+  question: string;
+  answer: string;
+};
+
 export type AiProcessedArticle = {
   titleAr: string;
   summaryAr: string;
@@ -21,6 +26,10 @@ export type AiProcessedArticle = {
   suggestedCategory: string;
   slug: string;
   featuredImagePrompt: string;
+  faq: FaqItem[];
+  keywords: string[];
+  imageAlt: string;
+  relatedTopics: string[];
 };
 
 const SYSTEM_PROMPT = `أنت صحفي ومحرر متخصص في أخبار الذكاء الاصطناعي والتقنية، تكتب لموقع إخباري عربي متميز. أسلوبك صحفي احترافي، تصيغ الأخبار بطريقة مستقلة وأصيلة للقارئ العربي — لا تترجم حرفياً بل تُعيد الكتابة والصياغة بأسلوبك الخاص مع الحفاظ على دقة المعلومات. أنت تعيد المحتوى بتنسيق JSON فقط، بدون أي نص خارج JSON.`;
@@ -38,13 +47,22 @@ ${content.slice(0, 6000)}
 {
   "titleAr": "عنوان صحفي جذاب بالعربية (موجز ومؤثر، لا يتجاوز 100 حرف)",
   "summaryAr": "مقدمة إخبارية 2-3 جمل تلخص أهمية الخبر للقارئ العربي",
-  "contentAr": "كتابة صحفية أصيلة بالعربية (600 كلمة على الأقل) — بأسلوب مستقل، مقسمة لفقرات، تتضمن السياق والأهمية والتأثير المتوقع",
-  "tags": ["وسم1", "وسم2", "وسم3", "وسم4"],
+  "contentAr": "كتابة صحفية أصيلة بالعربية (700 كلمة على الأقل) — بأسلوب مستقل، مقسمة لفقرات، تتضمن السياق والأهمية والتأثير المتوقع",
+  "tags": ["وسم1", "وسم2", "وسم3", "وسم4", "وسم5"],
   "seoTitle": "عنوان SEO بالعربية (50-60 حرف)",
   "seoDescription": "وصف SEO جذاب بالعربية (150-160 حرف)",
   "suggestedCategory": "أحد هذه التصنيفات فقط: ai-models | research | companies | tools | policy",
   "slug": "english-slug-from-title-max-6-words",
-  "featuredImagePrompt": "English prompt for image generation (20 words max)"
+  "featuredImagePrompt": "English prompt for image generation (20 words max)",
+  "faq": [
+    { "question": "سؤال شائع يطرحه القراء عن هذا الموضوع؟", "answer": "إجابة مفيدة ومختصرة (2-3 جمل)" },
+    { "question": "سؤال ثانٍ مهم؟", "answer": "إجابة واضحة" },
+    { "question": "سؤال ثالث؟", "answer": "إجابة مفيدة" },
+    { "question": "سؤال رابع؟", "answer": "إجابة مفيدة" }
+  ],
+  "keywords": ["كلمة مفتاحية 1", "كلمة مفتاحية 2", "كلمة مفتاحية 3", "كلمة مفتاحية 4", "كلمة مفتاحية 5", "كلمة مفتاحية 6"],
+  "imageAlt": "وصف دقيق للصورة المرافقة بالعربية (مناسب لإمكانية الوصول وSEO)",
+  "relatedTopics": ["موضوع ذي صلة 1", "موضوع ذي صلة 2", "موضوع ذي صلة 3"]
 }
 `.trim();
 
@@ -61,12 +79,11 @@ export async function processArticleWithAI(
       { role: "user", content: USER_PROMPT_TEMPLATE(title, content) },
     ],
     temperature: 0.7,
-    max_tokens: 2000,
+    max_tokens: 3500,
   });
 
   const raw = response.choices[0]?.message?.content ?? "";
 
-  // Strip any accidental markdown fences
   const jsonText = raw
     .replace(/^```json\s*/i, "")
     .replace(/^```\s*/i, "")
@@ -74,6 +91,12 @@ export async function processArticleWithAI(
     .trim();
 
   const parsed = JSON.parse(jsonText) as Partial<AiProcessedArticle>;
+
+  const faq = Array.isArray(parsed.faq)
+    ? parsed.faq
+        .filter((f) => f && typeof f.question === "string" && typeof f.answer === "string")
+        .slice(0, 5)
+    : [];
 
   return {
     titleAr: parsed.titleAr ?? title,
@@ -85,5 +108,9 @@ export async function processArticleWithAI(
     suggestedCategory: parsed.suggestedCategory ?? "ai-models",
     slug: parsed.slug ?? "",
     featuredImagePrompt: parsed.featuredImagePrompt ?? "",
+    faq,
+    keywords: Array.isArray(parsed.keywords) ? parsed.keywords.slice(0, 10) : [],
+    imageAlt: parsed.imageAlt ?? parsed.titleAr ?? title,
+    relatedTopics: Array.isArray(parsed.relatedTopics) ? parsed.relatedTopics.slice(0, 5) : [],
   };
 }

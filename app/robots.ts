@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
-
-const SITE_URL = "https://ai-news-ar.vercel.app";
+import { SITE_URL } from "@/lib/seo";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -11,7 +10,10 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/admin/", "/api/admin/", "/api/cron/"],
       },
     ],
-    sitemap: `${SITE_URL}/sitemap.xml`,
+    sitemap: [
+      `${SITE_URL}/sitemap.xml`,
+      `${SITE_URL}/news-sitemap.xml`,
+    ],
     host: SITE_URL,
   };
 }

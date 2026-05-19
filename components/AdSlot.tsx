@@ -8,7 +8,19 @@ type AdPosition =
   | "sidebar"
   | "homepage-top"
   | "homepage-mid"
-  | "category-top";
+  | "category-top"
+  | "guides-top"
+  | "guide-top"
+  | "guide-mid"
+  | "ai-tools-top"
+  | "tool-top"
+  | "tool-mid"
+  | "companies-top"
+  | "company-top"
+  | "company-mid"
+  | "compare-top"
+  | "compare-page-top"
+  | "compare-page-mid";
 
 interface Props {
   position: AdPosition;

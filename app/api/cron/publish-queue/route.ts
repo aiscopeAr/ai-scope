@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { generateArticleImage } from "@/lib/replicate";
 import { generateAllCaptions } from "@/lib/social/generate";
+import { pingGoogleNews, pingGoogleSitemap } from "@/lib/ping";
 import type { SocialPlatform } from "@/lib/social";
 
 export const dynamic = "force-dynamic";
@@ -70,9 +71,13 @@ export async function GET(request: Request) {
         contentAr: item.contentAr ?? item.rawContent,
         excerpt: item.summaryAr ?? undefined,
         imageUrl,
+        imageAlt: item.imageAlt ?? item.titleAr ?? undefined,
         sourceUrl: item.sourceUrl,
         sourceName: item.sourceName ?? "",
         tags: item.tags ?? [],
+        keywords: item.keywords ?? [],
+        faq: item.faq ?? undefined,
+        relatedTopics: item.relatedTopics ?? [],
         categoryId: category.id,
         published: true,
         publishedAt: new Date(),
@@ -115,6 +120,9 @@ export async function GET(request: Request) {
     } catch (socialErr) {
       console.error("[publish-queue] Social failed:", socialErr instanceof Error ? socialErr.message : socialErr);
     }
+
+    // Fire-and-forget — don't await, don't let failures block the response
+    void Promise.all([pingGoogleNews(), pingGoogleSitemap()]);
 
     return NextResponse.json({
       ok: true,

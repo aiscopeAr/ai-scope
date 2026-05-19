@@ -148,6 +148,29 @@ export default async function ArticlePage({
     ],
   };
 
+  const articleKeywords: string[] = "keywords" in article ? (article.keywords as string[]) : [];
+  const articleFaq: { question: string; answer: string }[] =
+    "faq" in article && Array.isArray(article.faq) ? (article.faq as { question: string; answer: string }[]) : [];
+  const imageAlt: string =
+    "imageAlt" in article && typeof article.imageAlt === "string"
+      ? article.imageAlt
+      : article.titleAr;
+
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${SITE_URL}/#organization`,
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: {
+      "@type": "ImageObject",
+      url: `${SITE_URL}/icon.png`,
+      width: 512,
+      height: 512,
+    },
+    sameAs: [],
+  };
+
   const newsArticleJsonLd = {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
@@ -174,20 +197,40 @@ export default async function ArticlePage({
     },
     mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl },
     articleSection: article.category.nameAr,
-    keywords: articleTags.join(", "),
+    keywords: [...articleTags, ...articleKeywords].join(", "),
     ...(article.imageUrl
       ? {
           image: {
             "@type": "ImageObject",
             url: article.imageUrl,
-            caption: article.titleAr,
+            caption: imageAlt,
           },
         }
       : {}),
   };
 
+  const faqJsonLd =
+    articleFaq.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: articleFaq.map((item) => ({
+            "@type": "Question",
+            name: item.question,
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: item.answer,
+            },
+          })),
+        }
+      : null;
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
@@ -196,6 +239,12 @@ export default async function ArticlePage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(newsArticleJsonLd) }}
       />
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
       <ViewTracker slug={article.slug} />
       <article className="container mx-auto max-w-4xl px-4 py-8" dir="rtl">
         <nav className="mb-6 flex items-center gap-2 text-sm text-gray-600">
@@ -236,7 +285,7 @@ export default async function ArticlePage({
 
         {article.imageUrl && (
           <div className="relative mb-8 h-96 overflow-hidden rounded-lg">
-            <Image src={article.imageUrl} alt={article.titleAr} fill className="object-cover" />
+            <Image src={article.imageUrl} alt={imageAlt} fill className="object-cover" />
           </div>
         )}
 
@@ -248,6 +297,34 @@ export default async function ArticlePage({
 
         <AdSlot position="article-bottom" className="mb-8" />
 
+        {articleFaq.length > 0 && (
+          <section className="mb-10" aria-label="أسئلة شائعة">
+            <h2 className="mb-6 text-2xl font-bold">أسئلة شائعة</h2>
+            <div className="space-y-4">
+              {articleFaq.map((item, i) => (
+                <details
+                  key={i}
+                  className="group rounded-lg border border-gray-200 bg-gray-50 open:bg-white"
+                >
+                  <summary className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 font-semibold text-gray-800 marker:hidden list-none">
+                    <span>{item.question}</span>
+                    <svg
+                      className="h-5 w-5 shrink-0 text-[#667eea] transition-transform group-open:rotate-180"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </summary>
+                  <p className="px-5 pb-4 text-gray-700 leading-relaxed">{item.answer}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
+
         {articleTags.length > 0 && (
           <div className="mb-8 flex flex-wrap gap-2">
             {articleTags.map((tag) => (
@@ -257,6 +334,20 @@ export default async function ArticlePage({
                 className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-sm text-gray-600 transition-colors hover:bg-[#667eea] hover:text-white hover:border-[#667eea]"
               >
                 #{tag}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {articleKeywords.length > 0 && (
+          <div className="mb-6 flex flex-wrap gap-2">
+            {articleKeywords.map((kw) => (
+              <Link
+                key={kw}
+                href={`/search?q=${encodeURIComponent(kw)}`}
+                className="rounded-full bg-violet-50 px-3 py-1 text-xs text-violet-700 transition-colors hover:bg-violet-100"
+              >
+                {kw}
               </Link>
             ))}
           </div>
