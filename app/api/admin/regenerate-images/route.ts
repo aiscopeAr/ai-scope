@@ -36,14 +36,37 @@ export async function GET(request: Request) {
   const needsImage = allArticles.filter((a) => needsNewImage(a.imageUrl));
 
   if (debugOnly) {
-    // Test: generate a fresh image with Replicate and upload to Cloudinary
+    // Test each step separately to find where it fails
+    let replicateUrl: string | null = null;
     let cloudinaryTest: string | null = null;
     let cloudinaryError: string | null = null;
+    let replicateError: string | null = null;
+
+    // Step 1: Replicate
     try {
-      const { generateArticleImage } = await import("@/lib/replicate");
-      cloudinaryTest = await generateArticleImage("artificial intelligence technology test");
+      const Replicate = (await import("replicate")).default;
+      const client = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
+      const output = await client.run("black-forest-labs/flux-schnell", {
+        input: { prompt: "AI technology test", num_outputs: 1, aspect_ratio: "16:9", output_format: "webp", go_fast: true },
+      }) as unknown[];
+      const first = output?.[0];
+      replicateUrl = first && typeof (first as {url?:()=>string}).url === "function"
+        ? (first as {url:()=>string}).url()
+        : typeof first === "string" ? first : String(first ?? "");
     } catch (e) {
-      cloudinaryError = e instanceof Error ? e.message : JSON.stringify(e);
+      replicateError = e instanceof Error ? e.message : JSON.stringify(e);
+    }
+
+    // Step 2: Cloudinary
+    if (replicateUrl) {
+      try {
+        const { v2: cld } = await import("cloudinary");
+        cld.config({ cloud_name: process.env.CLOUDINARY_CLOUD_NAME, api_key: process.env.CLOUDINARY_API_KEY, api_secret: process.env.CLOUDINARY_API_SECRET, secure: true });
+        const result = await cld.uploader.upload(replicateUrl, { folder: "aiscope/test", format: "webp" });
+        cloudinaryTest = result.secure_url;
+      } catch (e) {
+        cloudinaryError = e instanceof Error ? e.message : JSON.stringify(e);
+      }
     }
 
     return NextResponse.json({
@@ -52,6 +75,8 @@ export async function GET(request: Request) {
       cloudinaryOk: allArticles.length - needsImage.length,
       cloudinaryEnvSet: !!process.env.CLOUDINARY_CLOUD_NAME,
       replicateEnvSet: !!process.env.REPLICATE_API_TOKEN,
+      replicateUrl,
+      replicateError,
       cloudinaryTest,
       cloudinaryError,
       sample: needsImage.slice(0, 3).map((a) => ({ id: a.id, imageUrl: a.imageUrl })),
