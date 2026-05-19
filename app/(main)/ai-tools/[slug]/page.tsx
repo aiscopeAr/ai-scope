@@ -209,9 +209,10 @@ export default async function AIToolPage({
           </section>
         )}
 
-        {/* Back */}
-        <div className="border-t border-white/8 pt-6">
+        {/* Back + alternatives */}
+        <div className="border-t border-white/8 pt-6 flex flex-wrap items-center gap-4">
           <Link href="/ai-tools" className="text-sm text-violet-400 hover:text-violet-300 transition-colors">← جميع أدوات الذكاء الاصطناعي</Link>
+          <Link href={`/alternatives/${tool.slug}`} className="text-sm text-slate-500 hover:text-slate-300 transition-colors">بدائل {tool.name}</Link>
         </div>
       </main>
     </>

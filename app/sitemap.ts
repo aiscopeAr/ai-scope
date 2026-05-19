@@ -5,6 +5,11 @@ import { SITE_URL } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
+// Programmatic SEO: use-case pages
+const USE_CASE_SLUGS = ["students","developers","writers","designers","business","content","research","arabic"];
+// Programmatic SEO: topic pages
+const TOPIC_SLUGS = ["llm","image-generation","ai-education","generative-ai","ai-coding","openai","anthropic","ai-video"];
+
 const staticPages: MetadataRoute.Sitemap = [
   { url: SITE_URL,                      lastModified: new Date(), changeFrequency: "hourly",  priority: 1.0 },
   { url: `${SITE_URL}/search`,          lastModified: new Date(), changeFrequency: "weekly",  priority: 0.6 },
@@ -17,6 +22,10 @@ const staticPages: MetadataRoute.Sitemap = [
   { url: `${SITE_URL}/contact`,         lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
   { url: `${SITE_URL}/privacy`,         lastModified: new Date(), changeFrequency: "yearly",  priority: 0.2 },
   { url: `${SITE_URL}/terms`,           lastModified: new Date(), changeFrequency: "yearly",  priority: 0.2 },
+  // Use-case pages
+  ...USE_CASE_SLUGS.map((s) => ({ url: `${SITE_URL}/ai-tools/for/${s}`, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.85 })),
+  // Topic pages
+  ...TOPIC_SLUGS.map((s) => ({ url: `${SITE_URL}/topic/${s}`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.85 })),
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -98,6 +107,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     }));
 
+    // Alternatives pages — one per AI tool
+    const alternativePages: MetadataRoute.Sitemap = aiTools.map((t) => ({
+      url: `${SITE_URL}/alternatives/${t.slug}`,
+      lastModified: t.updatedAt,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    }));
+
     return [
       ...staticPages,
       ...categoryPages,
@@ -106,6 +123,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...toolPages,
       ...companyPages,
       ...comparePages,
+      ...alternativePages,
     ];
   } catch {
     return staticPages;

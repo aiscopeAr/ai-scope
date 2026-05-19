@@ -288,6 +288,9 @@ export default async function HomePage() {
                   {[
                     { href: "/guides", icon: "📚", label: "أدلة ومقالات تعليمية" },
                     { href: "/ai-tools", icon: "🔧", label: "أدوات الذكاء الاصطناعي" },
+                    { href: "/ai-tools/for/students", icon: "🎓", label: "أدوات AI للطلاب" },
+                    { href: "/ai-tools/for/developers", icon: "💻", label: "أدوات AI للمطورين" },
+                    { href: "/topic/llm", icon: "🧠", label: "نماذج اللغة الكبيرة" },
                     { href: "/companies", icon: "🏢", label: "شركات AI الكبرى" },
                     { href: "/compare", icon: "⚖️", label: "مقارنات الأدوات" },
                     { href: "/tools", icon: "✨", label: "مكتبة Prompts" },

@@ -20,7 +20,9 @@ type AdPosition =
   | "company-mid"
   | "compare-top"
   | "compare-page-top"
-  | "compare-page-mid";
+  | "compare-page-mid"
+  | "topic-top"
+  | "alternatives-top";
 
 interface Props {
   position: AdPosition;
