@@ -11,6 +11,6 @@ jobs:
     steps:
       - name: Send approved social posts
         run: |
-          curl -s -X GET \
+          curl -s -w "\nstatus:%{http_code}\n" -X GET \
             "https://ai-news-ar.vercel.app/api/cron/social-queue" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" | jq .
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" || true
