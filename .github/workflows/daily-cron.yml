@@ -21,7 +21,7 @@ jobs:
        (github.event.inputs.job == '' || github.event.inputs.job == 'all' || github.event.inputs.job == 'fetch'))
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch news from RSS sources
+      - name: Fetch news
         run: |
           curl --max-time 55 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
@@ -35,13 +35,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Process 1
-        run: curl --max-time 55 -s -w "\nstatus:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/process-queue" || true
+        run: |
+          curl --max-time 55 -s -w "\nstatus:%{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ai-news-ar.vercel.app/api/cron/process-queue" || true
       - run: sleep 20
       - name: Process 2
-        run: curl --max-time 55 -s -w "\nstatus:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/process-queue" || true
+        run: |
+          curl --max-time 55 -s -w "\nstatus:%{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ai-news-ar.vercel.app/api/cron/process-queue" || true
       - run: sleep 20
       - name: Process 3
-        run: curl --max-time 55 -s -w "\nstatus:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/process-queue" || true
+        run: |
+          curl --max-time 55 -s -w "\nstatus:%{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ai-news-ar.vercel.app/api/cron/process-queue" || true
 
   publish-queue:
     if: >-
@@ -51,13 +60,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Publish 1
-        run: curl --max-time 58 -s -w "\nstatus:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/publish-queue" || true
+        run: |
+          curl --max-time 58 -s -w "\nstatus:%{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ai-news-ar.vercel.app/api/cron/publish-queue" || true
       - run: sleep 35
       - name: Publish 2
-        run: curl --max-time 58 -s -w "\nstatus:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/publish-queue" || true
+        run: |
+          curl --max-time 58 -s -w "\nstatus:%{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ai-news-ar.vercel.app/api/cron/publish-queue" || true
       - run: sleep 35
       - name: Publish 3
-        run: curl --max-time 58 -s -w "\nstatus:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/publish-queue" || true
+        run: |
+          curl --max-time 58 -s -w "\nstatus:%{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ai-news-ar.vercel.app/api/cron/publish-queue" || true
 
   trending:
     if: >-
@@ -72,7 +90,6 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "https://ai-news-ar.vercel.app/api/cron/trending" || true
 
-  # Dummy job so the workflow never shows as all-skipped
   noop:
     if: always()
     runs-on: ubuntu-latest
