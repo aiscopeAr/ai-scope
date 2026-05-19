@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/seo";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
 const staticPages: MetadataRoute.Sitemap = [
@@ -32,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         where: { published: true },
         select: { slug: true, updatedAt: true },
         orderBy: { publishedAt: "desc" },
-        take: 5000,
+        take: 2000,
       }),
       prisma.category.findMany({
         select: { slug: true, updatedAt: true },

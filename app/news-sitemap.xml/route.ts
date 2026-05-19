@@ -3,7 +3,6 @@ import { prisma } from "@/lib/db";
 import { SITE_URL, SITE_NAME } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 1800; // 30 min
 
 // Google News sitemap spec: https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap
 // Only articles published in the last 48 hours qualify for Google News
