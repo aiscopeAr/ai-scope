@@ -101,22 +101,22 @@ export default async function CompanyPage({
         {/* Header */}
         <div className="mb-8 flex items-start gap-5">
           {company.logoUrl ? (
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-gray-200">
-              <Image src={company.logoUrl} alt={company.name} fill className="object-contain p-1" />
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-1">
+              <Image src={company.logoUrl} alt={company.name} fill className="object-contain" />
             </div>
           ) : (
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-sky-100 text-2xl font-black text-sky-600">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-sky-500/15 text-2xl font-black text-sky-400">
               {company.name[0]}
             </div>
           )}
           <div>
-            <h1 className="text-3xl font-bold md:text-4xl">{company.name}</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+            <h1 className="text-3xl font-black text-white md:text-4xl">{company.name}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-400">
               {company.country && <span>📍 {company.country}</span>}
               {company.founded && <span>🗓 تأسست {company.founded}</span>}
               {company.website && (
                 <a href={company.website} target="_blank" rel="noopener noreferrer nofollow"
-                  className="text-violet-600 hover:underline">
+                  className="text-violet-400 hover:text-violet-300 transition-colors">
                   زيارة الموقع ↗
                 </a>
               )}
@@ -125,17 +125,17 @@ export default async function CompanyPage({
         </div>
 
         {/* Description */}
-        <div className="prose prose-lg mb-8 max-w-none">
-          <p className="leading-relaxed text-gray-700 whitespace-pre-wrap">{company.descriptionAr}</p>
+        <div className="mb-8 text-lg leading-relaxed text-slate-300 whitespace-pre-wrap">
+          {company.descriptionAr}
         </div>
 
         {/* Notable Models */}
         {company.notableModels.length > 0 && (
           <section className="mb-8">
-            <h2 className="mb-4 text-xl font-bold">النماذج والمنتجات الأبرز</h2>
+            <h2 className="mb-4 text-xl font-black text-white">النماذج والمنتجات الأبرز</h2>
             <div className="flex flex-wrap gap-2">
               {company.notableModels.map((m) => (
-                <span key={m} className="rounded-full border border-violet-200 bg-violet-50 px-4 py-1.5 text-sm font-medium text-violet-700">
+                <span key={m} className="rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-1.5 text-sm font-semibold text-violet-400">
                   {m}
                 </span>
               ))}
@@ -146,10 +146,10 @@ export default async function CompanyPage({
         {/* Specialties */}
         {company.specialties.length > 0 && (
           <section className="mb-8">
-            <h2 className="mb-4 text-xl font-bold">مجالات التخصص</h2>
+            <h2 className="mb-4 text-xl font-black text-white">مجالات التخصص</h2>
             <div className="flex flex-wrap gap-2">
               {company.specialties.map((s) => (
-                <span key={s} className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-sm text-gray-600">
+                <span key={s} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-400">
                   {s}
                 </span>
               ))}
@@ -162,7 +162,7 @@ export default async function CompanyPage({
         {/* Related Articles */}
         {relatedArticles.length > 0 && (
           <section className="mb-8">
-            <h2 className="mb-6 text-xl font-bold">آخر أخبار {company.name}</h2>
+            <h2 className="mb-6 text-xl font-black text-white">آخر أخبار {company.name}</h2>
             <div className="grid gap-6 md:grid-cols-3">
               {relatedArticles.map((article) => (
                 <NewsCard key={article.id} article={article} />
@@ -172,8 +172,8 @@ export default async function CompanyPage({
         )}
 
         {/* Back */}
-        <div className="border-t border-gray-100 pt-6">
-          <Link href="/companies" className="text-sm text-sky-600 hover:underline">← جميع الشركات</Link>
+        <div className="border-t border-white/8 pt-6">
+          <Link href="/companies" className="text-sm text-sky-400 hover:text-sky-300 transition-colors">← جميع الشركات</Link>
         </div>
       </main>
     </>

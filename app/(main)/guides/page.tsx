@@ -28,9 +28,9 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  beginner: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  intermediate: "bg-amber-50 text-amber-700 border-amber-200",
-  advanced: "bg-red-50 text-red-700 border-red-200",
+  beginner: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+  intermediate: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+  advanced: "bg-red-500/10 text-red-400 border-red-500/30",
 };
 
 export default async function GuidesPage() {
@@ -95,7 +95,7 @@ export default async function GuidesPage() {
                       className="group flex flex-col rounded-2xl border border-white/6 bg-white/3 p-6 card-hover hover:border-violet-500/30 transition"
                     >
                       <div className="mb-3 flex items-center justify-between">
-                        <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${DIFFICULTY_COLORS[guide.difficulty] ?? "bg-gray-50 text-gray-700 border-gray-200"}`}>
+                        <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${DIFFICULTY_COLORS[guide.difficulty] ?? "bg-white/5 text-slate-400 border-white/10"}`}>
                           {CATEGORY_LABELS[guide.difficulty] ?? guide.difficulty}
                         </span>
                         {guide.readingTime && (

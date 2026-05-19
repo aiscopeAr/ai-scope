@@ -105,19 +105,19 @@ export default async function AIToolPage({
         {/* Header */}
         <div className="mb-8 flex items-start gap-5">
           {tool.logoUrl ? (
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-gray-200">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
               <Image src={tool.logoUrl} alt={tool.name} fill className="object-cover" />
             </div>
           ) : (
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-2xl font-black text-violet-600">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-violet-500/15 text-2xl font-black text-violet-400">
               {tool.name[0]}
             </div>
           )}
           <div>
-            <h1 className="text-3xl font-bold md:text-4xl">{tool.name}</h1>
-            {tool.tagline && <p className="mt-1 text-lg text-gray-500">{tool.tagline}</p>}
+            <h1 className="text-3xl font-black text-white md:text-4xl">{tool.name}</h1>
+            {tool.tagline && <p className="mt-1 text-lg text-slate-400">{tool.tagline}</p>}
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <span className="rounded-full bg-violet-100 px-3 py-1 text-sm font-medium text-violet-700">
+              <span className="rounded-full bg-violet-500/15 border border-violet-500/30 px-3 py-1 text-sm font-semibold text-violet-400">
                 {PRICING_LABELS[tool.pricing] ?? tool.pricing}
               </span>
               {tool.website && (
@@ -125,7 +125,7 @@ export default async function AIToolPage({
                   href={tool.website}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
-                  className="rounded-full border border-gray-200 px-3 py-1 text-sm text-gray-600 hover:border-violet-300 hover:text-violet-600 transition"
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-400 hover:border-violet-500/40 hover:text-violet-300 transition"
                 >
                   زيارة الموقع ↗
                 </a>
@@ -135,19 +135,19 @@ export default async function AIToolPage({
         </div>
 
         {/* Description */}
-        <div className="prose prose-lg mb-8 max-w-none">
-          <p className="leading-relaxed text-gray-700 whitespace-pre-wrap">{tool.descriptionAr}</p>
+        <div className="mb-8 text-lg leading-relaxed text-slate-300 whitespace-pre-wrap">
+          {tool.descriptionAr}
         </div>
 
         {/* Pros & Cons */}
         {(tool.pros.length > 0 || tool.cons.length > 0) && (
           <div className="mb-8 grid gap-4 md:grid-cols-2">
             {tool.pros.length > 0 && (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
-                <h2 className="mb-3 font-bold text-emerald-800">المميزات</h2>
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/8 p-5">
+                <h2 className="mb-3 font-bold text-emerald-400">المميزات</h2>
                 <ul className="space-y-2">
                   {tool.pros.map((p, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-emerald-700">
+                    <li key={i} className="flex items-start gap-2 text-sm text-emerald-300">
                       <span className="mt-0.5 text-emerald-500">✓</span>
                       <span>{p}</span>
                     </li>
@@ -156,12 +156,12 @@ export default async function AIToolPage({
               </div>
             )}
             {tool.cons.length > 0 && (
-              <div className="rounded-xl border border-red-200 bg-red-50 p-5">
-                <h2 className="mb-3 font-bold text-red-800">العيوب</h2>
+              <div className="rounded-xl border border-red-500/20 bg-red-500/8 p-5">
+                <h2 className="mb-3 font-bold text-red-400">العيوب</h2>
                 <ul className="space-y-2">
                   {tool.cons.map((c, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-red-700">
-                      <span className="mt-0.5 text-red-400">✗</span>
+                    <li key={i} className="flex items-start gap-2 text-sm text-red-300">
+                      <span className="mt-0.5 text-red-500">✗</span>
                       <span>{c}</span>
                     </li>
                   ))}
@@ -174,14 +174,14 @@ export default async function AIToolPage({
         {/* Use Cases */}
         {tool.useCases.length > 0 && (
           <section className="mb-8">
-            <h2 className="mb-4 text-xl font-bold">حالات الاستخدام</h2>
+            <h2 className="mb-4 text-xl font-black text-white">حالات الاستخدام</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {tool.useCases.map((uc, i) => (
-                <div key={i} className="flex items-start gap-3 rounded-lg border border-gray-100 bg-gray-50 p-4">
-                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-bold text-violet-600">
+                <div key={i} className="flex items-start gap-3 rounded-xl border border-white/6 bg-white/3 p-4">
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-xs font-bold text-violet-400">
                     {i + 1}
                   </span>
-                  <span className="text-sm text-gray-700">{uc}</span>
+                  <span className="text-sm text-slate-300">{uc}</span>
                 </div>
               ))}
             </div>
@@ -193,16 +193,16 @@ export default async function AIToolPage({
         {/* Comparisons */}
         {tool.comparisons.length > 0 && (
           <section className="mb-8">
-            <h2 className="mb-4 text-xl font-bold">مقارنات تتضمن {tool.name}</h2>
+            <h2 className="mb-4 text-xl font-black text-white">مقارنات تتضمن {tool.name}</h2>
             <div className="space-y-3">
               {tool.comparisons.map((side) => (
                 <Link
                   key={side.id}
                   href={`/compare/${side.comparison.slug}`}
-                  className="flex items-center justify-between rounded-lg border border-gray-200 p-4 hover:border-violet-300 hover:bg-violet-50 transition"
+                  className="flex items-center justify-between rounded-xl border border-white/6 bg-white/3 p-4 hover:border-violet-500/30 hover:bg-violet-500/5 transition"
                 >
-                  <span className="font-medium text-gray-800">{side.comparison.title}</span>
-                  <span className="text-sm text-violet-600">عرض المقارنة ←</span>
+                  <span className="font-medium text-slate-200">{side.comparison.title}</span>
+                  <span className="text-sm text-violet-400">عرض المقارنة ←</span>
                 </Link>
               ))}
             </div>
@@ -210,8 +210,8 @@ export default async function AIToolPage({
         )}
 
         {/* Back */}
-        <div className="border-t border-gray-100 pt-6">
-          <Link href="/ai-tools" className="text-sm text-violet-600 hover:underline">← جميع أدوات الذكاء الاصطناعي</Link>
+        <div className="border-t border-white/8 pt-6">
+          <Link href="/ai-tools" className="text-sm text-violet-400 hover:text-violet-300 transition-colors">← جميع أدوات الذكاء الاصطناعي</Link>
         </div>
       </main>
     </>

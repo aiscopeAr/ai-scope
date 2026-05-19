@@ -28,17 +28,17 @@ export default function Breadcrumbs({ items, className = "" }: BreadcrumbsProps)
   return (
     <nav
       aria-label="مسار التنقل"
-      className={`flex flex-wrap items-center gap-1.5 text-sm text-gray-500 ${className}`}
+      className={`flex flex-wrap items-center gap-1.5 text-sm text-slate-500 ${className}`}
     >
       {items.map((item, i) => (
         <span key={i} className="flex items-center gap-1.5">
-          {i > 0 && <span aria-hidden>/</span>}
+          {i > 0 && <span aria-hidden className="text-slate-700">/</span>}
           {item.href ? (
-            <Link href={item.href} className="hover:text-violet-600 transition-colors">
+            <Link href={item.href} className="hover:text-violet-400 transition-colors">
               {item.name}
             </Link>
           ) : (
-            <span className="text-gray-800 font-medium line-clamp-1">{item.name}</span>
+            <span className="text-slate-400 font-medium line-clamp-1">{item.name}</span>
           )}
         </span>
       ))}

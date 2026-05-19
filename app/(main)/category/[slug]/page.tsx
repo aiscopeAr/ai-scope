@@ -92,8 +92,8 @@ export default async function CategoryPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
       />
       <section className="container mx-auto px-4 py-8" dir="rtl">
-        <h1 className="mb-3 text-4xl font-bold">{category.nameAr}</h1>
-        <p className="mb-6 text-lg text-gray-600">آخر المقالات في هذا التصنيف</p>
+        <h1 className="mb-3 text-4xl font-black text-white">{category.nameAr}</h1>
+        <p className="mb-6 text-lg text-slate-400">آخر المقالات في هذا التصنيف</p>
         <AdSlot position="category-top" className="mb-8" />
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {articles.map((article) => (

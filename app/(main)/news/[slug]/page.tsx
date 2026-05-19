@@ -247,91 +247,92 @@ export default async function ArticlePage({
       )}
       <ViewTracker slug={article.slug} />
       <article className="container mx-auto max-w-4xl px-4 py-8" dir="rtl">
-        <nav className="mb-6 flex items-center gap-2 text-sm text-gray-600">
-          <Link href="/" className="hover:text-[#667eea]">
-            الرئيسية
-          </Link>
-          <span>/</span>
-          <Link href={`/category/${article.category.slug}`} className="hover:text-[#667eea]">
+        {/* Breadcrumb */}
+        <nav className="mb-6 flex items-center gap-2 text-sm text-slate-500">
+          <Link href="/" className="hover:text-violet-400 transition-colors">الرئيسية</Link>
+          <span className="text-slate-700">/</span>
+          <Link href={`/category/${article.category.slug}`} className="hover:text-violet-400 transition-colors">
             {article.category.nameAr}
           </Link>
-          <span>/</span>
-          <span className="line-clamp-1">{article.titleAr}</span>
+          <span className="text-slate-700">/</span>
+          <span className="line-clamp-1 text-slate-400">{article.titleAr}</span>
         </nav>
 
         <AdSlot position="article-top" className="mb-6" />
 
+        {/* Category badge */}
         <Link
           href={`/category/${article.category.slug}`}
-          className="gradient-primary mb-4 inline-block rounded-full px-4 py-1 text-sm font-medium text-white"
+          className="mb-4 inline-block rounded-full bg-violet-500/15 border border-violet-500/30 px-4 py-1 text-sm font-semibold text-violet-400 transition hover:bg-violet-500/25"
         >
           {article.category.nameAr}
         </Link>
 
-        <h1 className="mb-6 text-4xl font-bold leading-tight md:text-5xl">{article.titleAr}</h1>
+        {/* Title */}
+        <h1 className="mb-6 text-3xl font-black leading-tight text-white md:text-4xl lg:text-5xl">{article.titleAr}</h1>
 
-        <div className="mb-8 flex items-center gap-4 border-b pb-8 text-gray-600">
-          <span className="font-medium">{article.sourceName}</span>
-          <span>•</span>
+        {/* Meta */}
+        <div className="mb-8 flex items-center gap-4 border-b border-white/8 pb-8 text-slate-400">
+          <span className="font-semibold text-slate-300">{article.sourceName}</span>
+          <span className="text-slate-700">•</span>
           {article.publishedAt && (
-            <time dateTime={article.publishedAt.toISOString()}>
-              {formatDistanceToNow(new Date(article.publishedAt), {
-                addSuffix: true,
-                locale: ar,
-              })}
+            <time dateTime={article.publishedAt.toISOString()} className="text-sm">
+              {formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true, locale: ar })}
             </time>
           )}
         </div>
 
+        {/* Hero image */}
         {article.imageUrl && (
-          <div className="relative mb-8 h-96 overflow-hidden rounded-lg">
+          <div className="relative mb-8 h-72 overflow-hidden rounded-2xl sm:h-96">
             <Image src={article.imageUrl} alt={imageAlt} fill className="object-cover" />
+            <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10" />
           </div>
         )}
 
         <AdSlot position="article-mid" className="mb-8" />
 
-        <div className="prose prose-lg mb-12 max-w-none">
-          <div className="whitespace-pre-wrap leading-relaxed text-gray-800">{article.contentAr}</div>
+        {/* Article body */}
+        <div className="mb-12 space-y-4 text-lg leading-relaxed text-slate-300 whitespace-pre-wrap">
+          {article.contentAr}
         </div>
 
         <AdSlot position="article-bottom" className="mb-8" />
 
+        {/* FAQ */}
         {articleFaq.length > 0 && (
           <section className="mb-10" aria-label="أسئلة شائعة">
-            <h2 className="mb-6 text-2xl font-bold">أسئلة شائعة</h2>
-            <div className="space-y-4">
+            <h2 className="mb-6 text-2xl font-black text-white">أسئلة شائعة</h2>
+            <div className="space-y-3">
               {articleFaq.map((item, i) => (
                 <details
                   key={i}
-                  className="group rounded-lg border border-gray-200 bg-gray-50 open:bg-white"
+                  className="group rounded-xl border border-white/8 bg-white/3 open:bg-white/5 transition"
                 >
-                  <summary className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 font-semibold text-gray-800 marker:hidden list-none">
+                  <summary className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 font-semibold text-slate-200 marker:hidden list-none">
                     <span>{item.question}</span>
                     <svg
-                      className="h-5 w-5 shrink-0 text-[#667eea] transition-transform group-open:rotate-180"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
+                      className="h-5 w-5 shrink-0 text-violet-400 transition-transform group-open:rotate-180"
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                     </svg>
                   </summary>
-                  <p className="px-5 pb-4 text-gray-700 leading-relaxed">{item.answer}</p>
+                  <p className="px-5 pb-4 text-slate-400 leading-relaxed">{item.answer}</p>
                 </details>
               ))}
             </div>
           </section>
         )}
 
+        {/* Tags */}
         {articleTags.length > 0 && (
-          <div className="mb-8 flex flex-wrap gap-2">
+          <div className="mb-6 flex flex-wrap gap-2">
             {articleTags.map((tag) => (
               <Link
                 key={tag}
                 href={`/search?tag=${encodeURIComponent(tag)}`}
-                className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-sm text-gray-600 transition-colors hover:bg-[#667eea] hover:text-white hover:border-[#667eea]"
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-400 transition hover:border-violet-500/40 hover:bg-violet-500/10 hover:text-violet-300"
               >
                 #{tag}
               </Link>
@@ -339,13 +340,14 @@ export default async function ArticlePage({
           </div>
         )}
 
+        {/* Keywords */}
         {articleKeywords.length > 0 && (
-          <div className="mb-6 flex flex-wrap gap-2">
+          <div className="mb-8 flex flex-wrap gap-2">
             {articleKeywords.map((kw) => (
               <Link
                 key={kw}
                 href={`/search?q=${encodeURIComponent(kw)}`}
-                className="rounded-full bg-violet-50 px-3 py-1 text-xs text-violet-700 transition-colors hover:bg-violet-100"
+                className="rounded-full border border-violet-500/20 bg-violet-500/8 px-3 py-1 text-xs text-violet-400 transition hover:bg-violet-500/15"
               >
                 {kw}
               </Link>
@@ -353,26 +355,32 @@ export default async function ArticlePage({
           </div>
         )}
 
-        <div className="mb-12 rounded-lg bg-gray-50 p-6">
-          <p className="mb-3 text-gray-600">المصدر الأصلي:</p>
+        {/* Source */}
+        <div className="mb-12 rounded-2xl border border-white/8 bg-white/3 p-6">
+          <p className="mb-2 text-sm text-slate-500">المصدر الأصلي:</p>
           <a
             href={article.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-medium text-[#667eea] hover:underline"
+            className="break-all text-sm font-medium text-violet-400 hover:text-violet-300 hover:underline transition-colors"
           >
             {article.sourceUrl}
           </a>
         </div>
 
+        {/* Related articles */}
         {related.length > 0 && (
           <section>
-            <h2 className="mb-6 text-2xl font-bold">أخبار ذات صلة</h2>
-            <div className="grid gap-6 md:grid-cols-3">
+            <h2 className="mb-6 text-2xl font-black text-white">أخبار ذات صلة</h2>
+            <div className="grid gap-4 md:grid-cols-3">
               {related.map((rel) => (
-                <Link key={rel.id} href={`/news/${rel.slug}`} className="group">
+                <Link
+                  key={rel.id}
+                  href={`/news/${rel.slug}`}
+                  className="group rounded-xl border border-white/6 bg-white/3 p-4 transition hover:border-violet-500/30 hover:bg-violet-500/5"
+                >
                   {rel.imageUrl && (
-                    <div className="relative mb-3 h-40 overflow-hidden rounded-lg">
+                    <div className="relative mb-3 h-36 overflow-hidden rounded-lg">
                       <Image
                         src={rel.imageUrl}
                         alt={rel.titleAr}
@@ -381,7 +389,8 @@ export default async function ArticlePage({
                       />
                     </div>
                   )}
-                  <h3 className="line-clamp-2 font-bold group-hover:text-[#667eea]">{rel.titleAr}</h3>
+                  <p className="mb-1 text-xs font-semibold text-violet-400">{rel.category.nameAr}</p>
+                  <h3 className="line-clamp-2 text-sm font-bold text-slate-200 group-hover:text-violet-300 transition-colors leading-snug">{rel.titleAr}</h3>
                 </Link>
               ))}
             </div>
