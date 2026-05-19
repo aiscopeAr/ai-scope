@@ -18,12 +18,13 @@ function needsNewImage(imageUrl: string | null): boolean {
 }
 
 export async function GET(request: Request) {
-  if (!verify(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { searchParams } = new URL(request.url);
   const debugOnly = searchParams.get("debug") === "1";
+
+  // Debug mode is public — just shows env/count status, no writes
+  if (!debugOnly && !verify(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   // Find articles that don't have a permanent Cloudinary image yet
   const allArticles = await prisma.article.findMany({
