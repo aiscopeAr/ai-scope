@@ -1,4 +1,5 @@
 import Replicate from "replicate";
+import { uploadImageFromUrl } from "@/lib/cloudinary";
 
 let _client: Replicate | null = null;
 
@@ -11,39 +12,46 @@ function getClient(): Replicate {
   return _client;
 }
 
+/**
+ * Generate an image with Replicate Flux Schnell, then upload to Cloudinary
+ * for a permanent URL. Returns null on total failure.
+ */
 export async function generateArticleImage(prompt: string): Promise<string | null> {
   try {
     const client = getClient();
 
-    const output = await client.run(
-      "black-forest-labs/flux-schnell",
-      {
-        input: {
-          prompt: `${prompt}, professional technology news illustration, high quality`,
-          num_outputs: 1,
-          aspect_ratio: "16:9",
-          output_format: "webp",
-          output_quality: 80,
-          go_fast: true,
-        },
-      }
-    );
+    const output = await client.run("black-forest-labs/flux-schnell", {
+      input: {
+        prompt: `${prompt}, professional technology news illustration, high quality`,
+        num_outputs: 1,
+        aspect_ratio: "16:9",
+        output_format: "webp",
+        output_quality: 85,
+        go_fast: true,
+      },
+    });
 
-    // Flux Schnell returns a FileOutput array or string array
+    // Extract the temporary Replicate URL
+    let replicateUrl: string | null = null;
+
     if (Array.isArray(output) && output.length > 0) {
       const first = output[0];
-      // FileOutput object has a url() method or toString()
-      if (typeof first === "string") return first;
-      if (first && typeof (first as { url?: () => string }).url === "function") {
-        return (first as { url: () => string }).url();
+      if (typeof first === "string") {
+        replicateUrl = first;
+      } else if (first && typeof (first as { url?: () => string }).url === "function") {
+        replicateUrl = (first as { url: () => string }).url();
+      } else {
+        replicateUrl = String(first);
       }
-      return String(first);
+    } else if (typeof output === "string") {
+      replicateUrl = output;
     }
 
-    // Single string
-    if (typeof output === "string") return output;
+    if (!replicateUrl) return null;
 
-    return null;
+    // Upload to Cloudinary for a permanent URL
+    const permanentUrl = await uploadImageFromUrl(replicateUrl);
+    return permanentUrl;
   } catch (err) {
     console.error("[replicate] Image generation failed:", err instanceof Error ? err.message : err);
     return null;

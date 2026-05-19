@@ -28,6 +28,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.redd.it" },
       { protocol: "https", hostname: "**.medium.com" },
       { protocol: "https", hostname: "miro.medium.com" },
+      { protocol: "https", hostname: "res.cloudinary.com" },
     ],
   },
 };
