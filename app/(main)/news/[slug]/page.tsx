@@ -10,6 +10,8 @@ import { prisma } from "@/lib/db";
 import { mockArticles } from "@/lib/mock-data";
 import ViewTracker from "@/components/ViewTracker";
 import AdSlot from "@/components/AdSlot";
+import ReadingProgress from "@/components/ReadingProgress";
+import ShareButtons from "@/components/ShareButtons";
 import {
   SITE_URL,
   SITE_NAME,
@@ -138,6 +140,9 @@ export default async function ArticlePage({
   const createdAt: Date = "createdAt" in article ? (article.createdAt as Date) : new Date();
   const updatedAt: Date = "updatedAt" in article ? (article.updatedAt as Date) : new Date();
 
+  const wordCount = article.contentAr.trim().split(/\s+/).length;
+  const readingMinutes = Math.max(1, Math.round(wordCount / 200));
+
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -246,6 +251,7 @@ export default async function ArticlePage({
         />
       )}
       <ViewTracker slug={article.slug} />
+      <ReadingProgress />
       <article className="container mx-auto max-w-4xl px-4 py-8" dir="rtl">
         {/* Breadcrumb */}
         <nav className="mb-6 flex items-center gap-2 text-sm text-slate-500">
@@ -272,7 +278,7 @@ export default async function ArticlePage({
         <h1 className="mb-6 text-3xl font-black leading-tight text-white md:text-4xl lg:text-5xl">{article.titleAr}</h1>
 
         {/* Meta */}
-        <div className="mb-8 flex items-center gap-4 border-b border-white/8 pb-8 text-slate-400">
+        <div className="mb-8 flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-white/8 pb-8 text-slate-400">
           <span className="font-semibold text-slate-300">{article.sourceName}</span>
           <span className="text-slate-700">•</span>
           {article.publishedAt && (
@@ -280,6 +286,11 @@ export default async function ArticlePage({
               {formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true, locale: ar })}
             </time>
           )}
+          <span className="text-slate-700">•</span>
+          <span className="text-sm">{readingMinutes} دقيقة قراءة</span>
+          <div className="mr-auto">
+            <ShareButtons url={articleUrl} title={article.titleAr} />
+          </div>
         </div>
 
         {/* Hero image */}
@@ -354,6 +365,12 @@ export default async function ArticlePage({
             ))}
           </div>
         )}
+
+        {/* Share bar */}
+        <div className="mb-8 flex items-center justify-between gap-4 rounded-2xl border border-white/8 bg-white/3 px-5 py-4">
+          <p className="text-sm font-semibold text-slate-400">أعجبك المقال؟ شاركه مع أصدقائك</p>
+          <ShareButtons url={articleUrl} title={article.titleAr} />
+        </div>
 
         {/* Source */}
         <div className="mb-12 rounded-2xl border border-white/8 bg-white/3 p-6">
