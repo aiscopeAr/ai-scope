@@ -1,4 +1,4 @@
-name: Process Queue (Hourly)
+name: Process & Publish Queue (Hourly)
 
 on:
   schedule:
@@ -9,89 +9,35 @@ jobs:
   process:
     runs-on: ubuntu-latest
     steps:
-      - name: Process batch 1
-        run: |
-          curl -f -s -w "Status: %{http_code}\n" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-queue"
+      # Each call: OpenAI text only ~8s. Gap 20s. Total: 10 calls = ~280s
+      - name: Process 1
+        run: curl --max-time 55 -s -w "  status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/process-queue"
+      - run: sleep 20
+      - name: Process 2
+        run: curl --max-time 55 -s -w "  status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/process-queue"
+      - run: sleep 20
+      - name: Process 3
+        run: curl --max-time 55 -s -w "  status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/process-queue"
+      - run: sleep 20
+      - name: Process 4
+        run: curl --max-time 55 -s -w "  status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/process-queue"
+      - run: sleep 20
+      - name: Process 5
+        run: curl --max-time 55 -s -w "  status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/process-queue"
+      - run: sleep 20
 
-      - name: Wait 35s
-        run: sleep 35
-
-      - name: Process batch 2
-        run: |
-          curl -f -s -w "Status: %{http_code}\n" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-queue"
-
-      - name: Wait 35s
-        run: sleep 35
-
-      - name: Process batch 3
-        run: |
-          curl -f -s -w "Status: %{http_code}\n" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-queue"
-
-      - name: Wait 35s
-        run: sleep 35
-
-      - name: Process batch 4
-        run: |
-          curl -f -s -w "Status: %{http_code}\n" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-queue"
-
-      - name: Wait 35s
-        run: sleep 35
-
-      - name: Process batch 5
-        run: |
-          curl -f -s -w "Status: %{http_code}\n" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-queue"
-
-      - name: Wait 35s
-        run: sleep 35
-
-      - name: Process batch 6
-        run: |
-          curl -f -s -w "Status: %{http_code}\n" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-queue"
-
-      - name: Wait 35s
-        run: sleep 35
-
-      - name: Process batch 7
-        run: |
-          curl -f -s -w "Status: %{http_code}\n" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-queue"
-
-      - name: Wait 35s
-        run: sleep 35
-
-      - name: Process batch 8
-        run: |
-          curl -f -s -w "Status: %{http_code}\n" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-queue"
-
-      - name: Wait 35s
-        run: sleep 35
-
-      - name: Process batch 9
-        run: |
-          curl -f -s -w "Status: %{http_code}\n" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-queue"
-
-      - name: Wait 35s
-        run: sleep 35
-
-      - name: Process batch 10
-        run: |
-          curl -f -s -w "Status: %{http_code}\n" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-queue"
+      # Now publish: each call Replicate+Cloudinary ~30s. Gap 35s.
+      - name: Publish 1
+        run: curl --max-time 58 -s -w "  status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/publish-queue"
+      - run: sleep 35
+      - name: Publish 2
+        run: curl --max-time 58 -s -w "  status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/publish-queue"
+      - run: sleep 35
+      - name: Publish 3
+        run: curl --max-time 58 -s -w "  status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/publish-queue"
+      - run: sleep 35
+      - name: Publish 4
+        run: curl --max-time 58 -s -w "  status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/publish-queue"
+      - run: sleep 35
+      - name: Publish 5
+        run: curl --max-time 58 -s -w "  status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/publish-queue"

@@ -2,48 +2,55 @@ name: Daily News Pipeline
 
 on:
   schedule:
-    - cron: "0 8 * * *"   # 08:00 UTC — fetch
-    - cron: "20 8 * * *"  # 08:20 UTC — process
-    - cron: "0 9 * * *"   # 09:00 UTC — trending
-  workflow_dispatch:       # allows manual trigger from GitHub UI
+    - cron: "0 6 * * *"    # 06:00 UTC — fetch news
+    - cron: "15 6 * * *"   # 06:15 UTC — process (text)
+    - cron: "30 6 * * *"   # 06:30 UTC — publish (image)
+    - cron: "0 7 * * *"    # 07:00 UTC — trending
+  workflow_dispatch:
 
 jobs:
   fetch-news:
-    if: github.event.schedule == '0 8 * * *' || github.event_name == 'workflow_dispatch'
+    if: github.event.schedule == '0 6 * * *' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Fetch news from RSS sources
         run: |
-          curl -f -s \
+          curl --max-time 55 -f -s -w "status:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.SITE_URL }}/api/cron/fetch-news"
+            "https://ai-news-ar.vercel.app/api/cron/fetch-news"
 
   process-queue:
-    if: github.event.schedule == '20 8 * * *' || github.event_name == 'workflow_dispatch'
+    if: github.event.schedule == '15 6 * * *' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - name: Process queue — batch 1
-        run: |
-          curl -f -s --max-time 90 \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.SITE_URL }}/api/cron/process-queue"
-      - name: Process queue — batch 2
-        run: |
-          curl -f -s --max-time 90 \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.SITE_URL }}/api/cron/process-queue"
-      - name: Process queue — batch 3
-        run: |
-          curl -f -s --max-time 90 \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.SITE_URL }}/api/cron/process-queue"
+      - name: Process 1 (text only)
+        run: curl --max-time 55 -s -w "status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/process-queue"
+      - run: sleep 20
+      - name: Process 2
+        run: curl --max-time 55 -s -w "status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/process-queue"
+      - run: sleep 20
+      - name: Process 3
+        run: curl --max-time 55 -s -w "status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/process-queue"
+
+  publish-queue:
+    if: github.event.schedule == '30 6 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish 1 (image + DB)
+        run: curl --max-time 58 -s -w "status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/publish-queue"
+      - run: sleep 35
+      - name: Publish 2
+        run: curl --max-time 58 -s -w "status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/publish-queue"
+      - run: sleep 35
+      - name: Publish 3
+        run: curl --max-time 58 -s -w "status:%{http_code}\n" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "https://ai-news-ar.vercel.app/api/cron/publish-queue"
 
   trending:
-    if: github.event.schedule == '0 9 * * *' || github.event_name == 'workflow_dispatch'
+    if: github.event.schedule == '0 7 * * *' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Update trending keywords
         run: |
-          curl -f -s \
+          curl --max-time 55 -f -s -w "status:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.SITE_URL }}/api/cron/trending"
+            "https://ai-news-ar.vercel.app/api/cron/trending"
