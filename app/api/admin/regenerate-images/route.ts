@@ -50,9 +50,12 @@ export async function GET(request: Request) {
         input: { prompt: "AI technology test", num_outputs: 1, aspect_ratio: "16:9", output_format: "webp", go_fast: true },
       }) as unknown[];
       const first = output?.[0];
-      replicateUrl = first && typeof (first as {url?:()=>string}).url === "function"
-        ? (first as {url:()=>string}).url()
-        : typeof first === "string" ? first : String(first ?? "");
+      if (typeof first === "string") replicateUrl = first;
+      else if (first instanceof URL) replicateUrl = first.toString();
+      else if (first && typeof (first as {url?:()=>unknown}).url === "function") {
+        const u = (first as {url:()=>unknown}).url();
+        replicateUrl = u instanceof URL ? u.toString() : String(u);
+      } else if (first) replicateUrl = String(first);
     } catch (e) {
       replicateError = e instanceof Error ? e.message : JSON.stringify(e);
     }

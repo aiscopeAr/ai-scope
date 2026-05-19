@@ -27,19 +27,24 @@ export async function generateArticleImage(prompt: string): Promise<string | nul
       },
     });
 
-    // Extract temporary Replicate URL
+    // Extract temporary Replicate URL — always coerce to plain string
     let replicateUrl: string | null = null;
     if (Array.isArray(output) && output.length > 0) {
       const first = output[0];
       if (typeof first === "string") {
         replicateUrl = first;
-      } else if (first && typeof (first as { url?: () => string }).url === "function") {
-        replicateUrl = (first as { url: () => string }).url();
-      } else {
+      } else if (first instanceof URL) {
+        replicateUrl = first.toString();
+      } else if (first && typeof (first as { url?: () => unknown }).url === "function") {
+        const u = (first as { url: () => unknown }).url();
+        replicateUrl = u instanceof URL ? u.toString() : String(u);
+      } else if (first !== null && first !== undefined) {
         replicateUrl = String(first);
       }
     } else if (typeof output === "string") {
       replicateUrl = output;
+    } else if (output instanceof URL) {
+      replicateUrl = output.toString();
     }
 
     if (!replicateUrl) {
