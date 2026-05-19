@@ -11,24 +11,24 @@ jobs:
     steps:
       - name: Process prompts batch 1
         run: |
-          curl -f -s -o /dev/null -w "Status: %{http_code}\n" \
+          curl -s -w "\nStatus: %{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-prompts"
+            "https://ai-news-ar.vercel.app/api/cron/process-prompts" || true
 
       - name: Wait 30s
         run: sleep 30
 
       - name: Process prompts batch 2
         run: |
-          curl -f -s -o /dev/null -w "Status: %{http_code}\n" \
+          curl -s -w "\nStatus: %{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-prompts"
+            "https://ai-news-ar.vercel.app/api/cron/process-prompts" || true
 
       - name: Wait 30s
         run: sleep 30
 
       - name: Process prompts batch 3
         run: |
-          curl -f -s -o /dev/null -w "Status: %{http_code}\n" \
+          curl -s -w "\nStatus: %{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-prompts"
+            "https://ai-news-ar.vercel.app/api/cron/process-prompts" || true

@@ -11,6 +11,6 @@ jobs:
     steps:
       - name: Call fetch-news API
         run: |
-          curl -f -s -o /dev/null -w "Status: %{http_code}\n" \
+          curl -s -w "\nStatus: %{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/fetch-news"
+            "https://ai-news-ar.vercel.app/api/cron/fetch-news" || true
