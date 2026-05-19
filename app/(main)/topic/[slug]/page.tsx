@@ -7,7 +7,7 @@ import AdSlot from "@/components/AdSlot";
 import Breadcrumbs, { buildBreadcrumbJsonLd } from "@/components/Breadcrumbs";
 import NewsCard from "@/components/NewsCard";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 600;
 
 const TOPICS: Record<string, {
   titleAr: string;

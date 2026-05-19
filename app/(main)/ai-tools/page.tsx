@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR } from "@/lib/seo";
 import AdSlot from "@/components/AdSlot";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 600;
 
 export const metadata: Metadata = {
   title: `أفضل أدوات الذكاء الاصطناعي 2025 | ${SITE_NAME_AR}`,

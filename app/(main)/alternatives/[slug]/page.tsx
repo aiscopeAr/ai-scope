@@ -7,7 +7,7 @@ import { absoluteUrl, SITE_NAME_AR, SITE_URL, truncate } from "@/lib/seo";
 import AdSlot from "@/components/AdSlot";
 import Breadcrumbs, { buildBreadcrumbJsonLd } from "@/components/Breadcrumbs";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 const PRICING_BADGE: Record<string, string> = {
   free:     "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",

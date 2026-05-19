@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sI \"https://ai-news-ar.vercel.app/sitemap.xml\")",
+      "Bash(curl -sI \"https://ai-news-ar.vercel.app/news-sitemap.xml\")",
+      "Bash(curl -s \"https://ai-news-ar.vercel.app/sitemap.xml\")",
+      "Bash(curl -s \"https://ai-news-ar.vercel.app/robots.txt\")",
+      "Bash(git -C d:/AIScope log --oneline -3)",
+      "Bash(git -C d:/AIScope add app/\\\\\\(main\\\\\\)/ai-tools/for/ app/\\\\\\(main\\\\\\)/alternatives/ app/\\\\\\(main\\\\\\)/topic/ app/\\\\\\(main\\\\\\)/ai-tools/\\\\[slug\\\\]/page.tsx app/\\\\\\(main\\\\\\)/page.tsx app/sitemap.ts components/AdSlot.tsx)",
+      "Bash(git -C d:/AIScope commit -m ' *)",
+      "Bash(git -C d:/AIScope add components/ReadingProgress.tsx components/ShareButtons.tsx app/\\\\\\(main\\\\\\)/news/\\\\[slug\\\\]/page.tsx)",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code}\" -H \"Authorization: Bearer test\" \"https://ai-news-ar.vercel.app/api/admin/regenerate-images\")",
+      "Bash(curl -s -w \"\\\\nHTTP:%{http_code}\" -H \"Authorization: Bearer test\" \"https://ai-news-ar.vercel.app/api/cron/process-queue\")",
+      "Bash(git -C d:/AIScope add .github/workflows/)",
+      "Bash(Get-Content \"d:\\\\AIScope\\\\components\\\\NewsCard.tsx\")",
+      "Bash(Get-Content \"d:\\\\AIScope\\\\app\\\\\\(main\\)\\\\page.tsx\")",
+      "Bash(Select-String -Pattern \"prisma\\\\.\")",
+      "Bash(gh run *)"
+    ]
+  }
+}

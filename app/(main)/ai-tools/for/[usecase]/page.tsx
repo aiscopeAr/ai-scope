@@ -7,7 +7,7 @@ import { absoluteUrl, SITE_NAME_AR, SITE_URL, truncate } from "@/lib/seo";
 import AdSlot from "@/components/AdSlot";
 import Breadcrumbs, { buildBreadcrumbJsonLd } from "@/components/Breadcrumbs";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 // Curated use-case definitions — each maps to a set of tool categories + keywords
 const USE_CASES: Record<string, {
