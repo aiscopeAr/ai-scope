@@ -51,16 +51,16 @@ async function getRelatedArticles(article: ArticleForRelated) {
               published: true,
               tags: { hasSome: tags },
             },
-            take: 3,
-            orderBy: { publishedAt: "desc" },
+            take: 4,
+            orderBy: [{ viewCount: "desc" }, { publishedAt: "desc" }],
             include: { category: true },
           })
         : [];
 
-    if (byTags.length >= 3) return byTags;
+    if (byTags.length >= 4) return byTags;
 
     const existingIds = new Set([article.id, ...byTags.map((a) => a.id)]);
-    const needed = 3 - byTags.length;
+    const needed = 4 - byTags.length;
     const byCategory = await prisma.article.findMany({
       where: {
         categoryId: article.categoryId,
@@ -68,7 +68,7 @@ async function getRelatedArticles(article: ArticleForRelated) {
         published: true,
       },
       take: needed,
-      orderBy: { publishedAt: "desc" },
+      orderBy: [{ viewCount: "desc" }, { publishedAt: "desc" }],
       include: { category: true },
     });
 
@@ -76,7 +76,7 @@ async function getRelatedArticles(article: ArticleForRelated) {
   } catch {
     return mockArticles
       .filter((a) => a.categoryId === article.categoryId && a.id !== article.id)
-      .slice(0, 3);
+      .slice(0, 4);
   }
 }
 
@@ -387,29 +387,53 @@ export default async function ArticlePage({
 
         {/* Related articles */}
         {related.length > 0 && (
-          <section>
-            <h2 className="mb-6 text-2xl font-black text-white">أخبار ذات صلة</h2>
-            <div className="grid gap-4 md:grid-cols-3">
-              {related.map((rel) => (
-                <Link
-                  key={rel.id}
-                  href={`/news/${rel.slug}`}
-                  className="group rounded-xl border border-white/6 bg-white/3 p-4 transition hover:border-violet-500/30 hover:bg-violet-500/5"
-                >
-                  {rel.imageUrl && (
-                    <div className="relative mb-3 h-36 overflow-hidden rounded-lg">
-                      <Image
-                        src={rel.imageUrl}
-                        alt={rel.titleAr}
-                        fill
-                        className="object-cover transition-transform group-hover:scale-105"
-                      />
+          <section aria-label="مقالات ذات صلة">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="h-px flex-1 bg-white/8" />
+              <h2 className="text-lg font-black text-white">مقالات ذات صلة</h2>
+              <div className="h-px flex-1 bg-white/8" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {related.map((rel) => {
+                const relTimeAgo = rel.publishedAt
+                  ? formatDistanceToNow(new Date(rel.publishedAt), { addSuffix: true, locale: ar })
+                  : null;
+                return (
+                  <Link
+                    key={rel.id}
+                    href={`/news/${rel.slug}`}
+                    className="group flex flex-col rounded-xl border border-white/6 bg-white/2 overflow-hidden transition hover:border-violet-500/30 hover:bg-white/4"
+                  >
+                    <div className="relative h-32 w-full shrink-0 bg-white/4">
+                      {rel.imageUrl ? (
+                        <Image
+                          src={rel.imageUrl}
+                          alt={rel.titleAr}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-violet-900/30 to-blue-900/30">
+                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(167,139,250,0.3)" strokeWidth="1.5">
+                            <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3"/>
+                          </svg>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <p className="mb-1 text-xs font-semibold text-violet-400">{rel.category.nameAr}</p>
-                  <h3 className="line-clamp-2 text-sm font-bold text-slate-200 group-hover:text-violet-300 transition-colors leading-snug">{rel.titleAr}</h3>
-                </Link>
-              ))}
+                    <div className="flex flex-1 flex-col p-3" dir="rtl">
+                      <span className="mb-1.5 inline-block w-fit rounded-full bg-violet-500/10 px-2 py-0.5 text-[11px] font-semibold text-violet-400 border border-violet-500/15">
+                        {rel.category.nameAr}
+                      </span>
+                      <h3 className="flex-1 line-clamp-3 text-sm font-bold leading-snug text-slate-200 transition-colors group-hover:text-violet-300">
+                        {rel.titleAr}
+                      </h3>
+                      {relTimeAgo && (
+                        <p className="mt-2 text-[11px] text-slate-600">{relTimeAgo}</p>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}
