@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import NewsCard from "@/components/NewsCard";
 import { prisma } from "@/lib/db";
 import { mockArticles } from "@/lib/mock-data";
@@ -38,49 +39,77 @@ const websiteJsonLd = {
   ],
 };
 
-async function getLatestNews() {
+async function getHomeData() {
   try {
-    return await prisma.article.findMany({
-      where: { published: true },
-      orderBy: { publishedAt: "desc" },
-      take: 12,
-      include: { category: true },
-    });
+    const [latest, trending, mostRead, categories, totalArticles] = await Promise.all([
+      prisma.article.findMany({
+        where: { published: true },
+        orderBy: { publishedAt: "desc" },
+        take: 13,
+        include: { category: true },
+      }),
+      // Trending = high viewCount published in last 7 days
+      prisma.article.findMany({
+        where: {
+          published: true,
+          publishedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        },
+        orderBy: { viewCount: "desc" },
+        take: 5,
+        select: { id: true, slug: true, titleAr: true, viewCount: true, category: { select: { nameAr: true, slug: true } } },
+      }),
+      // Most read all-time
+      prisma.article.findMany({
+        where: { published: true, viewCount: { gt: 0 } },
+        orderBy: { viewCount: "desc" },
+        take: 6,
+        select: { id: true, slug: true, titleAr: true, viewCount: true, publishedAt: true },
+      }),
+      prisma.category.findMany({ select: { id: true, slug: true, nameAr: true, _count: { select: { articles: { where: { published: true } } } } } }),
+      prisma.article.count({ where: { published: true } }),
+    ]);
+    return { latest, trending, mostRead, categories, totalArticles };
   } catch {
-    return [...mockArticles];
+    return {
+      latest: [...mockArticles],
+      trending: [],
+      mostRead: [],
+      categories: [],
+      totalArticles: 0,
+    };
   }
 }
 
 export default async function HomePage() {
-  const news = await getLatestNews();
+  const { latest, trending, mostRead, categories, totalArticles } = await getHomeData();
+
+  const featured = latest[0];
+  const grid = latest.slice(1, 7);
+  const secondary = latest.slice(7, 13);
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
 
       {/* Hero */}
-      <section className="relative overflow-hidden py-24 text-center" dir="rtl">
-        {/* Background blobs */}
+      <section className="relative overflow-hidden py-20 text-center" dir="rtl">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-24 left-1/4 h-96 w-96 rounded-full bg-violet-600/10 blur-3xl animate-blob" />
           <div className="absolute -top-12 right-1/4 h-80 w-80 rounded-full bg-blue-600/10 blur-3xl animate-blob" style={{ animationDelay: "3s" }} />
           <div className="absolute top-32 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-fuchsia-600/8 blur-3xl animate-blob" style={{ animationDelay: "6s" }} />
-          {/* top gradient sweep */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-500/40 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-b from-violet-950/25 via-transparent to-transparent" />
         </div>
 
         <div className="container mx-auto px-4 relative animate-fade-up">
-          {/* Live badge */}
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-violet-500/25 bg-violet-500/8 px-4 py-2 glass">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
             </span>
-            <span className="text-xs font-semibold text-slate-300">يتم التحديث يومياً</span>
+            <span className="text-xs font-semibold text-slate-300">
+              {totalArticles > 0 ? `${totalArticles.toLocaleString("ar-EG")} خبر منشور` : "يتم التحديث يومياً"}
+            </span>
           </div>
 
           <h1 className="mb-5 text-5xl font-black leading-tight md:text-6xl lg:text-7xl">
@@ -92,7 +121,6 @@ export default async function HomePage() {
             تغطية شاملة لأحدث التطورات في عالم AI — بالعربية
           </p>
 
-          {/* Stats row */}
           <div className="mt-10 flex justify-center gap-6 flex-wrap">
             {[
               { label: "تحديث يومي", icon: "📡" },
@@ -108,40 +136,179 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Category filter tabs */}
+      {categories.length > 0 && (
+        <div className="sticky top-16 z-30 border-b border-white/5 bg-[#09090b]/90 backdrop-blur-sm" dir="rtl">
+          <div className="container mx-auto flex gap-1 overflow-x-auto px-4 py-2 scrollbar-none">
+            <Link
+              href="/"
+              className="flex shrink-0 items-center gap-1.5 rounded-full border border-violet-500/40 bg-violet-500/10 px-4 py-1.5 text-xs font-semibold text-violet-300 transition"
+            >
+              الكل
+            </Link>
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/category/${cat.slug}`}
+                className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-4 py-1.5 text-xs font-medium text-slate-400 transition hover:border-violet-500/30 hover:text-white"
+              >
+                {cat.nameAr}
+                <span className="rounded-full bg-white/8 px-1.5 py-0.5 text-[10px] text-slate-600">
+                  {cat._count.articles}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       <AdSlot position="homepage-top" className="container mx-auto px-4 pt-4" />
 
       <div className="container mx-auto px-4 pb-16" dir="rtl">
+
+        {/* Trending strip */}
+        {trending.length > 0 && (
+          <section className="mb-10 mt-6">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-lg">🔥</span>
+              <h2 className="font-black text-white">الأكثر تداولاً هذا الأسبوع</h2>
+              <div className="h-px flex-1 bg-white/5" />
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+              {trending.map((art, i) => (
+                <Link
+                  key={art.id}
+                  href={`/news/${art.slug}`}
+                  className="group flex shrink-0 items-start gap-3 rounded-xl border border-white/6 bg-white/3 p-4 hover:border-violet-500/30 hover:bg-violet-500/5 transition w-64"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-xs font-black text-violet-400">
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-violet-400 mb-1">{art.category.nameAr}</p>
+                    <p className="text-sm font-bold text-slate-200 group-hover:text-violet-300 transition line-clamp-2 leading-snug">
+                      {art.titleAr}
+                    </p>
+                    {art.viewCount > 0 && (
+                      <p className="mt-1.5 text-xs text-slate-600">👁 {art.viewCount.toLocaleString("ar-EG")}</p>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Featured */}
-        {news[0] && (
+        {featured && (
           <div className="mb-10 animate-fade-up" style={{ animationDelay: "0.1s" }}>
-            <NewsCard article={news[0]} featured />
+            <NewsCard article={featured} featured />
           </div>
         )}
 
         <AdSlot position="homepage-mid" className="mb-8" />
 
-        {/* Grid */}
-        {news.length > 1 && (
-          <>
-            <div className="mb-8 flex items-center gap-4">
-              <div className="h-px flex-1 bg-white/5" />
-              <div className="flex items-center gap-2 rounded-full border border-white/8 bg-white/3 px-4 py-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
-                <span className="text-xs font-semibold text-slate-500">أحدث الأخبار</span>
-              </div>
-              <div className="h-px flex-1 bg-white/5" />
+        {/* Main grid + sidebar */}
+        {(grid.length > 0 || mostRead.length > 0) && (
+          <div className="grid gap-10 lg:grid-cols-[1fr_300px]">
+
+            {/* Article grid */}
+            <div>
+              {grid.length > 0 && (
+                <>
+                  <div className="mb-6 flex items-center gap-4">
+                    <div className="h-px flex-1 bg-white/5" />
+                    <div className="flex items-center gap-2 rounded-full border border-white/8 bg-white/3 px-4 py-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
+                      <span className="text-xs font-semibold text-slate-500">أحدث الأخبار</span>
+                    </div>
+                    <div className="h-px flex-1 bg-white/5" />
+                  </div>
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                    {grid.map((article, i) => (
+                      <div key={article.slug} className="animate-fade-up" style={{ animationDelay: `${0.05 * i}s` }}>
+                        <NewsCard article={article} />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {secondary.length > 0 && (
+                <>
+                  <div className="my-8 flex items-center gap-4">
+                    <div className="h-px flex-1 bg-white/5" />
+                    <span className="text-xs font-semibold text-slate-600">المزيد من الأخبار</span>
+                    <div className="h-px flex-1 bg-white/5" />
+                  </div>
+                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    {secondary.map((article, i) => (
+                      <div key={article.slug} className="animate-fade-up" style={{ animationDelay: `${0.05 * i}s` }}>
+                        <NewsCard article={article} />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {news.slice(1).map((article, i) => (
-                <div key={article.slug} className="animate-fade-up" style={{ animationDelay: `${0.05 * i}s` }}>
-                  <NewsCard article={article} />
+
+            {/* Sidebar */}
+            <aside className="space-y-6">
+              {/* Most read */}
+              {mostRead.length > 0 && (
+                <div className="rounded-2xl border border-white/6 bg-white/3 p-5">
+                  <div className="mb-4 flex items-center gap-2">
+                    <span className="text-base">📈</span>
+                    <h3 className="font-black text-white text-sm">الأكثر قراءة</h3>
+                  </div>
+                  <ol className="space-y-3">
+                    {mostRead.map((art, i) => (
+                      <li key={art.id}>
+                        <Link
+                          href={`/news/${art.slug}`}
+                          className="group flex items-start gap-3"
+                        >
+                          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-[11px] font-black text-violet-400">
+                            {i + 1}
+                          </span>
+                          <p className="text-sm text-slate-400 group-hover:text-violet-300 transition line-clamp-2 leading-snug">
+                            {art.titleAr}
+                          </p>
+                        </Link>
+                      </li>
+                    ))}
+                  </ol>
                 </div>
-              ))}
-            </div>
-          </>
+              )}
+
+              {/* Evergreen section links */}
+              <div className="rounded-2xl border border-white/6 bg-white/3 p-5">
+                <h3 className="mb-4 font-black text-white text-sm">استكشف المزيد</h3>
+                <div className="space-y-2">
+                  {[
+                    { href: "/guides", icon: "📚", label: "أدلة ومقالات تعليمية" },
+                    { href: "/ai-tools", icon: "🔧", label: "أدوات الذكاء الاصطناعي" },
+                    { href: "/companies", icon: "🏢", label: "شركات AI الكبرى" },
+                    { href: "/compare", icon: "⚖️", label: "مقارنات الأدوات" },
+                    { href: "/tools", icon: "✨", label: "مكتبة Prompts" },
+                  ].map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 transition hover:bg-white/5 hover:text-white"
+                    >
+                      <span>{item.icon}</span>
+                      <span>{item.label}</span>
+                      <span className="mr-auto text-slate-600 text-xs">←</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </aside>
+          </div>
         )}
 
-        {news.length === 0 && (
+        {latest.length === 0 && (
           <div className="flex flex-col items-center justify-center py-32 text-center">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/10 border border-violet-500/20">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgb(167,139,250)" strokeWidth="1.5">

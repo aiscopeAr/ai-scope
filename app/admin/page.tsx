@@ -12,6 +12,10 @@ import {
   Bot,
   Share2,
   Library,
+  BookOpen,
+  Wrench,
+  Building2,
+  Scale,
 } from "lucide-react";
 
 import AdminSignOutButton from "@/components/AdminSignOutButton";
@@ -34,6 +38,10 @@ async function getDashboardData() {
     activeAds,
     activeSocialAccounts,
     pendingSocialPosts,
+    guideCount,
+    toolCount,
+    companyCount,
+    comparisonCount,
   ] = await Promise.all([
     prisma.article.count(),
     prisma.article.count({ where: { published: true } }),
@@ -56,6 +64,10 @@ async function getDashboardData() {
     prisma.adSlot.count({ where: { enabled: true } }),
     prisma.socialAccount.count({ where: { enabled: true } }),
     prisma.socialPost.count({ where: { status: "pending" } }),
+    prisma.guide.count({ where: { published: true } }),
+    prisma.aITool.count({ where: { published: true } }),
+    prisma.company.count({ where: { published: true } }),
+    prisma.comparison.count({ where: { published: true } }),
   ]);
 
   return {
@@ -71,6 +83,10 @@ async function getDashboardData() {
     activeAds,
     activeSocialAccounts,
     pendingSocialPosts,
+    guideCount,
+    toolCount,
+    companyCount,
+    comparisonCount,
   };
 }
 
@@ -155,6 +171,42 @@ export default async function AdminDashboardPage() {
       color: "pink",
       urgent: data.pendingSocialPosts > 0,
     },
+    {
+      href: "/admin/guides",
+      icon: BookOpen,
+      label: "الأدلة والشروحات",
+      sub: "إدارة المحتوى الدائم",
+      value: data.guideCount,
+      valueLabel: "دليل",
+      color: "indigo",
+    },
+    {
+      href: "/admin/ai-tools",
+      icon: Wrench,
+      label: "أدوات AI",
+      sub: "إدارة دليل الأدوات",
+      value: data.toolCount,
+      valueLabel: "أداة",
+      color: "cyan",
+    },
+    {
+      href: "/admin/companies",
+      icon: Building2,
+      label: "الشركات",
+      sub: "ملفات شركات الذكاء الاصطناعي",
+      value: data.companyCount,
+      valueLabel: "شركة",
+      color: "sky",
+    },
+    {
+      href: "/admin/compare",
+      icon: Scale,
+      label: "المقارنات",
+      sub: "مقارنات الأدوات",
+      value: data.comparisonCount,
+      valueLabel: "مقارنة",
+      color: "amber",
+    },
   ];
 
   const colorMap: Record<string, { card: string; icon: string; badge: string }> = {
@@ -166,6 +218,8 @@ export default async function AdminDashboardPage() {
     slate:  { card: "bg-slate-50  hover:bg-slate-100  border-slate-100",  icon: "bg-slate-200     text-slate-600",  badge: "bg-slate-200  text-slate-600"  },
     pink:   { card: "bg-pink-50   hover:bg-pink-100   border-pink-100",   icon: "bg-pink-500/10   text-pink-600",   badge: "bg-pink-100   text-pink-700"   },
     teal:   { card: "bg-teal-50   hover:bg-teal-100   border-teal-100",   icon: "bg-teal-500/10   text-teal-600",   badge: "bg-teal-100   text-teal-700"   },
+    indigo: { card: "bg-indigo-50 hover:bg-indigo-100 border-indigo-100", icon: "bg-indigo-500/10 text-indigo-600", badge: "bg-indigo-100 text-indigo-700" },
+    cyan:   { card: "bg-cyan-50   hover:bg-cyan-100   border-cyan-100",   icon: "bg-cyan-500/10   text-cyan-600",   badge: "bg-cyan-100   text-cyan-700"   },
   };
 
   return (
