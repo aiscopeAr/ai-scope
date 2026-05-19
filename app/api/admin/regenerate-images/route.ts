@@ -36,21 +36,12 @@ export async function GET(request: Request) {
   const needsImage = allArticles.filter((a) => needsNewImage(a.imageUrl));
 
   if (debugOnly) {
-    // Test Cloudinary connectivity using a real Replicate URL from DB
+    // Test: generate a fresh image with Replicate and upload to Cloudinary
     let cloudinaryTest: string | null = null;
     let cloudinaryError: string | null = null;
     try {
-      const { uploadImageFromUrl } = await import("@/lib/cloudinary");
-      const testArticle = await prisma.article.findFirst({
-        where: { imageUrl: { contains: "replicate.delivery" } },
-        select: { imageUrl: true },
-      });
-      const testUrl = testArticle?.imageUrl ?? needsImage[0]?.imageUrl;
-      if (testUrl) {
-        cloudinaryTest = await uploadImageFromUrl(testUrl, "aiscope/test");
-      } else {
-        cloudinaryError = "No test URL available";
-      }
+      const { generateArticleImage } = await import("@/lib/replicate");
+      cloudinaryTest = await generateArticleImage("artificial intelligence technology test");
     } catch (e) {
       cloudinaryError = e instanceof Error ? e.message : JSON.stringify(e);
     }
