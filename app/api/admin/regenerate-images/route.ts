@@ -36,12 +36,27 @@ export async function GET(request: Request) {
   const needsImage = allArticles.filter((a) => needsNewImage(a.imageUrl));
 
   if (debugOnly) {
+    // Test Cloudinary connectivity with a tiny ping upload
+    let cloudinaryTest: string | null = null;
+    let cloudinaryError: string | null = null;
+    try {
+      const { uploadImageFromUrl } = await import("@/lib/cloudinary");
+      cloudinaryTest = await uploadImageFromUrl(
+        "https://via.placeholder.com/100x100.webp",
+        "aiscope/test",
+      );
+    } catch (e) {
+      cloudinaryError = e instanceof Error ? e.message : String(e);
+    }
+
     return NextResponse.json({
       total: allArticles.length,
       needsImage: needsImage.length,
       cloudinaryOk: allArticles.length - needsImage.length,
       cloudinaryEnvSet: !!process.env.CLOUDINARY_CLOUD_NAME,
       replicateEnvSet: !!process.env.REPLICATE_API_TOKEN,
+      cloudinaryTest,
+      cloudinaryError,
       sample: needsImage.slice(0, 3).map((a) => ({ id: a.id, imageUrl: a.imageUrl })),
     });
   }

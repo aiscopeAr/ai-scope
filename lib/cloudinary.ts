@@ -15,28 +15,19 @@ function configure() {
 
 /**
  * Upload an image from a URL to Cloudinary and return a permanent URL.
- * Falls back to the original URL if upload fails.
+ * Returns null on failure (caller decides fallback).
  */
 export async function uploadImageFromUrl(
   sourceUrl: string,
   folder = "aiscope/articles",
-): Promise<string> {
-  try {
-    configure();
-    const result = await cloudinary.uploader.upload(sourceUrl, {
-      folder,
-      resource_type: "image",
-      // Overwrite if same public_id (idempotent)
-      overwrite: true,
-      // Optimize delivery
-      format: "webp",
-      quality: "auto:good",
-      fetch_format: "auto",
-    });
-    return result.secure_url;
-  } catch (err) {
-    console.error("[cloudinary] Upload failed:", err instanceof Error ? err.message : err);
-    // Return original URL as fallback — better than nothing
-    return sourceUrl;
-  }
+): Promise<string | null> {
+  configure();
+  const result = await cloudinary.uploader.upload(sourceUrl, {
+    folder,
+    resource_type: "image",
+    overwrite: true,
+    format: "webp",
+    quality: "auto:good",
+  });
+  return result.secure_url;
 }
