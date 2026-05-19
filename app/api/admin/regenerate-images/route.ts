@@ -46,7 +46,7 @@ export async function GET(request: Request) {
         "aiscope/test",
       );
     } catch (e) {
-      cloudinaryError = e instanceof Error ? e.message : String(e);
+      cloudinaryError = e instanceof Error ? e.message : JSON.stringify(e);
     }
 
     return NextResponse.json({
