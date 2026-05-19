@@ -25,15 +25,21 @@ import { prisma } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 async function getDashboardData() {
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+
   const [
     articleCount,
     publishedCount,
+    publishedToday,
     recentArticles,
     topArticles,
     categories,
     sources,
     settings,
     pendingQueue,
+    processedQueue,
+    failedQueue,
     totalViews,
     activeAds,
     activeSocialAccounts,
@@ -42,9 +48,11 @@ async function getDashboardData() {
     toolCount,
     companyCount,
     comparisonCount,
+    trendingKeywords,
   ] = await Promise.all([
     prisma.article.count(),
     prisma.article.count({ where: { published: true } }),
+    prisma.article.count({ where: { published: true, publishedAt: { gte: todayStart } } }),
     prisma.article.findMany({
       orderBy: { publishedAt: "desc" },
       take: 8,
@@ -59,7 +67,9 @@ async function getDashboardData() {
     prisma.category.count(),
     prisma.source.count(),
     prisma.settings.findFirst(),
-    prisma.articleQueue.count({ where: { status: { in: ["pending", "processed"] } } }),
+    prisma.articleQueue.count({ where: { status: "pending" } }),
+    prisma.articleQueue.count({ where: { status: "processed" } }),
+    prisma.articleQueue.count({ where: { status: "failed" } }),
     prisma.article.aggregate({ _sum: { viewCount: true } }),
     prisma.adSlot.count({ where: { enabled: true } }),
     prisma.socialAccount.count({ where: { enabled: true } }),
@@ -68,17 +78,24 @@ async function getDashboardData() {
     prisma.aITool.count({ where: { published: true } }),
     prisma.company.count({ where: { published: true } }),
     prisma.comparison.count({ where: { published: true } }),
+    prisma.trendingKeyword.findMany({
+      orderBy: { count: "desc" },
+      take: 12,
+    }),
   ]);
 
   return {
     articleCount,
     publishedCount,
+    publishedToday,
     recentArticles,
     topArticles,
     categories,
     sources,
     settings,
     pendingQueue,
+    processedQueue,
+    failedQueue,
     totalViews: totalViews._sum.viewCount ?? 0,
     activeAds,
     activeSocialAccounts,
@@ -87,6 +104,7 @@ async function getDashboardData() {
     toolCount,
     companyCount,
     comparisonCount,
+    trendingKeywords,
   };
 }
 
@@ -110,11 +128,11 @@ export default async function AdminDashboardPage() {
       href: "/admin/queue",
       icon: ClipboardList,
       label: "طابور المراجعة",
-      sub: "موافقة ورفض الكتابات",
+      sub: `${data.processedQueue} جاهز · ${data.failedQueue} فشل`,
       value: data.pendingQueue,
-      valueLabel: "بانتظار",
+      valueLabel: "بانتظار المعالجة",
       color: "amber",
-      urgent: data.pendingQueue > 0,
+      urgent: data.pendingQueue > 0 || data.failedQueue > 0,
     },
     {
       href: "/admin/sources",
@@ -247,14 +265,15 @@ export default async function AdminDashboardPage() {
       {/* Stats strip */}
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "إجمالي المقالات", value: data.articleCount },
-          { label: "منشور", value: data.publishedCount },
-          { label: "التصنيفات", value: data.categories },
-          { label: "النشر التلقائي", value: data.settings?.autoPublish ? "مفعّل" : "متوقف" },
+          { label: "إجمالي المقالات", value: data.articleCount, sub: `${data.publishedCount} منشور` },
+          { label: "نُشر اليوم", value: data.publishedToday, sub: "منذ منتصف الليل", highlight: data.publishedToday > 0 },
+          { label: "في الطابور", value: data.pendingQueue + data.processedQueue, sub: data.failedQueue > 0 ? `${data.failedQueue} فشل` : "لا أخطاء", urgent: data.failedQueue > 0 },
+          { label: "النشر التلقائي", value: data.settings?.autoPublish ? "مفعّل" : "متوقف", sub: `${data.totalViews.toLocaleString("ar-EG")} مشاهدة` },
         ].map((s) => (
-          <div key={s.label} className="rounded-[1.5rem] bg-white p-4 shadow-md shadow-slate-200/60">
+          <div key={s.label} className={`rounded-[1.5rem] bg-white p-4 shadow-md shadow-slate-200/60 ${s.urgent ? "ring-2 ring-red-400" : ""}`}>
             <p className="text-xs text-slate-400">{s.label}</p>
-            <p className="mt-2 text-2xl font-black text-slate-900">{s.value}</p>
+            <p className={`mt-2 text-2xl font-black ${s.highlight ? "text-emerald-600" : s.urgent ? "text-red-600" : "text-slate-900"}`}>{s.value}</p>
+            <p className="mt-0.5 text-[11px] text-slate-400">{s.sub}</p>
           </div>
         ))}
       </div>
@@ -291,6 +310,64 @@ export default async function AdminDashboardPage() {
             </Link>
           );
         })}
+      </div>
+
+      {/* Queue status + Trending keywords */}
+      <div className="mb-6 grid gap-6 lg:grid-cols-2">
+
+        {/* Queue breakdown */}
+        <div className="rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60">
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="font-black text-slate-900">حالة الطابور</h2>
+            <Link href="/admin/queue" className="text-xs font-semibold text-[#667eea] hover:underline">فتح الطابور</Link>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: "بانتظار المعالجة", value: data.pendingQueue, color: "bg-amber-50 text-amber-700 border-amber-100" },
+              { label: "جاهز للنشر", value: data.processedQueue, color: "bg-violet-50 text-violet-700 border-violet-100" },
+              { label: "فشل", value: data.failedQueue, color: data.failedQueue > 0 ? "bg-red-50 text-red-700 border-red-200 ring-1 ring-red-300" : "bg-slate-50 text-slate-400 border-slate-100" },
+            ].map((q) => (
+              <div key={q.label} className={`rounded-2xl border p-4 text-center ${q.color}`}>
+                <p className="text-3xl font-black">{q.value}</p>
+                <p className="mt-1 text-[11px] font-semibold leading-tight">{q.label}</p>
+              </div>
+            ))}
+          </div>
+          {data.failedQueue > 0 && (
+            <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
+              ⚠️ يوجد {data.failedQueue} عنصر فشل في المعالجة — تحقق من الطابور
+            </p>
+          )}
+        </div>
+
+        {/* Trending keywords */}
+        <div className="rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60">
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="font-black text-slate-900">الكلمات الرائجة</h2>
+            <span className="text-xs text-slate-400">آخر تحديث تلقائي</span>
+          </div>
+          {data.trendingKeywords.length === 0 ? (
+            <p className="text-sm text-slate-400">لا توجد بيانات بعد — سيتم التحديث تلقائياً</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {data.trendingKeywords.map((kw, i) => {
+                const size = i === 0 ? "text-base" : i < 3 ? "text-sm" : "text-xs";
+                const bg = i === 0
+                  ? "bg-[#667eea] text-white"
+                  : i < 3
+                  ? "bg-[#667eea]/10 text-[#667eea]"
+                  : "bg-slate-100 text-slate-600";
+                return (
+                  <span key={kw.id} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 font-semibold ${size} ${bg}`}>
+                    {kw.keyword}
+                    <span className="opacity-60">·{kw.count}</span>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* Bottom grid: top articles + recent articles */}
