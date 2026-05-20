@@ -16,6 +16,7 @@ import {
   Wrench,
   Building2,
   Scale,
+  BarChart2,
 } from "lucide-react";
 
 import AdminSignOutButton from "@/components/AdminSignOutButton";
@@ -224,6 +225,15 @@ export default async function AdminDashboardPage() {
       value: data.comparisonCount,
       valueLabel: "مقارنة",
       color: "amber",
+    },
+    {
+      href: "/admin/analytics",
+      icon: BarChart2,
+      label: "التحليلات",
+      sub: "مشاهدات، مصادر، تصنيفات",
+      value: null,
+      valueLabel: "",
+      color: "violet",
     },
   ];
 
