@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { fetchRssFeed } from "@/lib/rss";
 import { enqueueItem } from "@/lib/queue";
+import { isAiRelated } from "@/lib/classifier";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -46,6 +47,11 @@ export async function GET(request: Request) {
       let enqueued = 0;
       for (const item of items) {
         if (enqueued >= ITEMS_PER_SOURCE) break;
+        // Fast pre-filter — skip clearly non-AI items before touching the DB
+        if (!isAiRelated(item.title, item.description)) {
+          skipped++;
+          continue;
+        }
         const queued = await enqueueItem({
           ...item,
           sourceId: source.id,

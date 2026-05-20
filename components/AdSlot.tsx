@@ -13,6 +13,7 @@ type AdPosition =
   | "guide-top"
   | "guide-mid"
   | "ai-tools-top"
+  | "ai-tools-mid"
   | "tool-top"
   | "tool-mid"
   | "companies-top"

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import NewsCard from "@/components/NewsCard";
 import LiveFeed from "@/components/LiveFeed";
+import ToolCard from "@/components/ToolCard";
 import { prisma } from "@/lib/db";
 import { mockArticles } from "@/lib/mock-data";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
@@ -42,7 +43,7 @@ const websiteJsonLd = {
 
 async function getHomeData() {
   try {
-    const [latest, trending, mostRead, categories, totalArticles] = await Promise.all([
+    const [latest, trending, mostRead, categories, totalArticles, featuredTools] = await Promise.all([
       prisma.article.findMany({
         where: { published: true },
         orderBy: { publishedAt: "desc" },
@@ -68,8 +69,19 @@ async function getHomeData() {
       }),
       prisma.category.findMany({ select: { id: true, slug: true, nameAr: true, _count: { select: { articles: { where: { published: true } } } } } }),
       prisma.article.count({ where: { published: true } }),
+      prisma.aITool.findMany({
+        where: { published: true },
+        orderBy: [{ editorPick: "desc" }, { featured: "desc" }, { viewCount: "desc" }],
+        take: 6,
+        select: {
+          id: true, slug: true, name: true, tagline: true, descriptionAr: true,
+          logoUrl: true, toolCategory: true, pricing: true, monthlyPrice: true,
+          arabicSupport: true, hasApi: true, tags: true, viewCount: true, likes: true,
+          featured: true, editorPick: true,
+        },
+      }).catch(() => []),
     ]);
-    return { latest, trending, mostRead, categories, totalArticles };
+    return { latest, trending, mostRead, categories, totalArticles, featuredTools };
   } catch {
     return {
       latest: [...mockArticles],
@@ -77,12 +89,13 @@ async function getHomeData() {
       mostRead: [],
       categories: [],
       totalArticles: 0,
+      featuredTools: [],
     };
   }
 }
 
 export default async function HomePage() {
-  const { latest, trending, mostRead, categories, totalArticles } = await getHomeData();
+  const { latest, trending, mostRead, categories, totalArticles, featuredTools } = await getHomeData();
 
   const featured = latest[0];
   const grid = latest.slice(1, 7);
@@ -142,6 +155,35 @@ export default async function HomePage() {
       <AdSlot position="homepage-top" className="container mx-auto px-4 pt-4" />
 
       <div className="container mx-auto px-4 pb-16" dir="rtl">
+
+        {/* Featured AI Tools strip */}
+        {featuredTools.length > 0 && (
+          <section className="mb-10 mt-6">
+            <div className="flex items-center gap-3 mb-5">
+              <span className="text-lg">🔧</span>
+              <h2 className="font-black text-white">اكتشف أدوات الذكاء الاصطناعي</h2>
+              <div className="h-px flex-1 bg-white/5" />
+              <Link href="/ai-tools" className="text-xs text-violet-400 hover:text-violet-300 transition">عرض الكل ←</Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {featuredTools.map((t) => <ToolCard key={t.id} tool={t} />)}
+            </div>
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              {[
+                { href: "/ai-tools/for/writing",   label: "كتابة", icon: "✍️" },
+                { href: "/ai-tools/for/coding",    label: "برمجة", icon: "💻" },
+                { href: "/ai-tools/for/image",     label: "صور",   icon: "🎨" },
+                { href: "/ai-tools/for/marketing", label: "تسويق", icon: "📢" },
+                { href: "/ai-tools/for/students",  label: "طلاب",  icon: "🎓" },
+                { href: "/ai-tools/for/no-code",   label: "بدون كود", icon: "🔧" },
+              ].map((item) => (
+                <Link key={item.href} href={item.href} className="flex items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-slate-400 transition hover:border-violet-500/30 hover:text-white">
+                  <span>{item.icon}</span><span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Trending strip */}
         {trending.length > 0 && (

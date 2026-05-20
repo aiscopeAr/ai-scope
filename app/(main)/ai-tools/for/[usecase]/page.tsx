@@ -1,184 +1,105 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { prisma } from "@/lib/db";
-import { absoluteUrl, SITE_NAME_AR, SITE_URL, truncate } from "@/lib/seo";
+import { absoluteUrl, SITE_NAME_AR, SITE_URL } from "@/lib/seo";
+import { TOOL_CATEGORIES, getCategoryMeta } from "@/lib/tool-categories";
 import AdSlot from "@/components/AdSlot";
 import Breadcrumbs, { buildBreadcrumbJsonLd } from "@/components/Breadcrumbs";
+import ToolCard from "@/components/ToolCard";
 
-export const revalidate = 3600;
-
-// Curated use-case definitions — each maps to a set of tool categories + keywords
-const USE_CASES: Record<string, {
-  titleAr: string;
-  h1: string;
-  descriptionAr: string;
-  categories: string[];
-  keywords: string[];
-  icon: string;
-}> = {
-  students: {
-    titleAr: "أفضل أدوات الذكاء الاصطناعي للطلاب",
-    h1: "أفضل أدوات AI للطلاب 2025",
-    descriptionAr: "اكتشف أفضل أدوات الذكاء الاصطناعي التي تساعد الطلاب على التعلم والبحث وكتابة الأبحاث والتلخيص — مجاناً أو بأسعار منخفضة.",
-    categories: ["chatbot", "productivity"],
-    keywords: ["ذكاء اصطناعي للطلاب", "أدوات AI للدراسة", "مساعد الدراسة", "كتابة الأبحاث"],
-    icon: "🎓",
-  },
-  developers: {
-    titleAr: "أفضل أدوات الذكاء الاصطناعي للمطورين",
-    h1: "أفضل أدوات AI للمطورين والبرمجة 2025",
-    descriptionAr: "أدوات AI تساعد المطورين على كتابة الكود وإصلاح الأخطاء وتوليد الاختبارات وفهم الكود القديم — وفّر ساعات من وقتك.",
-    categories: ["code", "chatbot"],
-    keywords: ["AI للمطورين", "مساعد البرمجة", "كود بالذكاء الاصطناعي", "GitHub Copilot بديل"],
-    icon: "💻",
-  },
-  writers: {
-    titleAr: "أفضل أدوات الذكاء الاصطناعي للكتّاب",
-    h1: "أفضل أدوات AI للكتابة والمحتوى 2025",
-    descriptionAr: "أدوات الذكاء الاصطناعي التي تساعد الكتّاب والمدونين وصانعي المحتوى على الكتابة بشكل أسرع وأفضل — بالعربية والإنجليزية.",
-    categories: ["chatbot", "productivity"],
-    keywords: ["AI للكتابة", "مساعد الكتابة", "كتابة المحتوى بالذكاء الاصطناعي", "ChatGPT للكتابة"],
-    icon: "✍️",
-  },
-  designers: {
-    titleAr: "أفضل أدوات الذكاء الاصطناعي للمصممين",
-    h1: "أفضل أدوات AI للتصميم وتوليد الصور 2025",
-    descriptionAr: "أدوات الذكاء الاصطناعي التي تحوّل أفكارك إلى صور وتصاميم احترافية في ثوانٍ — Midjourney وDALL-E والمزيد.",
-    categories: ["image", "video"],
-    keywords: ["AI للتصميم", "توليد الصور بالذكاء الاصطناعي", "Midjourney", "أدوات التصميم"],
-    icon: "🎨",
-  },
-  business: {
-    titleAr: "أفضل أدوات الذكاء الاصطناعي للأعمال",
-    h1: "أفضل أدوات AI للأعمال والشركات 2025",
-    descriptionAr: "أدوات AI تزيد إنتاجية فريقك وتؤتمت المهام المتكررة وتساعد على اتخاذ قرارات أفضل — للشركات الناشئة والمؤسسات الكبيرة.",
-    categories: ["productivity", "chatbot"],
-    keywords: ["AI للأعمال", "ذكاء اصطناعي للشركات", "أتمتة الأعمال", "AI للإنتاجية"],
-    icon: "💼",
-  },
-  content: {
-    titleAr: "أفضل أدوات الذكاء الاصطناعي لصانعي المحتوى",
-    h1: "أفضل أدوات AI لصانعي المحتوى ويوتيوبرز 2025",
-    descriptionAr: "أدوات AI لإنشاء الفيديو والصوت والصور والنصوص — مثالية لليوتيوبرز والمدونين ومديري السوشيال ميديا.",
-    categories: ["video", "audio", "image", "chatbot"],
-    keywords: ["AI لصانعي المحتوى", "يوتيوب بالذكاء الاصطناعي", "توليد الفيديو", "AI للسوشيال ميديا"],
-    icon: "📱",
-  },
-  research: {
-    titleAr: "أفضل أدوات الذكاء الاصطناعي للبحث العلمي",
-    h1: "أفضل أدوات AI للبحث العلمي والأكاديمي 2025",
-    descriptionAr: "أدوات الذكاء الاصطناعي التي تساعد الباحثين والأكاديميين على مراجعة الأدبيات وتلخيص الأوراق البحثية وتحليل البيانات.",
-    categories: ["chatbot", "productivity"],
-    keywords: ["AI للبحث العلمي", "ذكاء اصطناعي للأكاديميين", "تلخيص الأبحاث", "مساعد البحث"],
-    icon: "🔬",
-  },
-  arabic: {
-    titleAr: "أفضل أدوات الذكاء الاصطناعي باللغة العربية",
-    h1: "أفضل أدوات AI تدعم اللغة العربية 2025",
-    descriptionAr: "أدوات الذكاء الاصطناعي التي تدعم اللغة العربية بشكل ممتاز — للكتابة والترجمة والمحادثة والبحث باللغة العربية.",
-    categories: ["chatbot", "productivity"],
-    keywords: ["AI باللغة العربية", "ذكاء اصطناعي عربي", "ChatGPT بالعربي", "كتابة عربية بالذكاء الاصطناعي"],
-    icon: "🌐",
-  },
-};
+export const revalidate = 600;
 
 export async function generateStaticParams() {
-  return Object.keys(USE_CASES).map((usecase) => ({ usecase }));
+  return TOOL_CATEGORIES.map((c) => ({ usecase: c.value }));
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ usecase: string }>;
-}): Promise<Metadata> {
-  const { usecase } = await params;
-  const uc = USE_CASES[usecase];
-  if (!uc) return {};
+// Unique intro copy per category (ASCII-safe for file write)
+const CATEGORY_INTROS: Record<string, { headline: string; intro: string }> = {
+  writing:            { headline: "Best AI Writing Tools 2025", intro: "AI has transformed digital writing. These tools help you produce professional content at record speed." },
+  coding:             { headline: "Best AI Tools for Developers", intro: "From auto-complete to bug detection — these tools multiply developer productivity by up to 10x." },
+  image:              { headline: "Best AI Image Generation Tools", intro: "From Midjourney to DALL-E — AI image tools opened unlimited creative possibilities for designers." },
+  video:              { headline: "Best AI Video Production Tools", intro: "Professional video production has never been easier — turn text into visual clips in clicks." },
+  voice:              { headline: "Best AI Voice and Music Tools", intro: "Convert text to natural speech or create original music using cutting-edge AI technology." },
+  marketing:          { headline: "Best AI Marketing Tools", intro: "From ad copy to audience analysis — AI marketing tools give you a real competitive edge." },
+  education:          { headline: "Best AI Education Tools", intro: "AI personalizes the learning experience for every individual with interactive explanations and instant evaluation." },
+  startups:           { headline: "Best AI Tools for Startups", intro: "From business plans to product design — these tools let startups move with the speed of large companies." },
+  ecommerce:          { headline: "Best AI Tools for E-commerce", intro: "Double your sales and improve customer experience with AI tools specialized for online commerce." },
+  automation:         { headline: "Best AI Automation Tools", intro: "Automate repetitive tasks and focus on what matters — automation tools save hours of manual work weekly." },
+  "customer-support": { headline: "Best AI Customer Support Tools", intro: "Smart chatbots and automated support systems raise customer satisfaction while reducing support costs." },
+  productivity:       { headline: "Best AI Productivity Tools", intro: "From meeting summaries to task management — AI productivity tools transform chaos into effective systems." },
+  legal:              { headline: "Best AI Legal Tools", intro: "Contract review, legal research, and document drafting at unprecedented speed and efficiency." },
+  finance:            { headline: "Best AI Financial Analysis Tools", intro: "From data analysis to investment planning — deep, fast insights powered by artificial intelligence." },
+  healthcare:         { headline: "Best AI Healthcare Tools", intro: "AI is revolutionizing healthcare from diagnosis to patient data management." },
+  students:           { headline: "Best AI Tools for Students", intro: "Tools that help students understand deeper, research faster, and write academic reports efficiently." },
+  "no-code":          { headline: "Best No-Code AI Tools", intro: "Build apps, websites, and automation without writing code — technology accessible to everyone." },
+  presentations:      { headline: "Best AI Presentation Tools", intro: "Turn your ideas into professional presentations in minutes with ready designs and AI-suggested content." },
+  other:              { headline: "Miscellaneous AI Tools", intro: "A diverse collection of AI tools serving various different needs." },
+};
 
+export async function generateMetadata({ params }: { params: Promise<{ usecase: string }> }): Promise<Metadata> {
+  const { usecase } = await params;
+  const cat = getCategoryMeta(usecase);
+  const intro = CATEGORY_INTROS[usecase] ?? CATEGORY_INTROS.other;
+  const title = `${intro.headline} | ${SITE_NAME_AR}`;
+  const description = `Discover the best AI tools for ${cat.labelAr} — detailed Arabic reviews with pros, cons, and pricing.`;
   const url = absoluteUrl(`/ai-tools/for/${usecase}`);
-  return {
-    title: `${uc.titleAr} | ${SITE_NAME_AR}`,
-    description: uc.descriptionAr,
-    alternates: { canonical: url },
-    keywords: uc.keywords.join(", "),
-    openGraph: {
-      title: uc.titleAr,
-      description: uc.descriptionAr,
-      url,
-      locale: "ar_AR",
-      type: "website",
-    },
-  };
+  return { title, description, alternates: { canonical: url }, openGraph: { title, description, url, locale: "ar_AR", type: "website" } };
 }
 
-const PRICING_BADGE: Record<string, string> = {
-  free:     "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  freemium: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  paid:     "bg-red-500/10 text-red-400 border-red-500/20",
-};
-const PRICING_LABEL: Record<string, string> = {
-  free: "مجاني", freemium: "مجاني+", paid: "مدفوع",
-};
-
-export default async function UseCasePage({
-  params,
-}: {
-  params: Promise<{ usecase: string }>;
-}) {
+export default async function ToolsForUsecasePage({ params }: { params: Promise<{ usecase: string }> }) {
   const { usecase } = await params;
-  const uc = USE_CASES[usecase];
-  if (!uc) notFound();
+  const validValues = TOOL_CATEGORIES.map((c) => c.value) as string[];
+  if (!validValues.includes(usecase)) notFound();
 
-  const tools = await prisma.aITool.findMany({
-    where: { published: true, category: { in: uc.categories } },
-    orderBy: [{ featuredAt: { sort: "desc", nulls: "last" } }, { viewCount: "desc" }],
-  }).catch(() => []);
+  const catMeta = getCategoryMeta(usecase);
+  const intro = CATEGORY_INTROS[usecase] ?? CATEGORY_INTROS.other;
 
-  // Also fetch all tools to show "other recommended" section
-  const allTools = tools.length < 3
-    ? await prisma.aITool.findMany({ where: { published: true }, orderBy: { viewCount: "desc" }, take: 6 }).catch(() => [])
-    : [];
+  const [tools, otherCats] = await Promise.all([
+    prisma.aITool.findMany({
+      where: { published: true, toolCategory: usecase },
+      orderBy: [{ editorPick: "desc" }, { viewCount: "desc" }],
+      select: {
+        id: true, slug: true, name: true, tagline: true, descriptionAr: true,
+        logoUrl: true, toolCategory: true, pricing: true, monthlyPrice: true,
+        arabicSupport: true, hasApi: true, tags: true, viewCount: true, likes: true,
+        featured: true, editorPick: true,
+      },
+    }).catch(() => []),
+    prisma.aITool.groupBy({
+      by: ["toolCategory"], where: { published: true },
+      _count: { id: true }, orderBy: { _count: { id: "desc" } }, take: 12,
+    }).catch(() => []),
+  ]);
 
-  const displayTools = tools.length > 0 ? tools : allTools;
-
-  const pageUrl = absoluteUrl(`/ai-tools/for/${usecase}`);
   const breadcrumbItems = [
-    { name: "الرئيسية", href: "/" },
-    { name: "أدوات AI", href: "/ai-tools" },
-    { name: uc.titleAr },
+    { name: "Home", href: "/" },
+    { name: "AI Tools", href: "/ai-tools" },
+    { name: catMeta.labelAr },
   ];
 
-  const itemListJsonLd = {
+  const itemListJsonLd = tools.length > 0 ? {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: uc.titleAr,
-    description: uc.descriptionAr,
-    url: pageUrl,
-    numberOfItems: displayTools.length,
-    itemListElement: displayTools.map((t, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      name: t.name,
-      url: `${SITE_URL}/ai-tools/${t.slug}`,
-      description: truncate(t.descriptionAr, 150),
+    name: intro.headline,
+    url: absoluteUrl(`/ai-tools/for/${usecase}`),
+    numberOfItems: tools.length,
+    itemListElement: tools.slice(0, 10).map((t, i) => ({
+      "@type": "ListItem", position: i + 1, url: `${SITE_URL}/ai-tools/${t.slug}`, name: t.name,
     })),
-  };
+  } : null;
 
-  // Other use-cases for internal linking
-  const otherUseCases = Object.entries(USE_CASES)
-    .filter(([key]) => key !== usecase)
-    .slice(0, 4);
+  const freePricing = tools.filter((t) => t.pricing === "free").length;
+  const withArabic = tools.filter((t) => t.arabicSupport).length;
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBreadcrumbJsonLd(breadcrumbItems)) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
+      {itemListJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />}
 
       <main className="min-h-screen" dir="rtl">
         {/* Hero */}
-        <section className="relative overflow-hidden border-b border-white/5 py-16">
+        <section className="relative overflow-hidden border-b border-white/5 py-14">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute -top-16 right-1/4 h-80 w-80 rounded-full bg-violet-600/10 blur-3xl" />
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent" />
@@ -186,112 +107,87 @@ export default async function UseCasePage({
           <div className="container mx-auto px-4 relative">
             <Breadcrumbs items={breadcrumbItems} className="mb-6" />
             <div className="flex items-center gap-4 mb-4">
-              <span className="text-5xl">{uc.icon}</span>
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-3xl">{catMeta.icon}</span>
               <div>
-                <h1 className="text-3xl font-black text-white md:text-4xl">{uc.h1}</h1>
-                <p className="mt-2 text-slate-400 max-w-2xl">{uc.descriptionAr}</p>
+                <h1 className="text-3xl font-black text-white md:text-4xl">{intro.headline}</h1>
+                <p className="text-sm text-violet-400 mt-1">{tools.length} tools</p>
               </div>
             </div>
-            <div className="mt-5 flex flex-wrap gap-2">
-              {uc.keywords.map((kw) => (
-                <span key={kw} className="rounded-full border border-violet-500/20 bg-violet-500/8 px-3 py-1 text-xs text-violet-400">
-                  {kw}
-                </span>
-              ))}
-            </div>
+            <p className="max-w-2xl text-slate-400 leading-relaxed">{intro.intro}</p>
+            {tools.length > 0 && (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {freePricing > 0 && <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-400">{freePricing} free</span>}
+                {withArabic > 0 && <span className="rounded-full border border-teal-500/30 bg-teal-500/10 px-3 py-1.5 text-xs text-teal-400">{withArabic} Arabic support</span>}
+                <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-slate-400">{tools.length} tools total</span>
+              </div>
+            )}
           </div>
         </section>
 
-        <div className="container mx-auto px-4 py-12">
-          <AdSlot position="ai-tools-top" className="mb-10" />
+        <div className="container mx-auto px-4 py-10">
+          <AdSlot position="ai-tools-top" className="mb-8" />
+          <div className="grid gap-10 lg:grid-cols-[1fr_260px]">
+            {/* Main content */}
+            <div>
+              {tools.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border border-white/5 bg-white/2 py-24 text-center">
+                  <div className="mb-3 text-5xl">{catMeta.icon}</div>
+                  <p className="text-lg font-semibold text-slate-400">No tools in this category yet</p>
+                  <Link href="/ai-tools" className="mt-4 text-sm text-violet-400 hover:text-violet-300">All tools</Link>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {tools.map((t) => <ToolCard key={t.id} tool={t} />)}
+                </div>
+              )}
 
-          {/* Tools grid */}
-          {displayTools.length === 0 ? (
-            <div className="py-20 text-center text-slate-500">
-              <p className="text-lg">لا توجد أدوات في هذه الفئة بعد</p>
-              <Link href="/ai-tools" className="mt-4 inline-block text-violet-400 hover:underline">عرض جميع الأدوات</Link>
-            </div>
-          ) : (
-            <>
-              <div className="mb-6 flex items-center gap-3">
-                <h2 className="text-xl font-black text-white">الأدوات الموصى بها</h2>
-                <span className="rounded-full bg-violet-500/10 px-2.5 py-0.5 text-xs font-bold text-violet-400">{displayTools.length} أداة</span>
-                <div className="h-px flex-1 bg-white/5" />
-              </div>
-
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {displayTools.map((tool, i) => (
-                  <Link
-                    key={tool.id}
-                    href={`/ai-tools/${tool.slug}`}
-                    className="group relative flex flex-col rounded-2xl border border-white/6 bg-white/3 p-6 hover:border-violet-500/30 hover:bg-violet-500/5 transition"
-                  >
-                    {i < 3 && (
-                      <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-violet-500 text-[11px] font-black text-white">
-                        {i + 1}
-                      </span>
-                    )}
-                    <div className="mb-4 flex items-center gap-3">
-                      {tool.logoUrl ? (
-                        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-white/10">
-                          <Image src={tool.logoUrl} alt={tool.name} fill className="object-cover" />
-                        </div>
-                      ) : (
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/15 text-lg font-black text-violet-400">
-                          {tool.name[0]}
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <h3 className="font-bold text-slate-100 group-hover:text-violet-300 transition-colors">{tool.name}</h3>
-                        {tool.tagline && <p className="text-xs text-slate-500 line-clamp-1">{tool.tagline}</p>}
-                      </div>
-                    </div>
-                    <p className="mb-4 flex-1 text-sm text-slate-400 line-clamp-3">{tool.descriptionAr}</p>
-                    {tool.pros.length > 0 && (
-                      <ul className="mb-4 space-y-1">
-                        {tool.pros.slice(0, 2).map((p, pi) => (
-                          <li key={pi} className="flex items-center gap-1.5 text-xs text-emerald-400">
-                            <span>✓</span><span className="line-clamp-1">{p}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    <div className="flex items-center justify-between border-t border-white/5 pt-4">
-                      <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${PRICING_BADGE[tool.pricing] ?? PRICING_BADGE.freemium}`}>
-                        {PRICING_LABEL[tool.pricing] ?? "—"}
-                      </span>
-                      <span className="text-xs font-semibold text-violet-400 group-hover:text-violet-300">مراجعة مفصلة ←</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Internal links to other use cases */}
-          <section className="mt-16">
-            <div className="mb-5 flex items-center gap-3">
-              <h2 className="text-lg font-black text-white">أدوات AI لاحتياجات أخرى</h2>
-              <div className="h-px flex-1 bg-white/5" />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {otherUseCases.map(([key, meta]) => (
-                <Link
-                  key={key}
-                  href={`/ai-tools/for/${key}`}
-                  className="flex items-center gap-3 rounded-xl border border-white/6 bg-white/3 p-4 hover:border-violet-500/20 hover:bg-violet-500/5 transition"
-                >
-                  <span className="text-2xl">{meta.icon}</span>
-                  <span className="text-sm font-semibold text-slate-300">{meta.titleAr}</span>
+              {/* Compare CTA */}
+              <div className="mt-10 rounded-2xl border border-violet-500/20 bg-violet-500/8 p-6 text-center">
+                <h3 className="mb-2 font-black text-white">Not sure which to pick?</h3>
+                <p className="mb-4 text-sm text-slate-400">Use the comparison tool to make the right decision</p>
+                <Link href="/compare" className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-violet-500 transition">
+                  Compare tools
                 </Link>
-              ))}
+              </div>
             </div>
-          </section>
 
-          <div className="mt-10 border-t border-white/8 pt-8 text-center">
-            <Link href="/ai-tools" className="inline-flex items-center gap-2 rounded-2xl border border-violet-500/30 bg-violet-500/10 px-6 py-3 text-sm font-semibold text-violet-400 hover:bg-violet-500/20 transition">
-              عرض جميع أدوات الذكاء الاصطناعي ←
-            </Link>
+            {/* Sidebar */}
+            <aside className="space-y-5">
+              <div className="rounded-xl border border-white/6 bg-white/3 p-5">
+                <h3 className="mb-4 font-black text-white text-sm">Other categories</h3>
+                <div className="space-y-1">
+                  {TOOL_CATEGORIES.filter((c) => c.value !== usecase && c.value !== "other").map((cat) => {
+                    const cnt = otherCats.find((o) => o.toolCategory === cat.value)?._count?.id ?? 0;
+                    return (
+                      <Link
+                        key={cat.value}
+                        href={`/ai-tools/for/${cat.value}`}
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-400 transition hover:bg-white/5 hover:text-white"
+                      >
+                        <span>{cat.icon}</span>
+                        <span className="flex-1">{cat.labelAr}</span>
+                        {cnt > 0 && <span className="text-xs text-slate-600">{cnt}</span>}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-white/6 bg-white/3 p-5">
+                <h3 className="mb-3 font-black text-white text-sm">Useful links</h3>
+                <div className="space-y-1.5">
+                  {[
+                    { href: "/ai-tools", label: "All tools" },
+                    { href: "/compare", label: "Compare tools" },
+                    { href: "/guides", label: "Guides" },
+                  ].map((item) => (
+                    <Link key={item.href} href={item.href} className="block rounded-lg px-3 py-2 text-sm text-slate-400 transition hover:bg-white/5 hover:text-white">
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
       </main>

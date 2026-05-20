@@ -1,43 +1,70 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Pencil, Trash2, Loader2, Wrench, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Wrench, ExternalLink, Wand2, Star, CheckCircle } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 
 const inputCls = "w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#667eea] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#667eea]/20 transition";
 const labelCls = "mb-1.5 block text-sm font-semibold text-slate-700";
 
+const CATEGORIES = [
+  { value: "writing",           label: "Writing & Content" },
+  { value: "coding",            label: "Coding & Development" },
+  { value: "image",             label: "Image Generation" },
+  { value: "video",             label: "Video" },
+  { value: "voice",             label: "Voice & Music" },
+  { value: "marketing",         label: "Marketing" },
+  { value: "education",         label: "Education" },
+  { value: "startups",          label: "Startups" },
+  { value: "ecommerce",         label: "E-commerce" },
+  { value: "automation",        label: "Automation" },
+  { value: "customer-support",  label: "Customer Support" },
+  { value: "productivity",      label: "Productivity" },
+  { value: "legal",             label: "Legal" },
+  { value: "finance",           label: "Finance" },
+  { value: "healthcare",        label: "Healthcare" },
+  { value: "students",          label: "Students" },
+  { value: "no-code",           label: "No-Code" },
+  { value: "presentations",     label: "Presentations" },
+  { value: "other",             label: "Other" },
+];
+
 type Tool = {
-  id: string; name: string; slug: string; tagline: string | null; descriptionAr: string;
-  website: string | null; logoUrl: string | null; category: string; pricing: string;
-  pros: string[]; cons: string[]; useCases: string[]; published: boolean; viewCount: number;
+  id: string; name: string; slug: string; tagline: string | null;
+  descriptionAr: string; contentAr: string | null; website: string | null;
+  logoUrl: string | null; screenshots: string[]; toolCategory: string;
+  pricing: string; monthlyPrice: number | null; pricingDetails: string | null;
+  pros: string[]; cons: string[]; useCases: string[];
+  arabicSupport: boolean; hasApi: boolean; tags: string[];
+  seoTitle: string | null; seoDescription: string | null;
+  featured: boolean; editorPick: boolean; published: boolean;
+  viewCount: number; likes: number; sourceUrl: string | null;
 };
 
 type FormState = {
   name: string; slug: string; tagline: string; descriptionAr: string;
-  website: string; logoUrl: string; category: string; pricing: string;
-  pros: string; cons: string; useCases: string; published: boolean;
+  contentAr: string; website: string; logoUrl: string; screenshots: string;
+  toolCategory: string; pricing: string; monthlyPrice: string; pricingDetails: string;
+  pros: string; cons: string; useCases: string; tags: string;
+  arabicSupport: boolean; hasApi: boolean;
+  seoTitle: string; seoDescription: string;
+  featured: boolean; editorPick: boolean; published: boolean;
+  sourceUrl: string;
 };
 
 const empty: FormState = {
-  name: "", slug: "", tagline: "", descriptionAr: "", website: "", logoUrl: "",
-  category: "chatbot", pricing: "freemium", pros: "", cons: "", useCases: "", published: true,
+  name: "", slug: "", tagline: "", descriptionAr: "", contentAr: "",
+  website: "", logoUrl: "", screenshots: "", toolCategory: "other",
+  pricing: "freemium", monthlyPrice: "", pricingDetails: "",
+  pros: "", cons: "", useCases: "", tags: "",
+  arabicSupport: false, hasApi: false,
+  seoTitle: "", seoDescription: "",
+  featured: false, editorPick: false, published: true, sourceUrl: "",
 };
 
-const CATEGORIES = [
-  { value: "chatbot", label: "محادثة وكتابة" },
-  { value: "image", label: "توليد الصور" },
-  { value: "video", label: "توليد الفيديو" },
-  { value: "audio", label: "الصوت والموسيقى" },
-  { value: "code", label: "البرمجة" },
-  { value: "productivity", label: "الإنتاجية" },
-  { value: "other", label: "أخرى" },
-];
-
 function autoSlug(name: string) {
-  return name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 40);
+  return name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 50);
 }
-
 function splitLines(s: string): string[] {
   return s.split("\n").map((l) => l.trim()).filter(Boolean);
 }
@@ -52,13 +79,16 @@ export default function AdminAIToolsPage() {
   const [saving, setSaving] = React.useState(false);
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const [deleting, setDeleting] = React.useState(false);
+  const [generatingId, setGeneratingId] = React.useState<string | null>(null);
+  const [filterCat, setFilterCat] = React.useState("");
+  const [filterStatus, setFilterStatus] = React.useState("");
 
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/ai-tools");
       if (res.ok) setTools(await res.json());
-    } catch { toast("فشل التحميل", "error"); }
+    } catch { toast("Load failed", "error"); }
     finally { setLoading(false); }
   }, [toast]);
 
@@ -72,11 +102,19 @@ export default function AdminAIToolsPage() {
 
   function openEdit(t: Tool) {
     setForm({
-      name: t.name, slug: t.slug, tagline: t.tagline ?? "", descriptionAr: t.descriptionAr,
+      name: t.name, slug: t.slug, tagline: t.tagline ?? "",
+      descriptionAr: t.descriptionAr, contentAr: t.contentAr ?? "",
       website: t.website ?? "", logoUrl: t.logoUrl ?? "",
-      category: t.category, pricing: t.pricing,
-      pros: t.pros.join("\n"), cons: t.cons.join("\n"), useCases: t.useCases.join("\n"),
-      published: t.published,
+      screenshots: t.screenshots.join("\n"),
+      toolCategory: t.toolCategory, pricing: t.pricing,
+      monthlyPrice: t.monthlyPrice?.toString() ?? "",
+      pricingDetails: t.pricingDetails ?? "",
+      pros: t.pros.join("\n"), cons: t.cons.join("\n"),
+      useCases: t.useCases.join("\n"), tags: t.tags.join(", "),
+      arabicSupport: t.arabicSupport, hasApi: t.hasApi,
+      seoTitle: t.seoTitle ?? "", seoDescription: t.seoDescription ?? "",
+      featured: t.featured, editorPick: t.editorPick, published: t.published,
+      sourceUrl: t.sourceUrl ?? "",
     });
     setEditId(t.id);
     setShowForm(true);
@@ -84,7 +122,7 @@ export default function AdminAIToolsPage() {
 
   async function save() {
     if (!form.name || !form.slug || !form.descriptionAr) {
-      toast("الاسم والـ slug والوصف مطلوبة", "error"); return;
+      toast("Name, slug, and description are required", "error"); return;
     }
     setSaving(true);
     try {
@@ -97,12 +135,15 @@ export default function AdminAIToolsPage() {
           pros: splitLines(form.pros),
           cons: splitLines(form.cons),
           useCases: splitLines(form.useCases),
+          tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+          screenshots: splitLines(form.screenshots),
+          monthlyPrice: form.monthlyPrice ? Number(form.monthlyPrice) : null,
         }),
       });
-      if (!res.ok) { const e = await res.json(); toast(e.error ?? "فشل الحفظ", "error"); return; }
-      toast(editId ? "تم التحديث" : "تمت الإضافة");
+      if (!res.ok) { const e = await res.json(); toast(e.error ?? "Save failed", "error"); return; }
+      toast(editId ? "Updated" : "Created");
       setShowForm(false); load();
-    } catch { toast("فشل الحفظ", "error"); }
+    } catch { toast("Save failed", "error"); }
     finally { setSaving(false); }
   }
 
@@ -111,38 +152,90 @@ export default function AdminAIToolsPage() {
     setDeleting(true);
     try {
       await fetch(`/api/admin/ai-tools/${deleteId}`, { method: "DELETE" });
-      toast("تم الحذف"); setDeleteId(null); load();
-    } catch { toast("فشل الحذف", "error"); }
+      toast("Deleted"); setDeleteId(null); load();
+    } catch { toast("Delete failed", "error"); }
     finally { setDeleting(false); }
   }
 
+  async function regenerate(id: string) {
+    setGeneratingId(id);
+    try {
+      const res = await fetch(`/api/admin/ai-tools/${id}/regenerate`, { method: "POST" });
+      if (res.ok) { toast("AI content regenerated"); load(); }
+      else toast("Regeneration failed", "error");
+    } catch { toast("Regeneration failed", "error"); }
+    finally { setGeneratingId(null); }
+  }
+
+  async function togglePublished(t: Tool) {
+    await fetch(`/api/admin/ai-tools/${t.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...t, published: !t.published, monthlyPrice: t.monthlyPrice, tags: t.tags, screenshots: t.screenshots }),
+    });
+    load();
+  }
+
+  const filtered = tools.filter((t) => {
+    if (filterCat && t.toolCategory !== filterCat) return false;
+    if (filterStatus === "published" && !t.published) return false;
+    if (filterStatus === "draft" && t.published) return false;
+    return true;
+  });
+
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
+      {/* Header */}
       <div className="mb-8 flex flex-col gap-4 rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="mb-1 text-sm font-semibold text-[#667eea]">لوحة الإدارة</p>
-          <h1 className="text-3xl font-black text-slate-900">أدوات الذكاء الاصطناعي</h1>
-          <p className="mt-1 text-slate-500">{tools.length} أداة مسجّلة</p>
+          <p className="mb-1 text-sm font-semibold text-[#667eea]">Admin Panel</p>
+          <h1 className="text-3xl font-black text-slate-900">AI Tools Directory</h1>
+          <p className="mt-1 text-slate-500">{tools.length} tools — {tools.filter((t) => t.published).length} published</p>
         </div>
-        <div className="flex gap-3">
-          <a href="/admin" className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition">الرئيسية</a>
+        <div className="flex flex-wrap gap-3">
+          <a href="/admin" className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition">Dashboard</a>
           <a href="/ai-tools" target="_blank" rel="noopener" className="flex items-center gap-1.5 rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition">
-            <ExternalLink className="size-3.5" /> عرض
+            <ExternalLink className="size-3.5" /> View Site
           </a>
+          <button
+            onClick={async () => {
+              const res = await fetch("/api/cron/fetch-tools", { headers: { authorization: `Bearer ${process.env.NEXT_PUBLIC_CRON_SECRET ?? ""}` } });
+              const data = await res.json();
+              toast(`Ingested: ${data.created} created, ${data.duplicates} dupes, ${data.failed} failed`);
+              load();
+            }}
+            className="flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 transition"
+          >
+            <Wand2 className="size-4" /> Auto-Ingest
+          </button>
           <button onClick={openNew} className="flex items-center gap-2 rounded-2xl bg-[#667eea] px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a6fd6] transition">
-            <Plus className="size-4" /> أداة جديدة
+            <Plus className="size-4" /> Add Tool
           </button>
         </div>
       </div>
 
+      {/* Filters */}
+      <div className="mb-6 flex flex-wrap gap-3">
+        <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:outline-none">
+          <option value="">All Categories</option>
+          {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+        </select>
+        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:outline-none">
+          <option value="">All Status</option>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
+        </select>
+        <span className="flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 shadow-sm">{filtered.length} results</span>
+      </div>
+
       {loading ? (
         <div className="flex justify-center py-32"><Loader2 className="size-8 animate-spin text-[#667eea]" /></div>
-      ) : tools.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-[2rem] bg-white py-24 shadow-lg shadow-slate-200/60">
           <Wrench className="size-12 text-slate-300 mb-4" />
-          <p className="text-lg font-semibold text-slate-700">لا توجد أدوات بعد</p>
+          <p className="text-lg font-semibold text-slate-700">No tools yet</p>
           <button onClick={openNew} className="mt-6 flex items-center gap-2 rounded-2xl bg-[#667eea] px-5 py-2.5 text-sm font-semibold text-white">
-            <Plus className="size-4" /> أضف أداة
+            <Plus className="size-4" /> Add Tool
           </button>
         </div>
       ) : (
@@ -150,32 +243,59 @@ export default function AdminAIToolsPage() {
           <table className="w-full text-sm">
             <thead className="border-b border-slate-100 bg-slate-50">
               <tr>
-                <th className="px-5 py-3 text-right font-semibold text-slate-600">الأداة</th>
-                <th className="px-5 py-3 text-right font-semibold text-slate-600 hidden md:table-cell">التصنيف</th>
-                <th className="px-5 py-3 text-right font-semibold text-slate-600 hidden md:table-cell">السعر</th>
-                <th className="px-5 py-3 text-right font-semibold text-slate-600">الحالة</th>
+                <th className="px-5 py-3 text-right font-semibold text-slate-600">Tool</th>
+                <th className="px-5 py-3 text-right font-semibold text-slate-600 hidden lg:table-cell">Category</th>
+                <th className="px-5 py-3 text-right font-semibold text-slate-600 hidden md:table-cell">Pricing</th>
+                <th className="px-5 py-3 text-right font-semibold text-slate-600 hidden md:table-cell">Stats</th>
+                <th className="px-5 py-3 text-right font-semibold text-slate-600">Status</th>
                 <th className="px-5 py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {tools.map((t) => (
+              {filtered.map((t) => (
                 <tr key={t.id} className="hover:bg-slate-50 transition">
                   <td className="px-5 py-4">
-                    <p className="font-semibold text-slate-900">{t.name}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{t.slug}</p>
+                    <div className="flex items-center gap-2">
+                      {t.logoUrl && <img src={t.logoUrl} alt={t.name} className="h-7 w-7 rounded-lg object-cover border border-slate-100" />}
+                      <div>
+                        <p className="font-semibold text-slate-900 flex items-center gap-1.5">
+                          {t.name}
+                          {t.editorPick && <Star className="size-3 text-amber-400 fill-amber-400" />}
+                          {t.featured && <span className="text-[10px] font-bold text-violet-600 bg-violet-100 px-1.5 rounded">featured</span>}
+                        </p>
+                        <p className="text-xs text-slate-400">{t.slug}</p>
+                      </div>
+                    </div>
                   </td>
-                  <td className="px-5 py-4 hidden md:table-cell text-slate-600">{t.category}</td>
-                  <td className="px-5 py-4 hidden md:table-cell text-slate-600">{t.pricing}</td>
-                  <td className="px-5 py-4">
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${t.published ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                      {t.published ? "منشور" : "مسودة"}
+                  <td className="px-5 py-4 hidden lg:table-cell text-slate-600 text-xs">{t.toolCategory}</td>
+                  <td className="px-5 py-4 hidden md:table-cell">
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${t.pricing === "free" ? "bg-emerald-100 text-emerald-700" : t.pricing === "paid" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
+                      {t.pricing}{t.monthlyPrice ? ` $${t.monthlyPrice}` : ""}
                     </span>
                   </td>
+                  <td className="px-5 py-4 hidden md:table-cell text-xs text-slate-500">
+                    👁 {t.viewCount} · ♥ {t.likes}
+                    {t.arabicSupport && <span className="ml-1 text-teal-600">عربي</span>}
+                    {t.hasApi && <span className="ml-1 text-blue-600">API</span>}
+                  </td>
                   <td className="px-5 py-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <a href={`/ai-tools/${t.slug}`} target="_blank" rel="noopener" className="rounded-lg bg-slate-100 p-2 text-slate-500 hover:text-[#667eea] transition"><ExternalLink className="size-4" /></a>
-                      <button onClick={() => openEdit(t)} className="rounded-lg bg-slate-100 p-2 text-slate-500 hover:text-[#667eea] transition"><Pencil className="size-4" /></button>
-                      <button onClick={() => setDeleteId(t.id)} className="rounded-lg bg-slate-100 p-2 text-slate-500 hover:text-red-600 transition"><Trash2 className="size-4" /></button>
+                    <button onClick={() => togglePublished(t)} className={`rounded-full px-2.5 py-0.5 text-xs font-bold transition ${t.published ? "bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-700" : "bg-amber-100 text-amber-700 hover:bg-emerald-100 hover:text-emerald-700"}`}>
+                      {t.published ? "Published" : "Draft"}
+                    </button>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <a href={`/ai-tools/${t.slug}`} target="_blank" rel="noopener" className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-[#667eea] transition"><ExternalLink className="size-3.5" /></a>
+                      <button
+                        onClick={() => regenerate(t.id)}
+                        disabled={generatingId === t.id}
+                        title="Regenerate AI content"
+                        className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-emerald-600 disabled:opacity-40 transition"
+                      >
+                        {generatingId === t.id ? <Loader2 className="size-3.5 animate-spin" /> : <Wand2 className="size-3.5" />}
+                      </button>
+                      <button onClick={() => openEdit(t)} className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-[#667eea] transition"><Pencil className="size-3.5" /></button>
+                      <button onClick={() => setDeleteId(t.id)} className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-red-600 transition"><Trash2 className="size-3.5" /></button>
                     </div>
                   </td>
                 </tr>
@@ -185,14 +305,17 @@ export default function AdminAIToolsPage() {
         </div>
       )}
 
+      {/* Form modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 backdrop-blur-sm p-4 pt-10" dir="rtl">
-          <div className="w-full max-w-2xl rounded-[2rem] bg-white p-8 shadow-2xl mb-10">
-            <h2 className="mb-6 text-xl font-black text-slate-900">{editId ? "تعديل الأداة" : "أداة جديدة"}</h2>
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 backdrop-blur-sm p-4 pt-8" dir="rtl">
+          <div className="w-full max-w-3xl rounded-[2rem] bg-white p-8 shadow-2xl mb-10">
+            <h2 className="mb-6 text-xl font-black text-slate-900">{editId ? "Edit Tool" : "Add Tool"}</h2>
+
             <div className="space-y-4">
+              {/* Row 1: name + slug */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls}>الاسم *</label>
+                  <label className={labelCls}>Name *</label>
                   <input value={form.name} onChange={(e) => { set("name", e.target.value); if (!editId) set("slug", autoSlug(e.target.value)); }} className={inputCls} placeholder="ChatGPT" />
                 </div>
                 <div>
@@ -200,81 +323,147 @@ export default function AdminAIToolsPage() {
                   <input value={form.slug} onChange={(e) => set("slug", e.target.value)} className={inputCls} dir="ltr" placeholder="chatgpt" />
                 </div>
               </div>
+
               <div>
-                <label className={labelCls}>شعار قصير (tagline)</label>
-                <input value={form.tagline} onChange={(e) => set("tagline", e.target.value)} className={inputCls} placeholder="أذكى مساعد AI للكتابة والبحث" />
+                <label className={labelCls}>Tagline</label>
+                <input value={form.tagline} onChange={(e) => set("tagline", e.target.value)} className={inputCls} placeholder="World's most popular AI assistant" />
               </div>
+
               <div>
-                <label className={labelCls}>الوصف بالعربية *</label>
-                <textarea rows={4} value={form.descriptionAr} onChange={(e) => set("descriptionAr", e.target.value)} className={inputCls} placeholder="وصف شامل للأداة..." />
+                <label className={labelCls}>Short Arabic Description *</label>
+                <textarea rows={3} value={form.descriptionAr} onChange={(e) => set("descriptionAr", e.target.value)} className={inputCls} />
               </div>
+
+              <div>
+                <label className={labelCls}>Full Arabic Review (contentAr)</label>
+                <textarea rows={6} value={form.contentAr} onChange={(e) => set("contentAr", e.target.value)} className={inputCls} placeholder="Long-form Arabic review..." />
+              </div>
+
+              {/* Row: website + logo */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls}>رابط الموقع</label>
-                  <input value={form.website} onChange={(e) => set("website", e.target.value)} className={inputCls} dir="ltr" placeholder="https://chat.openai.com" />
+                  <label className={labelCls}>Website</label>
+                  <input value={form.website} onChange={(e) => set("website", e.target.value)} className={inputCls} dir="ltr" placeholder="https://..." />
                 </div>
                 <div>
-                  <label className={labelCls}>رابط الشعار</label>
+                  <label className={labelCls}>Logo URL</label>
                   <input value={form.logoUrl} onChange={(e) => set("logoUrl", e.target.value)} className={inputCls} dir="ltr" placeholder="https://..." />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              <div>
+                <label className={labelCls}>Screenshots (one URL per line)</label>
+                <textarea rows={3} value={form.screenshots} onChange={(e) => set("screenshots", e.target.value)} className={inputCls} dir="ltr" placeholder="https://example.com/screen1.jpg" />
+              </div>
+
+              {/* Row: category + pricing + price */}
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className={labelCls}>الفئة</label>
-                  <select value={form.category} onChange={(e) => set("category", e.target.value)} className={inputCls}>
+                  <label className={labelCls}>Category</label>
+                  <select value={form.toolCategory} onChange={(e) => set("toolCategory", e.target.value)} className={inputCls}>
                     {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>التسعير</label>
+                  <label className={labelCls}>Pricing</label>
                   <select value={form.pricing} onChange={(e) => set("pricing", e.target.value)} className={inputCls}>
-                    <option value="free">مجاني</option>
-                    <option value="freemium">مجاني + مدفوع</option>
-                    <option value="paid">مدفوع</option>
+                    <option value="free">Free</option>
+                    <option value="freemium">Freemium</option>
+                    <option value="paid">Paid</option>
                   </select>
                 </div>
-              </div>
-              <div>
-                <label className={labelCls}>المميزات (سطر لكل ميزة)</label>
-                <textarea rows={3} value={form.pros} onChange={(e) => set("pros", e.target.value)} className={inputCls} placeholder={"واجهة سهلة الاستخدام\nيدعم العربية\nمجاني للاستخدام الأساسي"} />
-              </div>
-              <div>
-                <label className={labelCls}>العيوب (سطر لكل عيب)</label>
-                <textarea rows={3} value={form.cons} onChange={(e) => set("cons", e.target.value)} className={inputCls} placeholder={"الخطة المجانية محدودة\nيحتاج اتصال بالإنترنت"} />
-              </div>
-              <div>
-                <label className={labelCls}>حالات الاستخدام (سطر لكل حالة)</label>
-                <textarea rows={3} value={form.useCases} onChange={(e) => set("useCases", e.target.value)} className={inputCls} placeholder={"كتابة المقالات والتقارير\nالترجمة والتلخيص"} />
-              </div>
-              <label className="flex cursor-pointer items-center gap-3 select-none">
-                <div className="relative">
-                  <input type="checkbox" className="sr-only" checked={form.published} onChange={(e) => set("published", e.target.checked)} />
-                  <div className={`h-6 w-11 rounded-full transition-colors ${form.published ? "bg-[#667eea]" : "bg-slate-200"}`} />
-                  <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.published ? "-translate-x-5" : "-translate-x-0.5"}`} />
+                <div>
+                  <label className={labelCls}>Monthly Price ($)</label>
+                  <input value={form.monthlyPrice} onChange={(e) => set("monthlyPrice", e.target.value)} className={inputCls} dir="ltr" type="number" placeholder="20" />
                 </div>
-                <span className="text-sm font-semibold text-slate-700">{form.published ? "منشور" : "مسودة"}</span>
-              </label>
+              </div>
+
+              <div>
+                <label className={labelCls}>Pricing Details (markdown)</label>
+                <textarea rows={3} value={form.pricingDetails} onChange={(e) => set("pricingDetails", e.target.value)} className={inputCls} placeholder="Free: 10 requests/day&#10;Pro $20/mo: unlimited" />
+              </div>
+
+              {/* Pros / Cons / Use Cases */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Pros (one per line)</label>
+                  <textarea rows={4} value={form.pros} onChange={(e) => set("pros", e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Cons (one per line)</label>
+                  <textarea rows={4} value={form.cons} onChange={(e) => set("cons", e.target.value)} className={inputCls} />
+                </div>
+              </div>
+
+              <div>
+                <label className={labelCls}>Use Cases (one per line)</label>
+                <textarea rows={3} value={form.useCases} onChange={(e) => set("useCases", e.target.value)} className={inputCls} />
+              </div>
+
+              <div>
+                <label className={labelCls}>Tags (comma-separated)</label>
+                <input value={form.tags} onChange={(e) => set("tags", e.target.value)} className={inputCls} placeholder="chatbot, writing, gpt" />
+              </div>
+
+              {/* SEO */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>SEO Title</label>
+                  <input value={form.seoTitle} onChange={(e) => set("seoTitle", e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Source URL</label>
+                  <input value={form.sourceUrl} onChange={(e) => set("sourceUrl", e.target.value)} className={inputCls} dir="ltr" placeholder="https://producthunt.com/..." />
+                </div>
+              </div>
+
+              <div>
+                <label className={labelCls}>SEO Description</label>
+                <textarea rows={2} value={form.seoDescription} onChange={(e) => set("seoDescription", e.target.value)} className={inputCls} />
+              </div>
+
+              {/* Toggles */}
+              <div className="flex flex-wrap gap-6">
+                {([
+                  ["arabicSupport", "Arabic Support"],
+                  ["hasApi", "Has API"],
+                  ["featured", "Featured"],
+                  ["editorPick", "Editor Pick"],
+                  ["published", "Published"],
+                ] as const).map(([key, label]) => (
+                  <label key={key} className="flex cursor-pointer items-center gap-2.5 select-none">
+                    <div className="relative">
+                      <input type="checkbox" className="sr-only" checked={!!form[key]} onChange={(e) => set(key, e.target.checked)} />
+                      <div className={`h-5 w-10 rounded-full transition-colors ${form[key] ? "bg-[#667eea]" : "bg-slate-200"}`} />
+                      <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${form[key] ? "-translate-x-5" : "-translate-x-0.5"}`} />
+                    </div>
+                    <span className="text-sm font-semibold text-slate-700">{label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
+
             <div className="mt-8 flex justify-end gap-3">
-              <button onClick={() => setShowForm(false)} className="rounded-2xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200">إلغاء</button>
+              <button onClick={() => setShowForm(false)} className="rounded-2xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200">Cancel</button>
               <button onClick={save} disabled={saving} className="flex items-center gap-2 rounded-2xl bg-[#667eea] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#5a6fd6] disabled:opacity-60">
                 {saving && <Loader2 className="size-4 animate-spin" />}
-                {editId ? "حفظ" : "إضافة"}
+                {editId ? "Save" : "Create"}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Delete confirm */}
       {deleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" dir="rtl">
           <div className="w-full max-w-md rounded-[2rem] bg-white p-8 shadow-2xl">
-            <h2 className="text-xl font-black text-slate-900">تأكيد الحذف</h2>
-            <p className="mt-3 text-slate-600">سيتم حذف هذه الأداة نهائياً.</p>
+            <h2 className="text-xl font-black text-slate-900">Confirm Delete</h2>
+            <p className="mt-3 text-slate-600">This tool will be permanently deleted.</p>
             <div className="mt-6 flex justify-end gap-3">
-              <button onClick={() => setDeleteId(null)} disabled={deleting} className="rounded-2xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-700">إلغاء</button>
+              <button onClick={() => setDeleteId(null)} disabled={deleting} className="rounded-2xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-700">Cancel</button>
               <button onClick={del} disabled={deleting} className="flex items-center gap-2 rounded-2xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white">
-                {deleting && <Loader2 className="size-4 animate-spin" />} حذف
+                {deleting && <Loader2 className="size-4 animate-spin" />} Delete
               </button>
             </div>
           </div>

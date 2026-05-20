@@ -58,14 +58,16 @@ export default async function ComparisonPage({
   const [toolA, toolB] = comp.sides;
   const compUrl = absoluteUrl(`/compare/${slug}`);
   const breadcrumbItems = [
-    { name: "الرئيسية", href: "/" },
-    { name: "المقارنات", href: "/compare" },
+    { name: "Home", href: "/" },
+    { name: "Compare", href: "/compare" },
     { name: comp.title },
   ];
 
   const criteria = Array.isArray(comp.criteria)
     ? (comp.criteria as { name: string; scoreA?: number; scoreB?: number }[])
     : [];
+
+  const PRICING_LABELS: Record<string, string> = { free: "Free", freemium: "Free + Paid", paid: "Paid" };
 
   const articleJsonLd = {
     "@context": "https://schema.org",
@@ -131,6 +133,89 @@ export default async function ComparisonPage({
                     >
                       زيارة {side.tool.name} ↗
                     </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Pricing comparison */}
+        {toolA && toolB && (
+          <section className="mb-10">
+            <h2 className="mb-4 text-xl font-black text-white">Pricing Comparison</h2>
+            <div className="overflow-x-auto rounded-xl border border-white/8">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/8 bg-white/3">
+                    <th className="p-4 text-right font-bold text-slate-300">Feature</th>
+                    <th className="p-4 text-center font-bold text-slate-300">{toolA.tool.name}</th>
+                    <th className="p-4 text-center font-bold text-slate-300">{toolB.tool.name}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 text-slate-400">Pricing Model</td>
+                    <td className="p-4 text-center font-medium text-slate-300">{PRICING_LABELS[toolA.tool.pricing] ?? toolA.tool.pricing}</td>
+                    <td className="p-4 text-center font-medium text-slate-300">{PRICING_LABELS[toolB.tool.pricing] ?? toolB.tool.pricing}</td>
+                  </tr>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 text-slate-400">Starting Price</td>
+                    <td className="p-4 text-center text-slate-300">{toolA.tool.pricing === "free" ? "Free" : toolA.tool.monthlyPrice ? `$${toolA.tool.monthlyPrice}/mo` : "—"}</td>
+                    <td className="p-4 text-center text-slate-300">{toolB.tool.pricing === "free" ? "Free" : toolB.tool.monthlyPrice ? `$${toolB.tool.monthlyPrice}/mo` : "—"}</td>
+                  </tr>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 text-slate-400">Arabic Support</td>
+                    <td className="p-4 text-center">{toolA.tool.arabicSupport ? <span className="text-teal-400">Yes</span> : <span className="text-slate-600">No</span>}</td>
+                    <td className="p-4 text-center">{toolB.tool.arabicSupport ? <span className="text-teal-400">Yes</span> : <span className="text-slate-600">No</span>}</td>
+                  </tr>
+                  <tr className="border-b border-white/5">
+                    <td className="p-4 text-slate-400">API Available</td>
+                    <td className="p-4 text-center">{toolA.tool.hasApi ? <span className="text-blue-400">Yes</span> : <span className="text-slate-600">No</span>}</td>
+                    <td className="p-4 text-center">{toolB.tool.hasApi ? <span className="text-blue-400">Yes</span> : <span className="text-slate-600">No</span>}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {/* Strengths & Weaknesses */}
+        {(toolA?.strengths?.length || toolA?.weaknesses?.length || toolB?.strengths?.length || toolB?.weaknesses?.length) && (
+          <section className="mb-10">
+            <h2 className="mb-4 text-xl font-black text-white">Strengths & Weaknesses</h2>
+            <div className="grid gap-4 md:grid-cols-2">
+              {[toolA, toolB].filter(Boolean).map((side) => side && (
+                <div key={side.id} className="rounded-xl border border-white/8 bg-white/3 p-5">
+                  <h3 className="mb-4 font-bold text-slate-200">{side.tool.name}</h3>
+                  {side.strengths && side.strengths.length > 0 && (
+                    <div className="mb-3">
+                      <p className="mb-2 text-xs font-semibold text-emerald-400">Strengths</p>
+                      <ul className="space-y-1.5">
+                        {side.strengths.map((s, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-emerald-300">
+                            <span className="mt-0.5 shrink-0 text-emerald-500">+</span>{s}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {side.weaknesses && side.weaknesses.length > 0 && (
+                    <div>
+                      <p className="mb-2 text-xs font-semibold text-red-400">Weaknesses</p>
+                      <ul className="space-y-1.5">
+                        {side.weaknesses.map((w, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-red-300">
+                            <span className="mt-0.5 shrink-0 text-red-500">-</span>{w}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {side.bestFor && (
+                    <div className="mt-3 rounded-lg border border-violet-500/20 bg-violet-500/8 px-3 py-2 text-xs text-violet-300">
+                      <span className="font-semibold">Best for:</span> {side.bestFor}
+                    </div>
                   )}
                 </div>
               ))}

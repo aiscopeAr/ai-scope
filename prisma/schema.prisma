@@ -271,22 +271,46 @@ model AITool {
   slug            String   @unique
   tagline         String?
   descriptionAr   String   @db.Text
+  contentAr       String?  @db.Text   // Long-form Arabic review (800+ words)
   website         String?
   logoUrl         String?
-  category        String   // "chatbot" | "image" | "video" | "audio" | "code" | "productivity" | "other"
+  screenshots     String[]             // Array of image URLs
+  toolCategory    String   @default("other") // 18-category taxonomy (see TOOL_CATEGORIES)
+  category        String   @default("other") // Legacy field kept for compat
   pricing         String   @default("freemium") // "free" | "freemium" | "paid"
-  pros            String[] // Arabic bullet points
+  monthlyPrice    Float?               // Starting price in USD
+  pricingDetails  String?  @db.Text   // Markdown pricing tiers
+  pros            String[]
   cons            String[]
   useCases        String[]
+  arabicSupport   Boolean  @default(false)
+  hasApi          Boolean  @default(false)
+  tags            String[]
+  faq             Json?                // [{question, answer}]
+  seoTitle        String?
+  seoDescription  String?
+  imageAlt        String?
+  relatedTopics   String[]
+  featured        Boolean  @default(false)
+  editorPick      Boolean  @default(false)
   featuredAt      DateTime?
   published       Boolean  @default(true)
   viewCount       Int      @default(0)
+  likes           Int      @default(0)
+  releaseDate     DateTime?
+  lastUpdated     DateTime?
+  sourceUrl       String?              // Original listing URL (Product Hunt, Futurepedia, etc.)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   comparisons     ComparisonSide[]
 
+  @@index([toolCategory, published])
   @@index([category, published])
   @@index([slug])
+  @@index([published, viewCount])
+  @@index([published, likes])
+  @@index([featured, published])
+  @@index([editorPick, published])
 }
 
 model Company {
@@ -356,8 +380,22 @@ model ComparisonSide {
   tool         AITool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
   score        Int?       // 0–100 overall score
   notes        String?    @db.Text
+  strengths    String[]
+  weaknesses   String[]
+  bestFor      String?
 
   @@unique([comparisonId, toolId])
   @@index([comparisonId])
   @@index([toolId])
+}
+
+// Tracks tool view/like events for analytics
+model ToolEvent {
+  id        String   @id @default(cuid())
+  toolId    String
+  type      String   // "view" | "like" | "click"
+  createdAt DateTime @default(now())
+
+  @@index([toolId, type])
+  @@index([createdAt])
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { processArticleWithAI } from "@/lib/openai";
 import { markProcessing, markProcessed, markFailed } from "@/lib/queue";
+import { isAiRelated } from "@/lib/classifier";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -49,9 +50,28 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, staleReset: staleReset.count, skipped: item.id });
   }
 
+  // Layer 1 — fast keyword classifier (no OpenAI cost)
+  if (!isAiRelated(item.rawTitle ?? "", item.rawContent)) {
+    await prisma.articleQueue.update({
+      where: { id: item.id },
+      data: { status: "rejected", failureReason: "Not AI-related content" },
+    });
+    return NextResponse.json({ ok: true, staleReset: staleReset.count, rejected: item.id, reason: "Not AI-related" });
+  }
+
   try {
     await markProcessing(item.id);
     const processed = await processArticleWithAI(item.rawTitle ?? "Untitled", item.rawContent);
+
+    // Layer 2 — AI model's own judgment (catches edge cases that sneak past keywords)
+    if (!processed.isAiRelated) {
+      await prisma.articleQueue.update({
+        where: { id: item.id },
+        data: { status: "rejected", failureReason: "Rejected by AI classifier: not AI-related" },
+      });
+      return NextResponse.json({ ok: true, staleReset: staleReset.count, rejected: item.id, reason: "AI classifier: not AI-related" });
+    }
+
     await markProcessed(item.id, processed);
     return NextResponse.json({ ok: true, staleReset: staleReset.count, processed: item.id, title: processed.titleAr });
   } catch (err) {

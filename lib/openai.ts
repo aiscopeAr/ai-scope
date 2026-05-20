@@ -30,6 +30,7 @@ export type AiProcessedArticle = {
   keywords: string[];
   imageAlt: string;
   relatedTopics: string[];
+  isAiRelated: boolean;
 };
 
 const SYSTEM_PROMPT = `أنت صحفي ومحرر متخصص في أخبار الذكاء الاصطناعي والتقنية، تكتب لموقع إخباري عربي متميز. أسلوبك صحفي احترافي، تصيغ الأخبار بطريقة مستقلة وأصيلة للقارئ العربي — لا تترجم حرفياً بل تُعيد الكتابة والصياغة بأسلوبك الخاص مع الحفاظ على دقة المعلومات. أنت تعيد المحتوى بتنسيق JSON فقط، بدون أي نص خارج JSON.`;
@@ -51,6 +52,7 @@ ${content.slice(0, 6000)}
   "tags": ["وسم1", "وسم2", "وسم3", "وسم4", "وسم5"],
   "seoTitle": "عنوان SEO بالعربية (50-60 حرف)",
   "seoDescription": "وصف SEO جذاب بالعربية (150-160 حرف)",
+  "isAiRelated": true,
   "suggestedCategory": "أحد هذه التصنيفات فقط: ai-models | research | companies | tools | policy",
   "slug": "english-slug-from-title-max-6-words",
   "featuredImagePrompt": "English prompt for image generation (20 words max)",
@@ -112,5 +114,6 @@ export async function processArticleWithAI(
     keywords: Array.isArray(parsed.keywords) ? parsed.keywords.slice(0, 10) : [],
     imageAlt: parsed.imageAlt ?? parsed.titleAr ?? title,
     relatedTopics: Array.isArray(parsed.relatedTopics) ? parsed.relatedTopics.slice(0, 5) : [],
+    isAiRelated: parsed.isAiRelated !== false,
   };
 }
