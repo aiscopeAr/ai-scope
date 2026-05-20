@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import NewsCard from "@/components/NewsCard";
+import LiveFeed from "@/components/LiveFeed";
 import { prisma } from "@/lib/db";
 import { mockArticles } from "@/lib/mock-data";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
@@ -136,31 +137,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Category filter tabs */}
-      {categories.length > 0 && (
-        <div className="sticky top-16 z-30 border-b border-white/5 bg-[#09090b]/90 backdrop-blur-sm" dir="rtl">
-          <div className="container mx-auto flex gap-1 overflow-x-auto px-4 py-2 scrollbar-none">
-            <Link
-              href="/"
-              className="flex shrink-0 items-center gap-1.5 rounded-full border border-violet-500/40 bg-violet-500/10 px-4 py-1.5 text-xs font-semibold text-violet-300 transition"
-            >
-              الكل
-            </Link>
-            {categories.map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/category/${cat.slug}`}
-                className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/8 bg-white/4 px-4 py-1.5 text-xs font-medium text-slate-400 transition hover:border-violet-500/30 hover:text-white"
-              >
-                {cat.nameAr}
-                <span className="rounded-full bg-white/8 px-1.5 py-0.5 text-[10px] text-slate-600">
-                  {cat._count.articles}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* LiveFeed renders category tabs + filtered grid client-side */}
 
       <AdSlot position="homepage-top" className="container mx-auto px-4 pt-4" />
 
@@ -212,44 +189,29 @@ export default async function HomePage() {
         {(grid.length > 0 || mostRead.length > 0) && (
           <div className="grid gap-10 lg:grid-cols-[1fr_300px]">
 
-            {/* Article grid */}
+            {/* Article grid — LiveFeed handles tabs + filtering + live timestamps */}
             <div>
-              {grid.length > 0 && (
-                <>
-                  <div className="mb-6 flex items-center gap-4">
-                    <div className="h-px flex-1 bg-white/5" />
-                    <div className="flex items-center gap-2 rounded-full border border-white/8 bg-white/3 px-4 py-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
-                      <span className="text-xs font-semibold text-slate-500">أحدث الأخبار</span>
-                    </div>
-                    <div className="h-px flex-1 bg-white/5" />
-                  </div>
-                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-                    {grid.map((article, i) => (
-                      <div key={article.slug} className="animate-fade-up" style={{ animationDelay: `${0.05 * i}s` }}>
-                        <NewsCard article={article} />
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {secondary.length > 0 && (
-                <>
-                  <div className="my-8 flex items-center gap-4">
-                    <div className="h-px flex-1 bg-white/5" />
-                    <span className="text-xs font-semibold text-slate-600">المزيد من الأخبار</span>
-                    <div className="h-px flex-1 bg-white/5" />
-                  </div>
-                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {secondary.map((article, i) => (
-                      <div key={article.slug} className="animate-fade-up" style={{ animationDelay: `${0.05 * i}s` }}>
-                        <NewsCard article={article} />
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
+              <div className="mb-6 flex items-center gap-4">
+                <div className="h-px flex-1 bg-white/5" />
+                <div className="flex items-center gap-2 rounded-full border border-white/8 bg-white/3 px-4 py-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse" />
+                  <span className="text-xs font-semibold text-slate-500">أحدث الأخبار</span>
+                </div>
+                <div className="h-px flex-1 bg-white/5" />
+              </div>
+              <LiveFeed
+                initialArticles={[...grid, ...secondary].map((a) => ({
+                  ...a,
+                  viewCount: (a as { viewCount?: number }).viewCount ?? 0,
+                  publishedAt: a.publishedAt ? a.publishedAt.toISOString() : null,
+                }))}
+                categories={categories}
+                featured={featured ? {
+                  ...featured,
+                  viewCount: (featured as { viewCount?: number }).viewCount ?? 0,
+                  publishedAt: featured.publishedAt ? featured.publishedAt.toISOString() : null,
+                } : null}
+              />
             </div>
 
             {/* Sidebar */}

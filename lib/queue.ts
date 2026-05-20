@@ -147,7 +147,44 @@ export async function approveQueueItem(
     data: { status: "approved", approvedAt: new Date() },
   });
 
+  // Auto-draft social posts for all enabled accounts
+  if (overrides.published) {
+    try {
+      const accounts = await prisma.socialAccount.findMany({ where: { enabled: true } });
+      if (accounts.length > 0) {
+        const titleAr = item.titleAr ?? overrides.title;
+        const summaryAr = (item.summaryAr ?? "").slice(0, 200);
+        const articleUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://ai-news-ar.vercel.app"}/news/${overrides.slug}`;
+
+        await prisma.socialPost.createMany({
+          data: accounts.map((acc) => ({
+            articleId: article.id,
+            accountId: acc.id,
+            platform: acc.platform,
+            caption: buildCaption(acc.platform, titleAr, summaryAr, articleUrl),
+            status: "pending",
+          })),
+        });
+      }
+    } catch {
+      // social drafting is best-effort — don't fail article approval
+    }
+  }
+
   return article.id;
+}
+
+function buildCaption(platform: string, title: string, summary: string, url: string): string {
+  if (platform === "twitter") {
+    // Twitter: 280 chars max — title + url
+    const base = `${title}\n\n${url}\n\n#ذكاء_اصطناعي #AI`;
+    return base.slice(0, 280);
+  }
+  if (platform === "telegram") {
+    return `📰 *${title}*\n\n${summary}\n\n🔗 ${url}`;
+  }
+  // Default: Facebook, Instagram, etc.
+  return `${title}\n\n${summary}\n\n${url}\n\n#ذكاء_اصطناعي #AI #أخبار`;
 }
 
 /** Reject: mark rejected, content stays in queue for auditing. */

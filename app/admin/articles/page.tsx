@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Plus, Search, Pencil, Trash2, ChevronUp, ChevronDown, ChevronsUpDown, Loader2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ChevronUp, ChevronDown, ChevronsUpDown, Loader2, CheckSquare, Square, Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -32,6 +32,8 @@ export default function AdminArticlesPage() {
   const [page, setPage] = React.useState(1);
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const [deleting, setDeleting] = React.useState(false);
+  const [selected, setSelected] = React.useState<Set<string>>(new Set());
+  const [bulkActing, setBulkActing] = React.useState(false);
 
   const limit = 20;
 
@@ -63,6 +65,8 @@ export default function AdminArticlesPage() {
     return () => clearTimeout(t);
   }, [fetchArticles, search]);
 
+  React.useEffect(() => { setSelected(new Set()); }, [status, page, search]);
+
   function handleSort(field: SortField) {
     if (sortBy === field) {
       setSortOrder((o) => (o === "asc" ? "desc" : "asc"));
@@ -90,6 +94,48 @@ export default function AdminArticlesPage() {
   }
 
   const totalPages = Math.ceil(total / limit);
+  const allSelected = articles.length > 0 && articles.every((a) => selected.has(a.id));
+
+  function toggleSelectAll() {
+    setSelected(allSelected ? new Set() : new Set(articles.map((a) => a.id)));
+  }
+  function toggleOne(id: string) {
+    setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  }
+
+  async function bulkPublish(publish: boolean) {
+    if (!selected.size) return;
+    setBulkActing(true);
+    try {
+      const res = await fetch("/api/admin/articles/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: publish ? "publish" : "unpublish", ids: [...selected] }),
+      });
+      if (!res.ok) throw new Error();
+      toast(`تم ${publish ? "نشر" : "إلغاء نشر"} ${selected.size} مقال`);
+      setSelected(new Set());
+      fetchArticles();
+    } catch { toast("فشل الإجراء", "error"); }
+    finally { setBulkActing(false); }
+  }
+
+  async function bulkDelete() {
+    if (!selected.size) return;
+    setBulkActing(true);
+    try {
+      const res = await fetch("/api/admin/articles/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", ids: [...selected] }),
+      });
+      if (!res.ok) throw new Error();
+      toast(`تم حذف ${selected.size} مقال`);
+      setSelected(new Set());
+      fetchArticles();
+    } catch { toast("فشل الحذف", "error"); }
+    finally { setBulkActing(false); }
+  }
 
   return (
     <div className="container mx-auto px-4 py-8" dir="rtl">
@@ -136,6 +182,26 @@ export default function AdminArticlesPage() {
         </select>
       </div>
 
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border-2 border-[#667eea]/30 bg-[#667eea]/5 px-5 py-3">
+          <span className="flex-1 text-sm font-semibold text-[#667eea]">تم تحديد {selected.size} مقال</span>
+          <button onClick={() => bulkPublish(true)} disabled={bulkActing}
+            className="flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50">
+            {bulkActing ? <Loader2 className="size-4 animate-spin" /> : <Eye className="size-4" />} نشر
+          </button>
+          <button onClick={() => bulkPublish(false)} disabled={bulkActing}
+            className="flex items-center gap-1.5 rounded-xl bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-50">
+            {bulkActing ? <Loader2 className="size-4 animate-spin" /> : <EyeOff className="size-4" />} إلغاء النشر
+          </button>
+          <button onClick={bulkDelete} disabled={bulkActing}
+            className="flex items-center gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50">
+            {bulkActing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />} حذف
+          </button>
+          <button onClick={() => setSelected(new Set())} className="rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-500 hover:bg-slate-200">إلغاء</button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="rounded-[2rem] bg-white shadow-lg shadow-slate-200/60 overflow-hidden">
         {loading ? (
@@ -158,6 +224,11 @@ export default function AdminArticlesPage() {
             <table className="min-w-full divide-y divide-slate-100">
               <thead className="bg-slate-50">
                 <tr className="text-right text-xs text-slate-500">
+                  <th className="px-4 py-4">
+                    <button onClick={toggleSelectAll} className="text-slate-400 hover:text-[#667eea] transition">
+                      {allSelected ? <CheckSquare className="size-4 text-[#667eea]" /> : <Square className="size-4" />}
+                    </button>
+                  </th>
                   <th className="px-5 py-4 font-semibold">
                     <button className="flex items-center gap-1" onClick={() => handleSort("titleAr")}>
                       العنوان <SortIcon field="titleAr" current={sortBy} order={sortOrder} />
@@ -181,7 +252,12 @@ export default function AdminArticlesPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {articles.map((article) => (
-                  <tr key={article.id} className="text-sm text-slate-700 hover:bg-slate-50/50 transition-colors">
+                  <tr key={article.id} className={`text-sm text-slate-700 transition-colors hover:bg-slate-50/50 ${selected.has(article.id) ? "bg-[#667eea]/5" : ""}`}>
+                    <td className="px-4 py-4">
+                      <button onClick={() => toggleOne(article.id)} className="text-slate-300 hover:text-[#667eea] transition">
+                        {selected.has(article.id) ? <CheckSquare className="size-4 text-[#667eea]" /> : <Square className="size-4" />}
+                      </button>
+                    </td>
                     <td className="px-5 py-4 max-w-[280px]">
                       <p className="font-semibold text-slate-900 line-clamp-1">{article.titleAr}</p>
                       <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{article.title}</p>
