@@ -1,10 +1,10 @@
 {
   "crons": [
-    { "path": "/api/cron/fetch-news",     "schedule": "0 */3 * * *"  },
-    { "path": "/api/cron/cluster-news",   "schedule": "30 */3 * * *" },
-    { "path": "/api/cron/process-review", "schedule": "0 */6 * * *"  },
-    { "path": "/api/cron/publish-review", "schedule": "0 9 * * *"    },
-    { "path": "/api/cron/social-queue",   "schedule": "30 9 * * *"   },
-    { "path": "/api/cron/trending",       "schedule": "0 0 * * *"    }
+    { "path": "/api/cron/fetch-news",     "schedule": "0 6 * * *"  },
+    { "path": "/api/cron/cluster-news",   "schedule": "30 6 * * *" },
+    { "path": "/api/cron/process-review", "schedule": "0 7 * * *"  },
+    { "path": "/api/cron/publish-review", "schedule": "0 9 * * *"  },
+    { "path": "/api/cron/social-queue",   "schedule": "30 9 * * *" },
+    { "path": "/api/cron/trending",       "schedule": "0 0 * * *"  }
   ]
 }
