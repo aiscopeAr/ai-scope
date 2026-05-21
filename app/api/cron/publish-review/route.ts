@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { approveReview } from "@/lib/review-queue";
+import { generateReviewImage } from "@/lib/images";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -63,11 +64,17 @@ export async function GET(request: Request) {
   const published: string[] = [];
   for (const item of items) {
     try {
+      // Generate image if missing
+      let imageUrl = item.imageUrl ?? undefined;
+      if (!imageUrl && item.featuredImagePrompt) {
+        imageUrl = await generateReviewImage(item.featuredImagePrompt) ?? undefined;
+      }
+
       const reviewId = await approveReview(item.id, {
         categoryId: defaultCategory.id,
         slug: item.slug!,
         published: true,
-        imageUrl: item.imageUrl ?? undefined,
+        imageUrl,
       });
       published.push(reviewId);
     } catch (err) {
