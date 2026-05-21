@@ -8,7 +8,7 @@ import type { SocialPlatform } from "@/lib/social";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const DAILY_PUBLISH_LIMIT = 50;
+const DAILY_PUBLISH_LIMIT = 5;
 
 function verifyCronSecret(request: Request): boolean {
   const secret = process.env.CRON_SECRET;

@@ -17,6 +17,7 @@ import {
   Building2,
   Scale,
   BarChart2,
+  SearchCheck,
 } from "lucide-react";
 
 import AdminSignOutButton from "@/components/AdminSignOutButton";
@@ -234,6 +235,15 @@ export default async function AdminDashboardPage() {
       value: null,
       valueLabel: "",
       color: "violet",
+    },
+    {
+      href: "/admin/seo",
+      icon: SearchCheck,
+      label: "تحليل SEO",
+      sub: "فجوات الكلمات والتوصيات",
+      value: null,
+      valueLabel: "",
+      color: "teal",
     },
   ];
 

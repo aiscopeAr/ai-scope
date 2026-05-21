@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import type { RssItem } from "@/lib/rss";
 import type { AiProcessedArticle } from "@/lib/openai";
+import type { AuthorSlug } from "@/lib/authors";
 
 export type EnqueueInput = RssItem & {
   sourceId: string;
@@ -76,6 +77,8 @@ export async function markProcessed(id: string, result: AiProcessedArticle) {
       featuredImagePrompt: result.featuredImagePrompt,
       processedAt: new Date(),
       failureReason: null,
+      // store author assignment as JSON in translatedContent field (no migration needed)
+      translatedContent: JSON.stringify({ authorSlug: result.authorSlug }),
     },
   });
 }
@@ -109,11 +112,22 @@ export async function approveQueueItem(
     title: string;
     slug: string;
     published: boolean;
+    authorSlug?: AuthorSlug;
   },
 ): Promise<string> {
   const item = await prisma.articleQueue.findUniqueOrThrow({
     where: { id },
   });
+
+  // Extract authorSlug stored during markProcessed
+  let derivedAuthorSlug: AuthorSlug = "zayd";
+  if (item.translatedContent) {
+    try {
+      const meta = JSON.parse(item.translatedContent) as { authorSlug?: AuthorSlug };
+      if (meta.authorSlug) derivedAuthorSlug = meta.authorSlug;
+    } catch { /* ignore */ }
+  }
+  const finalAuthorSlug = overrides.authorSlug ?? derivedAuthorSlug;
 
   const imageUrl =
     item.imageUrl ?? imageFallback(overrides.categorySlug ?? item.suggestedCategory ?? undefined);
@@ -130,7 +144,6 @@ export async function approveQueueItem(
       imageAlt: (item as { imageAlt?: string | null }).imageAlt ?? item.titleAr ?? undefined,
       sourceUrl: item.sourceUrl,
       sourceName: item.sourceName ?? "",
-      tags: item.tags ?? [],
       keywords: (item as { keywords?: string[] }).keywords ?? [],
       faq: (item as { faq?: unknown }).faq ?? undefined,
       relatedTopics: (item as { relatedTopics?: string[] }).relatedTopics ?? [],
@@ -138,6 +151,10 @@ export async function approveQueueItem(
       published: overrides.published,
       publishedAt: overrides.published ? new Date() : null,
       score: 0,
+      tags: [
+        ...(item.tags ?? []).filter((t) => !t.startsWith("__author:")),
+        `__author:${finalAuthorSlug}`,
+      ],
     },
     select: { id: true },
   });

@@ -20,6 +20,7 @@ import {
   truncate,
   absoluteUrl,
 } from "@/lib/seo";
+import { AUTHORS, getAuthorSlugFromTags, getPublicTags } from "@/lib/authors";
 
 export const dynamic = "force-dynamic";
 
@@ -143,6 +144,10 @@ export default async function ArticlePage({
   const wordCount = article.contentAr.trim().split(/\s+/).length;
   const readingMinutes = Math.max(1, Math.round(wordCount / 200));
 
+  const authorSlug = getAuthorSlugFromTags(articleTags);
+  const author = AUTHORS[authorSlug];
+  const publicTags = getPublicTags(articleTags);
+
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -187,9 +192,10 @@ export default async function ArticlePage({
     dateModified: updatedAt.toISOString(),
     inLanguage: "ar",
     author: {
-      "@type": "Organization",
-      name: article.sourceName,
-      url: article.sourceUrl,
+      "@type": "Person",
+      name: author.nameAr,
+      url: absoluteUrl(`/author/${author.slug}`),
+      jobTitle: author.titleAr,
     },
     publisher: {
       "@type": "Organization",
@@ -202,7 +208,7 @@ export default async function ArticlePage({
     },
     mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl },
     articleSection: article.category.nameAr,
-    keywords: [...articleTags, ...articleKeywords].join(", "),
+    keywords: [...publicTags, ...articleKeywords].join(", "),
     ...(article.imageUrl
       ? {
           image: {
@@ -337,9 +343,9 @@ export default async function ArticlePage({
         )}
 
         {/* Tags */}
-        {articleTags.length > 0 && (
+        {publicTags.length > 0 && (
           <div className="mb-6 flex flex-wrap gap-2">
-            {articleTags.map((tag) => (
+            {publicTags.map((tag) => (
               <Link
                 key={tag}
                 href={`/search?tag=${encodeURIComponent(tag)}`}
@@ -373,7 +379,7 @@ export default async function ArticlePage({
         </div>
 
         {/* Source */}
-        <div className="mb-12 rounded-2xl border border-white/8 bg-white/3 p-6">
+        <div className="mb-6 rounded-2xl border border-white/8 bg-white/3 p-6">
           <p className="mb-2 text-sm text-slate-500">المصدر الأصلي:</p>
           <a
             href={article.sourceUrl}
@@ -383,6 +389,70 @@ export default async function ArticlePage({
           >
             {article.sourceUrl}
           </a>
+        </div>
+
+        {/* Author signature card */}
+        <div
+          className="mb-12 overflow-hidden rounded-2xl border p-5"
+          style={{
+            borderColor: `${author.accentColor}25`,
+            backgroundColor: `${author.accentColor}08`,
+          }}
+        >
+          <div className="flex items-start gap-4">
+            {/* Avatar */}
+            <Link href={`/author/${author.slug}`} className="shrink-0">
+              <div className="h-14 w-14 overflow-hidden rounded-full" style={{ outline: `2px solid ${author.accentColor}50`, outlineOffset: "2px" }}>
+                <img
+                  src={author.avatarUrl}
+                  alt={author.nameAr}
+                  width={56}
+                  height={56}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              </div>
+            </Link>
+
+            {/* Info */}
+            <div className="min-w-0 flex-1">
+              <div className="mb-0.5 flex flex-wrap items-center gap-2">
+                <Link
+                  href={`/author/${author.slug}`}
+                  className="text-sm font-bold text-slate-200 transition hover:text-white"
+                >
+                  {author.nameAr}
+                </Link>
+                <span
+                  className="rounded-full border px-2 py-0.5 text-[10px] font-semibold"
+                  style={{
+                    color: author.accentColor,
+                    borderColor: `${author.accentColor}40`,
+                    backgroundColor: `${author.accentColor}12`,
+                  }}
+                >
+                  نظام ذكاء اصطناعي
+                </span>
+              </div>
+              <p className="mb-1.5 text-xs text-slate-500">{author.titleAr}</p>
+              <p className="text-xs leading-relaxed text-slate-400">
+                كُتب هذا المقال بمساعدة {author.nameAr}، نظام ذكاء اصطناعي متخصص في {author.specialtyAr}،
+                انطلاقاً من مصادر إخبارية موثوقة مع مراجعة تحريرية قبل النشر.
+              </p>
+              <Link
+                href={`/author/${author.slug}`}
+                className="mt-2 inline-flex items-center gap-1 text-xs font-semibold transition hover:underline"
+                style={{ color: author.accentColor }}
+              >
+                جميع مقالات {author.nameAr}
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </Link>
+            </div>
+          </div>
         </div>
 
         {/* Related articles */}

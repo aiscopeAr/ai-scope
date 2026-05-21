@@ -15,6 +15,7 @@ export default function AboutPage() {
       <p className="mb-10 text-lg text-slate-500">منصة عربية لأخبار الذكاء الاصطناعي</p>
 
       <div className="space-y-8 text-slate-700 leading-8">
+
         <div>
           <h2 className="mb-3 text-xl font-bold text-slate-900">ما هو {SITE_NAME}؟</h2>
           <p>
@@ -44,6 +45,37 @@ export default function AboutPage() {
           </ul>
         </div>
 
+        {/* Transparency section — important for AdSense & reader trust */}
+        <div className="rounded-2xl border border-violet-200 bg-violet-50 p-6">
+          <h2 className="mb-3 text-xl font-bold text-slate-900">شفافية كاملة: كيف نعمل؟</h2>
+          <p className="mb-4">
+            نؤمن بالصدق مع قرائنا. إليك بالضبط كيف تصل الأخبار إليك:
+          </p>
+          <ol className="space-y-3 list-decimal list-inside text-slate-600">
+            <li>
+              <span className="font-semibold text-slate-800">الرصد الآلي:</span>{" "}
+              نتابع عشرات المصادر الإخبارية العالمية الموثوقة تلقائياً على مدار الساعة.
+            </li>
+            <li>
+              <span className="font-semibold text-slate-800">المعالجة بالذكاء الاصطناعي:</span>{" "}
+              نستخدم نماذج AI لإعادة كتابة المحتوى بالعربية — لا ترجمة حرفية، بل إعادة صياغة
+              تراعي القارئ العربي وتضيف سياقاً وتحليلاً.
+            </li>
+            <li>
+              <span className="font-semibold text-slate-800">المراجعة التحريرية:</span>{" "}
+              لا يُنشر أي مقال دون مرور بمراجعة بشرية تتحقق من الدقة وجودة المحتوى.
+            </li>
+            <li>
+              <span className="font-semibold text-slate-800">التوثيق:</span>{" "}
+              كل مقال يتضمن رابط المصدر الأصلي لمن يرغب في التعمق أكثر.
+            </li>
+          </ol>
+          <p className="mt-4 text-sm text-slate-500">
+            هذا النهج يتيح لنا تغطية واسعة بجودة عالية — وهو ما يميّز {SITE_NAME} عن المدونات
+            الفردية من جهة، وعن المواقع التي تكتفي بالترجمة الآلية من جهة أخرى.
+          </p>
+        </div>
+
         <div>
           <h2 className="mb-3 text-xl font-bold text-slate-900">معاييرنا التحريرية</h2>
           <p>
@@ -62,6 +94,7 @@ export default function AboutPage() {
             </a>
           </p>
         </div>
+
       </div>
     </section>
   );
