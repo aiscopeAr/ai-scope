@@ -16,8 +16,11 @@ export async function generateReviewImage(prompt: string): Promise<string | null
       },
     });
 
-    const urls = output as string[];
-    return urls?.[0] ?? null;
+    // flux-schnell returns FileOutput objects with a .url() method or direct strings
+    const items = output as Array<{ url: () => string } | string>;
+    const first = items?.[0];
+    if (!first) return null;
+    return typeof first === "string" ? first : first.url();
   } catch (err) {
     console.error("[images] Replicate error:", err);
     return null;
