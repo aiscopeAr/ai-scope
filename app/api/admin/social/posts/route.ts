@@ -17,19 +17,19 @@ export async function GET(request: Request) {
       sentAt: true,
       errorMsg: true,
       createdAt: true,
-      articleId: true,
+      reviewId: true,
     },
   });
 
-  // Attach article titles
-  const articleIds = [...new Set(posts.map((p) => p.articleId))];
-  const articles = await prisma.article.findMany({
-    where: { id: { in: articleIds } },
+  // Attach review titles
+  const reviewIds = [...new Set(posts.map((p) => p.reviewId))];
+  const reviews = await prisma.review.findMany({
+    where: { id: { in: reviewIds } },
     select: { id: true, titleAr: true, slug: true },
   });
-  const articleMap = Object.fromEntries(articles.map((a) => [a.id, a]));
+  const reviewMap = Object.fromEntries(reviews.map((r) => [r.id, r]));
 
   return NextResponse.json(
-    posts.map((p) => ({ ...p, article: articleMap[p.articleId] ?? null }))
+    posts.map((p) => ({ ...p, review: reviewMap[p.reviewId] ?? null }))
   );
 }

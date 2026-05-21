@@ -4,7 +4,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { fetchRssFeed } from "@/lib/rss";
-import { enqueueItem } from "@/lib/queue";
+import { enqueueNewsItem } from "@/lib/review-queue";
 
 function unauthorized() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -22,7 +22,6 @@ const updateSchema = z.object({
   website: z.string().url().optional().or(z.literal("")).nullable(),
   enabled: z.boolean().optional(),
   priority: z.number().int().min(1).max(10).optional(),
-  categoryId: z.string().optional().nullable(),
 });
 
 export async function GET(
@@ -34,7 +33,7 @@ export async function GET(
 
   const source = await prisma.source.findUnique({
     where: { id },
-    include: { category: true, _count: { select: { queueItems: true } } },
+    select: { id: true, name: true, rssUrl: true, website: true, enabled: true, priority: true, lastSyncedAt: true },
   });
   if (!source) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(source);
@@ -60,16 +59,15 @@ export async function PUT(
   const existing = await prisma.source.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { website, categoryId, ...rest } = parsed.data;
+  const { website, ...rest } = parsed.data;
 
   const source = await prisma.source.update({
     where: { id },
     data: {
       ...rest,
       ...(website !== undefined ? { website: website || null } : {}),
-      ...(categoryId !== undefined ? { categoryId: categoryId || null } : {}),
     },
-    include: { category: true },
+    select: { id: true, name: true, rssUrl: true, website: true, enabled: true, priority: true, lastSyncedAt: true },
   });
 
   return NextResponse.json(source);
@@ -120,12 +118,16 @@ export async function POST(
   let skipped = 0;
 
   for (const item of items) {
-    const queued = await enqueueItem({
-      ...item,
-      sourceId: source.id,
+    const queuedId = await enqueueNewsItem({
+      sourceUrl: item.link,
+      title: item.title,
+      content: item.content ?? item.description,
+      publishedAt: item.pubDate ? new Date(item.pubDate) : new Date(),
       sourceName: source.name,
+      sourceId: source.id,
+      imageUrl: item.imageUrl ?? undefined,
     });
-    if (queued) added++;
+    if (queuedId) added++;
     else skipped++;
   }
 

@@ -32,13 +32,13 @@ export async function GET(request: Request) {
   const results: Array<{ id: string; status: "sent" | "failed"; error?: string }> = [];
 
   for (const post of posts) {
-    const article = await prisma.article.findUnique({
-      where: { id: post.articleId },
+    const review = await prisma.review.findUnique({
+      where: { id: post.reviewId },
       select: { slug: true, imageUrl: true },
     });
 
-    const articleUrl = article
-      ? `https://ai-news-ar.vercel.app/news/${article.slug}`
+    const articleUrl = review
+      ? `https://ai-news-ar.vercel.app/reviews/${review.slug}`
       : "https://ai-news-ar.vercel.app";
 
     try {
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
         {
           caption: post.caption,
           articleUrl,
-          imageUrl: article?.imageUrl ?? undefined,
+          imageUrl: review?.imageUrl ?? undefined,
         },
         credentials
       );

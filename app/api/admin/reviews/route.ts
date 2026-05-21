@@ -7,12 +7,20 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const items = await prisma.reviewQueue.findMany({
+  const reviews = await prisma.review.findMany({
     orderBy: { createdAt: "desc" },
-    include: {
-      newsItems: { select: { id: true, title: true, sourceName: true, sourceUrl: true } },
+    select: {
+      id: true,
+      titleAr: true,
+      slug: true,
+      authorSlug: true,
+      published: true,
+      publishedAt: true,
+      viewCount: true,
+      category: { select: { nameAr: true, slug: true } },
+      createdAt: true,
     },
   });
 
-  return NextResponse.json(items);
+  return NextResponse.json(reviews);
 }

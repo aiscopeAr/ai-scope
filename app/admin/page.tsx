@@ -1,23 +1,16 @@
+"use server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { format } from "date-fns";
 import {
-  FileText,
-  Rss,
   ClipboardList,
+  Rss,
   Megaphone,
   Eye,
-  PlusCircle,
   ArrowLeft,
   Bot,
   Share2,
-  Library,
-  BookOpen,
   Wrench,
-  Building2,
-  Scale,
-  BarChart2,
-  SearchCheck,
+  BookOpen,
 } from "lucide-react";
 
 import AdminSignOutButton from "@/components/AdminSignOutButton";
@@ -31,82 +24,63 @@ async function getDashboardData() {
   todayStart.setUTCHours(0, 0, 0, 0);
 
   const [
-    articleCount,
+    reviewCount,
     publishedCount,
     publishedToday,
-    recentArticles,
-    topArticles,
-    categories,
-    sources,
-    settings,
+    recentReviews,
+    topReviews,
     pendingQueue,
     processedQueue,
     failedQueue,
+    pendingNewsItems,
     totalViews,
     activeAds,
     activeSocialAccounts,
     pendingSocialPosts,
-    guideCount,
     toolCount,
-    companyCount,
-    comparisonCount,
     trendingKeywords,
   ] = await Promise.all([
-    prisma.article.count(),
-    prisma.article.count({ where: { published: true } }),
-    prisma.article.count({ where: { published: true, publishedAt: { gte: todayStart } } }),
-    prisma.article.findMany({
+    prisma.review.count(),
+    prisma.review.count({ where: { published: true } }),
+    prisma.review.count({ where: { published: true, publishedAt: { gte: todayStart } } }),
+    prisma.review.findMany({
       orderBy: { publishedAt: "desc" },
       take: 8,
-      include: { category: true },
+      select: {
+        id: true,
+        titleAr: true,
+        slug: true,
+        published: true,
+        publishedAt: true,
+        authorSlug: true,
+        category: { select: { nameAr: true } },
+      },
     }),
-    prisma.article.findMany({
+    prisma.review.findMany({
       where: { published: true },
       orderBy: { viewCount: "desc" },
       take: 5,
-      select: { id: true, titleAr: true, slug: true, viewCount: true, sourceName: true },
+      select: { id: true, titleAr: true, slug: true, viewCount: true, authorSlug: true },
     }),
-    prisma.category.count(),
-    prisma.source.count(),
-    prisma.settings.findFirst(),
-    prisma.articleQueue.count({ where: { status: "pending" } }),
-    prisma.articleQueue.count({ where: { status: "processed" } }),
-    prisma.articleQueue.count({ where: { status: "failed" } }),
-    prisma.article.aggregate({ _sum: { viewCount: true } }),
+    prisma.reviewQueue.count({ where: { status: "pending" } }),
+    prisma.reviewQueue.count({ where: { status: "processed" } }),
+    prisma.reviewQueue.count({ where: { status: "failed" } }),
+    prisma.newsItem.count({ where: { status: "pending" } }),
+    prisma.review.aggregate({ _sum: { viewCount: true } }),
     prisma.adSlot.count({ where: { enabled: true } }),
     prisma.socialAccount.count({ where: { enabled: true } }),
     prisma.socialPost.count({ where: { status: "pending" } }),
-    prisma.guide.count({ where: { published: true } }),
     prisma.aITool.count({ where: { published: true } }),
-    prisma.company.count({ where: { published: true } }),
-    prisma.comparison.count({ where: { published: true } }),
-    prisma.trendingKeyword.findMany({
-      orderBy: { count: "desc" },
-      take: 12,
-    }),
+    prisma.trendingKeyword.findMany({ orderBy: { count: "desc" }, take: 12 }),
   ]);
 
   return {
-    articleCount,
-    publishedCount,
-    publishedToday,
-    recentArticles,
-    topArticles,
-    categories,
-    sources,
-    settings,
-    pendingQueue,
-    processedQueue,
-    failedQueue,
+    reviewCount, publishedCount, publishedToday,
+    recentReviews, topReviews,
+    pendingQueue, processedQueue, failedQueue, pendingNewsItems,
     totalViews: totalViews._sum.viewCount ?? 0,
-    activeAds,
-    activeSocialAccounts,
-    pendingSocialPosts,
-    guideCount,
-    toolCount,
-    companyCount,
-    comparisonCount,
-    trendingKeywords,
+    activeAds, activeSocialAccounts, pendingSocialPosts,
+    toolCount, trendingKeywords,
   };
 }
 
@@ -118,68 +92,32 @@ export default async function AdminDashboardPage() {
 
   const navCards = [
     {
-      href: "/admin/articles",
-      icon: FileText,
-      label: "المقالات",
-      sub: "إدارة وتعديل المحتوى",
-      value: data.articleCount,
-      valueLabel: "مقال",
-      color: "violet",
-    },
-    {
       href: "/admin/queue",
       icon: ClipboardList,
-      label: "طابور المراجعة",
+      label: "طابور السكريفات",
       sub: `${data.processedQueue} جاهز · ${data.failedQueue} فشل`,
       value: data.pendingQueue,
-      valueLabel: "بانتظار المعالجة",
+      valueLabel: "معلّق",
       color: "amber",
-      urgent: data.pendingQueue > 0 || data.failedQueue > 0,
+      urgent: data.processedQueue > 0 || data.failedQueue > 0,
+    },
+    {
+      href: "/admin/reviews",
+      icon: BookOpen,
+      label: "السكريفات",
+      sub: `${data.publishedCount} منشورة`,
+      value: data.reviewCount,
+      valueLabel: "سكريفة",
+      color: "violet",
     },
     {
       href: "/admin/sources",
       icon: Rss,
       label: "المصادر",
-      sub: "إدارة مصادر RSS",
-      value: data.sources,
-      valueLabel: "مصدر",
+      sub: `${data.pendingNewsItems} خبر جديد`,
+      value: null,
+      valueLabel: "",
       color: "sky",
-    },
-    {
-      href: "/admin/ads",
-      icon: Megaphone,
-      label: "الإعلانات",
-      sub: "إدارة حريز الإعلانات",
-      value: data.activeAds,
-      valueLabel: "إعلان مفعّل",
-      color: "emerald",
-    },
-    {
-      href: "/admin/articles?sortBy=viewCount&sortOrder=desc",
-      icon: Eye,
-      label: "الأكثر مشاهدة",
-      sub: "ترتيب حسب الزيارات",
-      value: data.totalViews.toLocaleString("ar-EG"),
-      valueLabel: "مشاهدة إجمالية",
-      color: "rose",
-    },
-    {
-      href: "/admin/articles/new",
-      icon: PlusCircle,
-      label: "مقال جديد",
-      sub: "إنشاء مقال يدوياً",
-      value: null,
-      valueLabel: "",
-      color: "slate",
-    },
-    {
-      href: "/admin/prompts",
-      icon: Library,
-      label: "مكتبة Prompts",
-      sub: "إدارة الـ prompts والطابور",
-      value: null,
-      valueLabel: "",
-      color: "teal",
     },
     {
       href: "/admin/social",
@@ -192,72 +130,32 @@ export default async function AdminDashboardPage() {
       urgent: data.pendingSocialPosts > 0,
     },
     {
-      href: "/admin/guides",
-      icon: BookOpen,
-      label: "الأدلة والشروحات",
-      sub: "إدارة المحتوى الدائم",
-      value: data.guideCount,
-      valueLabel: "دليل",
-      color: "indigo",
-    },
-    {
       href: "/admin/ai-tools",
       icon: Wrench,
       label: "أدوات AI",
-      sub: "إدارة دليل الأدوات",
+      sub: "دليل الأدوات",
       value: data.toolCount,
       valueLabel: "أداة",
       color: "cyan",
     },
     {
-      href: "/admin/companies",
-      icon: Building2,
-      label: "الشركات",
-      sub: "ملفات شركات الذكاء الاصطناعي",
-      value: data.companyCount,
-      valueLabel: "شركة",
-      color: "sky",
-    },
-    {
-      href: "/admin/compare",
-      icon: Scale,
-      label: "المقارنات",
-      sub: "مقارنات الأدوات",
-      value: data.comparisonCount,
-      valueLabel: "مقارنة",
-      color: "amber",
-    },
-    {
-      href: "/admin/analytics",
-      icon: BarChart2,
-      label: "التحليلات",
-      sub: "مشاهدات، مصادر، تصنيفات",
-      value: null,
-      valueLabel: "",
-      color: "violet",
-    },
-    {
-      href: "/admin/seo",
-      icon: SearchCheck,
-      label: "تحليل SEO",
-      sub: "فجوات الكلمات والتوصيات",
-      value: null,
-      valueLabel: "",
-      color: "teal",
+      href: "/admin/ads",
+      icon: Megaphone,
+      label: "الإعلانات",
+      sub: "إدارة حريز الإعلانات",
+      value: data.activeAds,
+      valueLabel: "مفعّل",
+      color: "emerald",
     },
   ];
 
   const colorMap: Record<string, { card: string; icon: string; badge: string }> = {
-    violet: { card: "bg-violet-50 hover:bg-violet-100 border-violet-100", icon: "bg-violet-500/10 text-violet-600", badge: "bg-violet-100 text-violet-700" },
-    amber:  { card: "bg-amber-50  hover:bg-amber-100  border-amber-100",  icon: "bg-amber-500/10  text-amber-600",  badge: "bg-amber-100  text-amber-700"  },
-    sky:    { card: "bg-sky-50    hover:bg-sky-100    border-sky-100",    icon: "bg-sky-500/10    text-sky-600",    badge: "bg-sky-100    text-sky-700"    },
-    emerald:{ card: "bg-emerald-50 hover:bg-emerald-100 border-emerald-100", icon: "bg-emerald-500/10 text-emerald-600", badge: "bg-emerald-100 text-emerald-700" },
-    rose:   { card: "bg-rose-50   hover:bg-rose-100   border-rose-100",   icon: "bg-rose-500/10   text-rose-600",   badge: "bg-rose-100   text-rose-700"   },
-    slate:  { card: "bg-slate-50  hover:bg-slate-100  border-slate-100",  icon: "bg-slate-200     text-slate-600",  badge: "bg-slate-200  text-slate-600"  },
-    pink:   { card: "bg-pink-50   hover:bg-pink-100   border-pink-100",   icon: "bg-pink-500/10   text-pink-600",   badge: "bg-pink-100   text-pink-700"   },
-    teal:   { card: "bg-teal-50   hover:bg-teal-100   border-teal-100",   icon: "bg-teal-500/10   text-teal-600",   badge: "bg-teal-100   text-teal-700"   },
-    indigo: { card: "bg-indigo-50 hover:bg-indigo-100 border-indigo-100", icon: "bg-indigo-500/10 text-indigo-600", badge: "bg-indigo-100 text-indigo-700" },
-    cyan:   { card: "bg-cyan-50   hover:bg-cyan-100   border-cyan-100",   icon: "bg-cyan-500/10   text-cyan-600",   badge: "bg-cyan-100   text-cyan-700"   },
+    violet:  { card: "bg-violet-50 hover:bg-violet-100 border-violet-100",   icon: "bg-violet-500/10  text-violet-600",  badge: "bg-violet-100  text-violet-700"  },
+    amber:   { card: "bg-amber-50  hover:bg-amber-100  border-amber-100",    icon: "bg-amber-500/10   text-amber-600",   badge: "bg-amber-100   text-amber-700"   },
+    sky:     { card: "bg-sky-50    hover:bg-sky-100    border-sky-100",      icon: "bg-sky-500/10     text-sky-600",     badge: "bg-sky-100     text-sky-700"     },
+    emerald: { card: "bg-emerald-50 hover:bg-emerald-100 border-emerald-100", icon: "bg-emerald-500/10 text-emerald-600", badge: "bg-emerald-100 text-emerald-700" },
+    pink:    { card: "bg-pink-50   hover:bg-pink-100   border-pink-100",     icon: "bg-pink-500/10    text-pink-600",    badge: "bg-pink-100    text-pink-700"    },
+    cyan:    { card: "bg-cyan-50   hover:bg-cyan-100   border-cyan-100",     icon: "bg-cyan-500/10    text-cyan-600",    badge: "bg-cyan-100    text-cyan-700"    },
   };
 
   return (
@@ -285,14 +183,14 @@ export default async function AdminDashboardPage() {
       {/* Stats strip */}
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "إجمالي المقالات", value: data.articleCount, sub: `${data.publishedCount} منشور` },
+          { label: "إجمالي السكريفات", value: data.reviewCount, sub: `${data.publishedCount} منشورة` },
           { label: "نُشر اليوم", value: data.publishedToday, sub: "منذ منتصف الليل", highlight: data.publishedToday > 0 },
           { label: "في الطابور", value: data.pendingQueue + data.processedQueue, sub: data.failedQueue > 0 ? `${data.failedQueue} فشل` : "لا أخطاء", urgent: data.failedQueue > 0 },
-          { label: "النشر التلقائي", value: data.settings?.autoPublish ? "مفعّل" : "متوقف", sub: `${data.totalViews.toLocaleString("ar-EG")} مشاهدة` },
+          { label: "مشاهدات إجمالية", value: data.totalViews.toLocaleString("ar-EG"), sub: `${data.pendingNewsItems} خبر جديد` },
         ].map((s) => (
-          <div key={s.label} className={`rounded-[1.5rem] bg-white p-4 shadow-md shadow-slate-200/60 ${s.urgent ? "ring-2 ring-red-400" : ""}`}>
+          <div key={s.label} className={`rounded-[1.5rem] bg-white p-4 shadow-md shadow-slate-200/60 ${(s as {urgent?: boolean}).urgent ? "ring-2 ring-red-400" : ""}`}>
             <p className="text-xs text-slate-400">{s.label}</p>
-            <p className={`mt-2 text-2xl font-black ${s.highlight ? "text-emerald-600" : s.urgent ? "text-red-600" : "text-slate-900"}`}>{s.value}</p>
+            <p className={`mt-2 text-2xl font-black ${(s as {highlight?: boolean}).highlight ? "text-emerald-600" : (s as {urgent?: boolean}).urgent ? "text-red-600" : "text-slate-900"}`}>{s.value}</p>
             <p className="mt-0.5 text-[11px] text-slate-400">{s.sub}</p>
           </div>
         ))}
@@ -307,7 +205,7 @@ export default async function AdminDashboardPage() {
             <Link
               key={card.href}
               href={card.href}
-              className={`group relative flex items-center gap-4 rounded-[1.75rem] border p-5 transition ${c.card} ${card.urgent ? "ring-2 ring-amber-400" : ""}`}
+              className={`group relative flex items-center gap-4 rounded-[1.75rem] border p-5 transition ${c.card} ${(card as {urgent?: boolean}).urgent ? "ring-2 ring-amber-400" : ""}`}
             >
               <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl ${c.icon}`}>
                 <Icon className="size-5" />
@@ -322,20 +220,18 @@ export default async function AdminDashboardPage() {
                 )}
               </div>
               <ArrowLeft className="size-4 flex-shrink-0 text-slate-300 transition group-hover:text-slate-500 group-hover:-translate-x-1" />
-              {card.urgent && (
-                <span className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[10px] font-black text-white">
-                  !
-                </span>
+              {(card as {urgent?: boolean}).urgent && (
+                <span className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[10px] font-black text-white">!</span>
               )}
             </Link>
           );
         })}
       </div>
 
-      {/* Queue status + Trending keywords */}
-      <div className="mb-6 grid gap-6 lg:grid-cols-2">
+      {/* Bottom grid */}
+      <div className="grid gap-6 lg:grid-cols-2">
 
-        {/* Queue breakdown */}
+        {/* Queue status */}
         <div className="rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="font-black text-slate-900">حالة الطابور</h2>
@@ -343,8 +239,8 @@ export default async function AdminDashboardPage() {
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "بانتظار المعالجة", value: data.pendingQueue, color: "bg-amber-50 text-amber-700 border-amber-100" },
-              { label: "جاهز للنشر", value: data.processedQueue, color: "bg-violet-50 text-violet-700 border-violet-100" },
+              { label: "أخبار جديدة", value: data.pendingNewsItems, color: "bg-sky-50 text-sky-700 border-sky-100" },
+              { label: "جاهز للمراجعة", value: data.processedQueue, color: "bg-violet-50 text-violet-700 border-violet-100" },
               { label: "فشل", value: data.failedQueue, color: data.failedQueue > 0 ? "bg-red-50 text-red-700 border-red-200 ring-1 ring-red-300" : "bg-slate-50 text-slate-400 border-slate-100" },
             ].map((q) => (
               <div key={q.label} className={`rounded-2xl border p-4 text-center ${q.color}`}>
@@ -353,102 +249,66 @@ export default async function AdminDashboardPage() {
               </div>
             ))}
           </div>
-          {data.failedQueue > 0 && (
-            <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
-              ⚠️ يوجد {data.failedQueue} عنصر فشل في المعالجة — تحقق من الطابور
-            </p>
-          )}
         </div>
 
         {/* Trending keywords */}
         <div className="rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="font-black text-slate-900">الكلمات الرائجة</h2>
-            <span className="text-xs text-slate-400">آخر تحديث تلقائي</span>
-          </div>
+          <h2 className="mb-4 font-black text-slate-900">الكلمات الرائجة</h2>
           {data.trendingKeywords.length === 0 ? (
-            <p className="text-sm text-slate-400">لا توجد بيانات بعد — سيتم التحديث تلقائياً</p>
+            <p className="text-sm text-slate-400">لا توجد بيانات بعد</p>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {data.trendingKeywords.map((kw, i) => {
-                const size = i === 0 ? "text-base" : i < 3 ? "text-sm" : "text-xs";
-                const bg = i === 0
-                  ? "bg-[#667eea] text-white"
-                  : i < 3
-                  ? "bg-[#667eea]/10 text-[#667eea]"
-                  : "bg-slate-100 text-slate-600";
-                return (
-                  <span key={kw.id} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 font-semibold ${size} ${bg}`}>
-                    {kw.keyword}
-                    <span className="opacity-60">·{kw.count}</span>
-                  </span>
-                );
-              })}
+              {data.trendingKeywords.map((kw, i) => (
+                <span
+                  key={kw.id}
+                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 font-semibold ${
+                    i === 0 ? "bg-[#667eea] text-white text-base" :
+                    i < 3 ? "bg-[#667eea]/10 text-[#667eea] text-sm" :
+                    "bg-slate-100 text-slate-600 text-xs"
+                  }`}
+                >
+                  {kw.keyword}<span className="opacity-60">·{kw.count}</span>
+                </span>
+              ))}
             </div>
           )}
         </div>
 
-      </div>
-
-      {/* Bottom grid: top articles + recent articles */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.6fr]">
-
-        {/* Top articles by views */}
+        {/* Top reviews */}
         <div className="rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="font-black text-slate-900">الأكثر مشاهدة</h2>
-            <Link href="/admin/articles?sortBy=viewCount&sortOrder=desc" className="text-xs font-semibold text-[#667eea] hover:underline">
-              عرض الكل
-            </Link>
+            <Link href="/admin/reviews" className="text-xs font-semibold text-[#667eea] hover:underline">عرض الكل</Link>
           </div>
-          {data.topArticles.length === 0 ? (
-            <p className="text-sm text-slate-400">لا توجد مشاهدات بعد</p>
-          ) : (
-            <ol className="space-y-3">
-              {data.topArticles.map((article, i) => (
-                <li key={article.id} className="flex items-center gap-3">
-                  <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#667eea]/10 text-xs font-black text-[#667eea]">
-                    {i + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <a
-                      href={`/news/${article.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block truncate text-sm font-semibold text-slate-800 hover:text-[#667eea]"
-                    >
-                      {article.titleAr}
-                    </a>
-                    <p className="text-xs text-slate-400">{article.sourceName}</p>
-                  </div>
-                  <span className="flex-shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                    {article.viewCount.toLocaleString("ar-EG")}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          )}
+          <ol className="space-y-3">
+            {data.topReviews.map((r, i) => (
+              <li key={r.id} className="flex items-center gap-3">
+                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#667eea]/10 text-xs font-black text-[#667eea]">{i + 1}</span>
+                <div className="min-w-0 flex-1">
+                  <a href={`/reviews/${r.slug}`} target="_blank" rel="noopener noreferrer" className="block truncate text-sm font-semibold text-slate-800 hover:text-[#667eea]">{r.titleAr}</a>
+                  <p className="text-xs text-slate-400">{r.authorSlug}</p>
+                </div>
+                <span className="flex-shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">{r.viewCount.toLocaleString("ar-EG")}</span>
+              </li>
+            ))}
+          </ol>
         </div>
 
-        {/* Recent articles */}
+        {/* Recent reviews */}
         <div className="rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60">
           <div className="mb-5 flex items-center justify-between">
-            <h2 className="font-black text-slate-900">آخر المقالات</h2>
-            <Link href="/admin/articles" className="text-xs font-semibold text-[#667eea] hover:underline">
-              عرض الكل
-            </Link>
+            <h2 className="font-black text-slate-900">آخر السكريفات</h2>
+            <Link href="/admin/reviews" className="text-xs font-semibold text-[#667eea] hover:underline">عرض الكل</Link>
           </div>
           <div className="divide-y divide-slate-100">
-            {data.recentArticles.map((article) => (
-              <div key={article.id} className="flex items-center gap-3 py-3">
+            {data.recentReviews.map((r) => (
+              <div key={r.id} className="flex items-center gap-3 py-3">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-800">{article.titleAr}</p>
-                  <p className="text-xs text-slate-400">
-                    {article.category.nameAr} · {article.publishedAt ? format(new Date(article.publishedAt), "yyyy-MM-dd") : "—"}
-                  </p>
+                  <p className="truncate text-sm font-semibold text-slate-800">{r.titleAr}</p>
+                  <p className="text-xs text-slate-400">{r.category.nameAr} · {r.authorSlug}</p>
                 </div>
-                <span className={`flex-shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${article.published ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                  {article.published ? "منشور" : "مسودة"}
+                <span className={`flex-shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${r.published ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                  {r.published ? "منشورة" : "مسودة"}
                 </span>
               </div>
             ))}

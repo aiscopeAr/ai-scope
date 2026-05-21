@@ -9,21 +9,12 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
 
-  let articles: { slug: string; titleAr: string; sourceName: string; publishedAt: Date | null; tags: string[] }[] = [];
+  let reviews: { slug: string; titleAr: string; publishedAt: Date | null; tags: string[] }[] = [];
 
   try {
-    articles = await prisma.article.findMany({
-      where: {
-        published: true,
-        publishedAt: { gte: cutoff },
-      },
-      select: {
-        slug: true,
-        titleAr: true,
-        sourceName: true,
-        publishedAt: true,
-        tags: true,
-      },
+    reviews = await prisma.review.findMany({
+      where: { published: true, publishedAt: { gte: cutoff } },
+      select: { slug: true, titleAr: true, publishedAt: true, tags: true },
       orderBy: { publishedAt: "desc" },
       take: 1000,
     });
@@ -31,20 +22,20 @@ export async function GET() {
     // Return empty valid sitemap on DB error
   }
 
-  const items = articles
-    .filter((a) => a.publishedAt !== null)
-    .map((a) => {
-      const pubDate = (a.publishedAt as Date).toISOString();
-      const keywords = a.tags.slice(0, 10).join(", ");
+  const items = reviews
+    .filter((r) => r.publishedAt !== null)
+    .map((r) => {
+      const pubDate = (r.publishedAt as Date).toISOString();
+      const keywords = r.tags.slice(0, 10).join(", ");
       return `  <url>
-    <loc>${SITE_URL}/news/${escapeXml(a.slug)}</loc>
+    <loc>${SITE_URL}/reviews/${escapeXml(r.slug)}</loc>
     <news:news>
       <news:publication>
         <news:name>${escapeXml(SITE_NAME)}</news:name>
         <news:language>ar</news:language>
       </news:publication>
       <news:publication_date>${pubDate}</news:publication_date>
-      <news:title>${escapeXml(a.titleAr)}</news:title>${keywords ? `\n      <news:keywords>${escapeXml(keywords)}</news:keywords>` : ""}
+      <news:title>${escapeXml(r.titleAr)}</news:title>${keywords ? `\n      <news:keywords>${escapeXml(keywords)}</news:keywords>` : ""}
     </news:news>
   </url>`;
     })

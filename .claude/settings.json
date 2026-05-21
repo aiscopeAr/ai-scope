@@ -15,7 +15,24 @@
       "Bash(Get-Content \"d:\\\\AIScope\\\\components\\\\NewsCard.tsx\")",
       "Bash(Get-Content \"d:\\\\AIScope\\\\app\\\\\\(main\\)\\\\page.tsx\")",
       "Bash(Select-String -Pattern \"prisma\\\\.\")",
-      "Bash(gh run *)"
+      "Bash(gh run *)",
+      "Bash(mkdir -p \"d:\\\\AIScope\\\\app\\\\api\\\\tools\\\\[id]\\\\like\")",
+      "Bash(mkdir -p \"d:\\\\AIScope\\\\app\\\\api\\\\tools\\\\[id]\\\\view\")",
+      "Bash(mkdir -p \"d:\\\\AIScope\\\\app\\\\api\\\\admin\\\\ai-tools\\\\[id]\\\\regenerate\" && echo done)",
+      "Bash(Remove-Item -Path \"d:\\\\AIScope\\\\app\\\\search\\\\page.tsx\" -Force)",
+      "Bash(gh api *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(mkdir -p \"d:/AIScope/app/\\(main\\)/author/[slug]\")",
+      "PowerShell(cd d:/AIScope; Get-ChildItem app/api/cron -Recurse -ErrorAction SilentlyContinue | Select-Object FullName; Get-ChildItem app/\\(main\\) | Select-Object Name; Get-ChildItem app/admin | Select-Object Name)",
+      "Bash(mkdir -p \"d:/AIScope/app/api/admin/reviews\" \"d:/AIScope/app/api/admin/reviews/[id]\" \"d:/AIScope/app/api/admin/queue\" \"d:/AIScope/app/api/admin/queue/[id]\" \"d:/AIScope/app/api/views/[slug]\")",
+      "Bash(mkdir -p \"d:/AIScope/app/\\(main\\)/reviews/[slug]\" \"d:/AIScope/app/\\(main\\)/author/[slug]\")"
+    ],
+    "additionalDirectories": [
+      "d:\\AIScope\\app\\api\\admin\\ai-tools\\[id]",
+      "d:\\AIScope\\app\\(main)\\author",
+      "d:\\AIScope\\app\\api\\admin\\reviews",
+      "d:\\AIScope\\app\\(main)\\reviews"
     ]
   }
 }

@@ -6,17 +6,14 @@ import { useState } from "react";
 
 const primaryNav = [
   { href: "/", label: "الرئيسية" },
-  { href: "/category/ai-models", label: "نماذج AI" },
-  { href: "/category/research", label: "البحوث" },
-  { href: "/tools", label: "مكتبة Prompts" },
+  { href: "/author/zayd", label: "زيد" },
+  { href: "/author/lina", label: "لينا" },
+  { href: "/ai-tools", label: "أدوات AI" },
 ];
 
 const moreNav = [
-  { href: "/guides", label: "الأدلة", icon: "📚" },
-  { href: "/ai-tools", label: "أدوات AI", icon: "🔧" },
-  { href: "/companies", label: "الشركات", icon: "🏢" },
-  { href: "/compare", label: "مقارنات", icon: "⚖️" },
   { href: "/about", label: "من نحن", icon: "ℹ️" },
+  { href: "/contact", label: "تواصل معنا", icon: "✉️" },
 ];
 
 const allNavLinks = [...primaryNav, ...moreNav];

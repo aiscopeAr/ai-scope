@@ -1,88 +1,97 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
-import { auth } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { approveQueueItem, rejectQueueItem, resetForRetry } from "@/lib/queue";
-
-function unauthorized() {
-  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-}
-
-async function requireAdmin() {
-  const session = await auth();
-  if (!session || session.user?.role !== "admin") return null;
-  return session;
-}
+import { approveReview, rejectReview, resetReviewForRetry } from "@/lib/review-queue";
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!(await requireAdmin())) return unauthorized();
-  const { id } = await params;
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const item = await prisma.articleQueue.findUnique({
+  const { id } = await params;
+  const item = await prisma.reviewQueue.findUnique({
     where: { id },
-    include: { source: true },
+    include: { newsItems: true },
   });
   if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(item);
 }
 
-const actionSchema = z.discriminatedUnion("action", [
-  z.object({
-    action: z.literal("approve"),
-    categoryId: z.string().min(1, "التصنيف مطلوب"),
-    title: z.string().min(1),
-    slug: z.string().min(1).regex(/^[a-z0-9-]+$/),
-    published: z.boolean().default(true),
-  }),
-  z.object({ action: z.literal("reject") }),
-  z.object({ action: z.literal("retry") }),
-]);
-
-export async function POST(
-  request: Request,
+export async function PUT(
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!(await requireAdmin())) return unauthorized();
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { id } = await params;
+  const body = await req.json() as {
+    action: "approve" | "reject" | "retry" | "update";
+    categoryId?: string;
+    slug?: string;
+    published?: boolean;
+    imageUrl?: string;
+    // editable fields
+    titleAr?: string;
+    contentAr?: string;
+    summaryAr?: string;
+    tags?: string[];
+    seoTitle?: string;
+    seoDescription?: string;
+  };
 
-  let body: unknown;
-  try { body = await request.json(); } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-
-  const parsed = actionSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
-  }
-
-  const existing = await prisma.articleQueue.findUnique({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
-  if (parsed.data.action === "approve") {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { action: _action, ...overrides } = parsed.data;
-    try {
-      const articleId = await approveQueueItem(id, overrides);
-      return NextResponse.json({ success: true, articleId });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Approval failed";
-      return NextResponse.json({ error: message }, { status: 500 });
+  if (body.action === "approve") {
+    if (!body.categoryId || !body.slug) {
+      return NextResponse.json({ error: "categoryId and slug required" }, { status: 400 });
     }
+    const reviewId = await approveReview(id, {
+      categoryId: body.categoryId,
+      slug: body.slug,
+      published: body.published ?? false,
+      imageUrl: body.imageUrl,
+    });
+    return NextResponse.json({ ok: true, reviewId });
   }
 
-  if (parsed.data.action === "reject") {
-    await rejectQueueItem(id);
-    return NextResponse.json({ success: true });
+  if (body.action === "reject") {
+    await rejectReview(id);
+    return NextResponse.json({ ok: true });
   }
 
-  if (parsed.data.action === "retry") {
-    await resetForRetry(id);
-    return NextResponse.json({ success: true });
+  if (body.action === "retry") {
+    await resetReviewForRetry(id);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.action === "update") {
+    await prisma.reviewQueue.update({
+      where: { id },
+      data: {
+        titleAr: body.titleAr,
+        contentAr: body.contentAr,
+        summaryAr: body.summaryAr,
+        tags: body.tags,
+        seoTitle: body.seoTitle,
+        seoDescription: body.seoDescription,
+      },
+    });
+    return NextResponse.json({ ok: true });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+}
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  await prisma.reviewQueue.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
 }

@@ -22,16 +22,16 @@ const sourceSchema = z.object({
   website: z.string().url("رابط الموقع غير صالح").optional().or(z.literal("")),
   enabled: z.boolean().default(true),
   priority: z.number().int().min(1).max(10).default(5),
-  categoryId: z.string().optional().nullable(),
 });
 
 export async function GET() {
   if (!(await requireAdmin())) return unauthorized();
 
   const sources = await prisma.source.findMany({
-    include: {
-      category: true,
-      _count: { select: { queueItems: true } },
+    select: {
+      id: true, name: true, rssUrl: true, website: true,
+      enabled: true, priority: true, lastSyncedAt: true,
+      _count: { select: { newsItems: true } },
     },
     orderBy: [{ enabled: "desc" }, { priority: "desc" }, { name: "asc" }],
   });
@@ -54,15 +54,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
-  const { website, categoryId, ...rest } = parsed.data;
+  const { website, ...rest } = parsed.data;
 
   const source = await prisma.source.create({
     data: {
       ...rest,
       website: website || null,
-      categoryId: categoryId || null,
     },
-    include: { category: true },
+    select: { id: true, name: true, rssUrl: true, website: true, enabled: true, priority: true, lastSyncedAt: true },
   });
 
   return NextResponse.json(source, { status: 201 });

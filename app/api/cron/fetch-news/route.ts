@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
-
 import { prisma } from "@/lib/db";
 import { fetchRssFeed } from "@/lib/rss";
-import { enqueueItem } from "@/lib/queue";
-import { isAiRelated } from "@/lib/classifier";
+import { enqueueNewsItem } from "@/lib/review-queue";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-// Take up to 10 fresh articles per source per daily run
 const ITEMS_PER_SOURCE = 10;
+const AI_KEYWORDS = /\b(ai|artificial intelligence|machine learning|llm|gpt|claude|gemini|openai|anthropic|deepmind|mistral|llama|neural|model|chatbot|generative|transformer)\b/i;
 
 function verifyCronSecret(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -27,13 +25,7 @@ export async function GET(request: Request) {
     orderBy: { priority: "desc" },
   });
 
-  const results: Array<{
-    sourceId: string;
-    name: string;
-    added: number;
-    skipped: number;
-    error?: string;
-  }> = [];
+  const results: Array<{ name: string; added: number; skipped: number; error?: string }> = [];
 
   for (const source of sources) {
     let added = 0;
@@ -42,22 +34,24 @@ export async function GET(request: Request) {
 
     try {
       const items = await fetchRssFeed(source.rssUrl);
-
-      // Only enqueue the first N fresh items per source
       let enqueued = 0;
+
       for (const item of items) {
         if (enqueued >= ITEMS_PER_SOURCE) break;
-        // Fast pre-filter — skip clearly non-AI items before touching the DB
-        if (!isAiRelated(item.title, item.description)) {
+        if (!AI_KEYWORDS.test(item.title + " " + item.description)) {
           skipped++;
           continue;
         }
-        const queued = await enqueueItem({
-          ...item,
-          sourceId: source.id,
+        const id = await enqueueNewsItem({
+          sourceUrl: item.link,
+          title: item.title,
+          content: item.description,
+          publishedAt: item.pubDate ? new Date(item.pubDate) : null,
           sourceName: source.name,
+          sourceId: source.id,
+          imageUrl: item.imageUrl,
         });
-        if (queued) { added++; enqueued++; }
+        if (id) { added++; enqueued++; }
         else skipped++;
       }
 
@@ -67,20 +61,14 @@ export async function GET(request: Request) {
       });
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : "Unknown error";
-      console.error(`[fetch-news] Failed source ${source.name}:`, errorMsg);
     }
 
-    results.push({ sourceId: source.id, name: source.name, added, skipped, error: errorMsg });
+    results.push({ name: source.name, added, skipped, error: errorMsg });
   }
-
-  const totalAdded = results.reduce((s, r) => s + r.added, 0);
-  const totalFailed = results.filter((r) => r.error).length;
 
   return NextResponse.json({
     ok: true,
-    sources: sources.length,
-    totalAdded,
-    totalFailed,
+    totalAdded: results.reduce((s, r) => s + r.added, 0),
     results,
   });
 }

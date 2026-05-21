@@ -13,32 +13,30 @@ function escapeXml(str: string): string {
 }
 
 export async function GET() {
-  const articles = await prisma.article.findMany({
+  const reviews = await prisma.review.findMany({
     where: { published: true },
     orderBy: { publishedAt: "desc" },
     take: 50,
     include: { category: true },
   });
 
-  const items = articles
-    .map((article) => {
-      const url = `${SITE_URL}/news/${article.slug}`;
-      const pubDate = article.publishedAt
-        ? new Date(article.publishedAt).toUTCString()
-        : new Date(article.createdAt).toUTCString();
-      const description = article.excerpt
-        ? escapeXml(article.excerpt)
-        : escapeXml(article.contentAr.slice(0, 300));
+  const items = reviews
+    .map((review) => {
+      const url = `${SITE_URL}/reviews/${review.slug}`;
+      const pubDate = review.publishedAt
+        ? new Date(review.publishedAt).toUTCString()
+        : new Date(review.createdAt).toUTCString();
+      const description = escapeXml(review.summary.slice(0, 300));
 
       return `    <item>
-      <title>${escapeXml(article.titleAr)}</title>
+      <title>${escapeXml(review.titleAr)}</title>
       <link>${url}</link>
       <guid isPermaLink="true">${url}</guid>
       <description>${description}</description>
-      <category>${escapeXml(article.category.nameAr)}</category>
-      <source url="${escapeXml(article.sourceUrl)}">${escapeXml(article.sourceName)}</source>
+      <category>${escapeXml(review.category.nameAr)}</category>
+      <author>${escapeXml(review.authorSlug)}</author>
       <pubDate>${pubDate}</pubDate>
-      ${article.imageUrl ? `<enclosure url="${escapeXml(article.imageUrl)}" type="image/jpeg" length="0"/>` : ""}
+      ${review.imageUrl ? `<enclosure url="${escapeXml(review.imageUrl)}" type="image/jpeg" length="0"/>` : ""}
     </item>`;
     })
     .join("\n");

@@ -67,7 +67,7 @@ export default async function AIToolPage({
 }) {
   const { slug } = await params;
 
-  const [tool, relatedTools, relatedArticles] = await Promise.all([
+  const [tool, relatedTools, relatedReviews] = await Promise.all([
     prisma.aITool.findUnique({
       where: { slug },
       include: {
@@ -88,12 +88,12 @@ export default async function AIToolPage({
       },
     }).catch(() => []),
 
-    // Related articles mentioning this tool by name
-    prisma.article.findMany({
+    // Related reviews mentioning this tool
+    prisma.review.findMany({
       where: { published: true },
       orderBy: { publishedAt: "desc" },
       take: 4,
-      select: { id: true, slug: true, titleAr: true, excerpt: true, publishedAt: true, sourceName: true },
+      select: { id: true, slug: true, titleAr: true, summary: true, publishedAt: true, authorSlug: true },
     }).catch(() => []),
   ]);
 
@@ -361,22 +361,22 @@ export default async function AIToolPage({
                 </section>
               )}
 
-              {/* Related articles */}
-              {relatedArticles.length > 0 && (
+              {/* Related reviews */}
+              {relatedReviews.length > 0 && (
                 <section className="mb-8">
-                  <h2 className="mb-4 text-xl font-black text-white">مقالات ذات صلة</h2>
+                  <h2 className="mb-4 text-xl font-black text-white">سكريفات ذات صلة</h2>
                   <div className="space-y-3">
-                    {relatedArticles.map((a) => (
+                    {relatedReviews.map((r) => (
                       <Link
-                        key={a.id}
-                        href={`/news/${a.slug}`}
+                        key={r.id}
+                        href={`/reviews/${r.slug}`}
                         className="flex items-start gap-3 rounded-xl border border-white/6 bg-white/3 p-4 hover:border-violet-500/30 hover:bg-violet-500/5 transition group"
                       >
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-slate-200 group-hover:text-violet-300 transition-colors line-clamp-1">{a.titleAr}</p>
-                          {a.excerpt && <p className="mt-1 text-xs text-slate-500 line-clamp-1">{a.excerpt}</p>}
+                          <p className="font-semibold text-slate-200 group-hover:text-violet-300 transition-colors line-clamp-1">{r.titleAr}</p>
+                          {r.summary && <p className="mt-1 text-xs text-slate-500 line-clamp-1">{r.summary}</p>}
                         </div>
-                        <span className="shrink-0 text-xs text-slate-600">{a.sourceName}</span>
+                        <span className="shrink-0 text-xs text-slate-600">{r.authorSlug}</span>
                       </Link>
                     ))}
                   </div>

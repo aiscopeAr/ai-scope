@@ -10,7 +10,6 @@ function verifyCronSecret(request: Request): boolean {
   return request.headers.get("authorization") === `Bearer ${secret}`;
 }
 
-// Known AI company/product names to detect in content
 const COMPANY_PATTERNS = [
   "OpenAI", "ChatGPT", "GPT-4", "GPT-5", "GPT",
   "Google DeepMind", "DeepMind", "Gemini", "Google AI",
@@ -30,9 +29,7 @@ function detectCompanies(text: string): string[] {
   const found: string[] = [];
   const lower = text.toLowerCase();
   for (const name of COMPANY_PATTERNS) {
-    if (lower.includes(name.toLowerCase())) {
-      found.push(name);
-    }
+    if (lower.includes(name.toLowerCase())) found.push(name);
   }
   return [...new Set(found)];
 }
@@ -44,26 +41,24 @@ export async function GET(request: Request) {
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const recentArticles = await prisma.article.findMany({
+  const recentReviews = await prisma.review.findMany({
     where: {
       published: true,
       publishedAt: { gte: sevenDaysAgo },
     },
-    select: { tags: true, titleAr: true, title: true, contentAr: true },
+    select: { tags: true, titleAr: true, summary: true },
   });
 
-  // Aggregate tag counts
   const tagCounts = new Map<string, number>();
-  for (const article of recentArticles) {
-    for (const tag of article.tags) {
+  for (const review of recentReviews) {
+    for (const tag of review.tags) {
       if (tag.trim()) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
     }
   }
 
-  // Aggregate company mentions
   const companyCounts = new Map<string, number>();
-  for (const article of recentArticles) {
-    const combined = `${article.titleAr} ${article.title} ${article.contentAr.slice(0, 500)}`;
+  for (const review of recentReviews) {
+    const combined = `${review.titleAr} ${review.summary.slice(0, 500)}`;
     const companies = detectCompanies(combined);
     for (const company of companies) {
       companyCounts.set(company, (companyCounts.get(company) ?? 0) + 1);
@@ -73,7 +68,6 @@ export async function GET(request: Request) {
   let tagUpserts = 0;
   let companyUpserts = 0;
 
-  // Upsert tags
   for (const [keyword, count] of tagCounts.entries()) {
     await prisma.trendingKeyword.upsert({
       where: { keyword_type: { keyword, type: "tag" } },
@@ -83,7 +77,6 @@ export async function GET(request: Request) {
     tagUpserts++;
   }
 
-  // Upsert companies
   for (const [keyword, count] of companyCounts.entries()) {
     await prisma.trendingKeyword.upsert({
       where: { keyword_type: { keyword, type: "company" } },
@@ -95,7 +88,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     ok: true,
-    articles: recentArticles.length,
+    reviews: recentReviews.length,
     tagUpserts,
     companyUpserts,
   });

@@ -8,7 +8,19 @@ import {
 } from "lucide-react";
 
 import { useToast } from "@/components/ui/toast";
-import type { SourceWithCategory } from "@/types/pipeline";
+
+type SourceWithCategory = {
+  id: string;
+  name: string;
+  rssUrl: string;
+  website: string | null;
+  enabled: boolean;
+  priority: number;
+  lastSyncedAt: Date | null;
+  categoryId?: string | null;
+  category?: { id: string; nameAr: string; name: string } | null;
+  _count?: { queueItems?: number; newsItems?: number };
+};
 
 type Category = { id: string; nameAr: string; name: string };
 
@@ -260,7 +272,7 @@ export default function AdminSourcesPage() {
                     </p>
                   )}
                   {s._count && (
-                    <p className="text-slate-400">{s._count.queueItems} عنصر في الطابور</p>
+                    <p className="text-slate-400">{s._count.newsItems ?? s._count.queueItems ?? 0} خبر مجمَّع</p>
                   )}
                 </div>
 

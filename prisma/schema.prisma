@@ -1,145 +1,167 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [vector]
 }
 
-model Category {
-  id           String         @id @default(cuid())
-  name         String
-  nameAr       String
-  slug         String         @unique
-  articles     Article[]
-  sources      Source[]
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-}
+// ─── News Sources ─────────────────────────────────────────────────────────────
 
 model Source {
-  id           String         @id @default(cuid())
+  id           String        @id @default(cuid())
   name         String
   rssUrl       String
   website      String?
-  enabled      Boolean        @default(true)
-  priority     Int            @default(5)
-  categoryId   String?
-  category     Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  enabled      Boolean       @default(true)
+  priority     Int           @default(5)
   lastSyncedAt DateTime?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  queueItems   ArticleQueue[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  newsItems    NewsItem[]
 
   @@index([enabled])
 }
 
-model Article {
-  id           String    @id @default(cuid())
-  title        String
-  titleAr      String
-  slug         String    @unique
-  content      String    @db.Text
-  contentAr    String    @db.Text
-  excerpt      String?   @db.Text
-  imageUrl     String?
-  imageAlt     String?
-  sourceUrl    String
-  sourceName   String
-  tags         String[]
-  keywords     String[]
-  faq          Json?
-  relatedTopics String[]
-  score        Int       @default(0)
-  viewCount    Int       @default(0)
-  published    Boolean   @default(false)
-  publishedAt  DateTime?
-  categoryId   String
-  category     Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  @@index([published, publishedAt])
-  @@index([categoryId])
-}
-
-model ArticleQueue {
-  id                 String    @id @default(cuid())
-  sourceUrl          String    @unique
-  rawTitle           String?
-  rawContent         String    @db.Text
-  rawPublishedAt     DateTime?
-  sourceName         String?
-  sourceId           String?
-  source             Source?   @relation(fields: [sourceId], references: [id], onDelete: SetNull)
-  titleAr            String?
-  summaryAr          String?   @db.Text
-  contentAr          String?   @db.Text
-  tags               String[]
-  keywords           String[]
-  faq                Json?
-  imageAlt           String?
-  relatedTopics      String[]
-  seoTitle           String?
-  seoDescription     String?
-  suggestedCategory  String?
-  slug               String?
-  featuredImagePrompt String?
-  imageUrl           String?
-  translatedContent  String?   @db.Text
-  status             String    @default("pending")
-  retryCount         Int       @default(0)
-  failureReason      String?
-  processedAt        DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @default(now()) @updatedAt
-  approvedAt         DateTime?
+// Raw RSS item — fetched, waiting to be clustered
+model NewsItem {
+  id          String    @id @default(cuid())
+  sourceUrl   String    @unique
+  title       String
+  content     String    @db.Text
+  publishedAt DateTime?
+  sourceName  String
+  sourceId    String?
+  source      Source?   @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  imageUrl    String?
+  status      String    @default("pending") // "pending" | "clustered" | "skipped"
+  clusterId   String?
+  cluster     ReviewQueue? @relation(fields: [clusterId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
 
   @@index([status])
-  @@index([sourceId])
+  @@index([clusterId])
 }
 
-model Settings {
-  id               String   @id @default(cuid())
-  autoPublish      Boolean  @default(true)
-  minScore         Int      @default(7)
-  publishInterval  Int      @default(60)
-  translationModel String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+// ─── Review Pipeline ──────────────────────────────────────────────────────────
+
+// A cluster of related news items → becomes one deep review
+model ReviewQueue {
+  id              String     @id @default(cuid())
+  topic           String     // e.g. "GPT-5 release"
+  authorSlug      String     // "zayd" | "lina"
+  newsItems       NewsItem[]
+  // AI-generated review draft
+  titleAr         String?
+  contentAr       String?    @db.Text  // Markdown, 1500–3000 words
+  summaryAr       String?    @db.Text
+  tags            String[]
+  keywords        String[]
+  faq             Json?
+  imageAlt        String?
+  seoTitle        String?
+  seoDescription  String?
+  slug            String?
+  imageUrl        String?
+  featuredImagePrompt String?
+  // Pipeline state
+  status          String     @default("pending") // "pending" | "processing" | "processed" | "approved" | "rejected" | "failed"
+  retryCount      Int        @default(0)
+  failureReason   String?
+  processedAt     DateTime?
+  approvedAt      DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @default(now()) @updatedAt
+
+  @@index([status])
+  @@index([authorSlug])
 }
+
+// Published deep review — the main content unit
+model Review {
+  id            String   @id @default(cuid())
+  title         String   // fallback English
+  titleAr       String
+  slug          String   @unique
+  summary       String   @db.Text   // 2–3 sentence lede
+  content       String   @db.Text   // Full Markdown, 1500–3000 words
+  authorSlug    String   // "zayd" | "lina"
+  categoryId    String
+  category      Category @relation(fields: [categoryId], references: [id])
+  tags          String[]
+  keywords      String[]
+  faq           Json?
+  imageUrl      String?
+  imageAlt      String?
+  seoTitle      String?
+  seoDescription String?
+  sources       Json     @default("[]") // [{title, url, name}]
+  relatedIds    String[]               // other Review ids referenced in this piece
+  viewCount     Int      @default(0)
+  published     Boolean  @default(false)
+  publishedAt   DateTime?
+  // pgvector — 1536-dim OpenAI text-embedding-3-small
+  embedding     Unsupported("vector(1536)")?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  socialPosts   SocialPost[]
+
+  @@index([published, publishedAt])
+  @@index([authorSlug])
+  @@index([categoryId])
+  @@index([slug])
+}
+
+// ─── Taxonomy ────────────────────────────────────────────────────────────────
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  nameAr    String
+  slug      String   @unique
+  reviews   Review[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Social Media ─────────────────────────────────────────────────────────────
 
 model SocialAccount {
-  id           String       @id @default(cuid())
-  platform     String       // "twitter" | "instagram" | "telegram" | "facebook" | "tiktok"
-  name         String
-  enabled      Boolean      @default(false)
-  credentials  String       @db.Text // JSON — API keys (encrypted at app level)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  posts        SocialPost[]
+  id          String       @id @default(cuid())
+  platform    String       // "twitter" | "instagram" | "telegram" | "facebook" | "tiktok"
+  name        String
+  enabled     Boolean      @default(false)
+  credentials String       @db.Text // JSON — API keys
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  posts       SocialPost[]
 
   @@index([platform, enabled])
 }
 
 model SocialPost {
-  id          String    @id @default(cuid())
-  articleId   String
-  accountId   String
-  account     SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  platform    String
-  caption     String    @db.Text
-  status      String    @default("pending") // "pending" | "approved" | "sent" | "failed" | "skipped"
-  sentAt      DateTime?
-  errorMsg    String?
-  createdAt   DateTime  @default(now())
+  id        String        @id @default(cuid())
+  reviewId  String
+  review    Review        @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  accountId String
+  account   SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  platform  String
+  caption   String        @db.Text
+  status    String        @default("pending") // "pending" | "approved" | "sent" | "failed" | "skipped"
+  sentAt    DateTime?
+  errorMsg  String?
+  createdAt DateTime      @default(now())
 
   @@index([status])
-  @@index([articleId])
+  @@index([reviewId])
   @@index([accountId])
 }
+
+// ─── Ads ─────────────────────────────────────────────────────────────────────
 
 model AdSlot {
   id        String   @id @default(cuid())
@@ -154,219 +176,65 @@ model AdSlot {
   @@index([position, enabled])
 }
 
-model PromptCategory {
-  id          String   @id @default(cuid())
-  name        String
-  nameAr      String
-  slug        String   @unique
-  icon        String?
-  description String?
-  prompts     Prompt[]
-
-  @@index([slug])
-}
-
-model AIModel {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  icon        String?
-  description String?
-  prompts     Prompt[]
-
-  @@index([slug])
-}
-
-model Prompt {
-  id            String         @id @default(cuid())
-  title         String
-  titleAr       String
-  slug          String         @unique
-  description   String         @db.Text
-  descriptionAr String         @db.Text
-  promptText    String         @db.Text
-  promptTextAr  String         @db.Text
-  examples      Json?
-  useCases      Json?
-  culturalNotes String?        @db.Text
-  sourceUrl     String
-  sourceName    String
-  categoryId    String
-  category      PromptCategory @relation(fields: [categoryId], references: [id])
-  aiModelId     String
-  aiModel       AIModel        @relation(fields: [aiModelId], references: [id])
-  tags          String[]
-  difficulty    String         @default("intermediate")
-  viewCount     Int            @default(0)
-  copyCount     Int            @default(0)
-  featured      Boolean        @default(false)
-  published     Boolean        @default(true)
-  publishedAt   DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  @@index([categoryId])
-  @@index([aiModelId])
-  @@index([featured])
-  @@index([slug])
-  @@index([published, publishedAt])
-}
-
-model PromptQueue {
-  id            String    @id @default(cuid())
-  rawTitle      String
-  rawPrompt     String    @db.Text
-  rawCategory   String?
-  rawTags       String[]
-  sourceUrl     String
-  sourceName    String
-  titleAr       String?
-  descriptionAr String?   @db.Text
-  promptText    String?   @db.Text
-  promptTextAr  String?   @db.Text
-  examples      Json?
-  useCases      Json?
-  culturalNotes String?   @db.Text
-  score         Int       @default(0)
-  status        String    @default("pending")
-  difficulty    String?
-  tags          String[]
-  createdAt     DateTime  @default(now())
-  processedAt   DateTime?
-
-  @@index([status])
-  @@index([score])
-}
-
-model PromptSource {
-  id        String    @id @default(cuid())
-  name      String
-  type      String
-  url       String
-  config    Json?
-  active    Boolean   @default(true)
-  priority  Int       @default(5)
-  lastFetch DateTime?
-  createdAt DateTime  @default(now())
-
-  @@index([active])
-}
-
-model TrendingKeyword {
-  id        String   @id @default(cuid())
-  keyword   String
-  count     Int      @default(1)
-  type      String   @default("tag")
-  createdAt DateTime @default(now())
-
-  @@unique([keyword, type])
-  @@index([type, count])
-}
-
-// ─── Evergreen content ────────────────────────────────────────────────────────
+// ─── AI Tools Directory (kept as-is) ─────────────────────────────────────────
 
 model AITool {
-  id              String   @id @default(cuid())
+  id              String           @id @default(cuid())
   name            String
-  slug            String   @unique
+  slug            String           @unique
   tagline         String?
-  descriptionAr   String   @db.Text
-  contentAr       String?  @db.Text   // Long-form Arabic review (800+ words)
+  descriptionAr   String           @db.Text
+  contentAr       String?          @db.Text
   website         String?
   logoUrl         String?
-  screenshots     String[]             // Array of image URLs
-  toolCategory    String   @default("other") // 18-category taxonomy (see TOOL_CATEGORIES)
-  category        String   @default("other") // Legacy field kept for compat
-  pricing         String   @default("freemium") // "free" | "freemium" | "paid"
-  monthlyPrice    Float?               // Starting price in USD
-  pricingDetails  String?  @db.Text   // Markdown pricing tiers
+  screenshots     String[]
+  toolCategory    String           @default("other")
+  category        String           @default("other")
+  pricing         String           @default("freemium")
+  monthlyPrice    Float?
+  pricingDetails  String?          @db.Text
   pros            String[]
   cons            String[]
   useCases        String[]
-  arabicSupport   Boolean  @default(false)
-  hasApi          Boolean  @default(false)
+  arabicSupport   Boolean          @default(false)
+  hasApi          Boolean          @default(false)
   tags            String[]
-  faq             Json?                // [{question, answer}]
+  faq             Json?
   seoTitle        String?
   seoDescription  String?
   imageAlt        String?
   relatedTopics   String[]
-  featured        Boolean  @default(false)
-  editorPick      Boolean  @default(false)
+  featured        Boolean          @default(false)
+  editorPick      Boolean          @default(false)
   featuredAt      DateTime?
-  published       Boolean  @default(true)
-  viewCount       Int      @default(0)
-  likes           Int      @default(0)
+  published       Boolean          @default(true)
+  viewCount       Int              @default(0)
+  likes           Int              @default(0)
   releaseDate     DateTime?
   lastUpdated     DateTime?
-  sourceUrl       String?              // Original listing URL (Product Hunt, Futurepedia, etc.)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  sourceUrl       String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   comparisons     ComparisonSide[]
 
   @@index([toolCategory, published])
-  @@index([category, published])
   @@index([slug])
   @@index([published, viewCount])
-  @@index([published, likes])
   @@index([featured, published])
-  @@index([editorPick, published])
-}
-
-model Company {
-  id              String   @id @default(cuid())
-  name            String
-  slug            String   @unique
-  descriptionAr   String   @db.Text
-  website         String?
-  logoUrl         String?
-  country         String?
-  founded         Int?
-  specialties     String[] // Arabic tags
-  notableModels   String[]
-  published       Boolean  @default(true)
-  viewCount       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([slug])
-  @@index([published])
-}
-
-model Guide {
-  id              String   @id @default(cuid())
-  title           String
-  slug            String   @unique
-  excerpt         String   @db.Text
-  content         String   @db.Text
-  category        String   // "beginner" | "advanced" | "tutorial" | "how-to" | "comparison"
-  tags            String[]
-  difficulty      String   @default("beginner") // "beginner" | "intermediate" | "advanced"
-  faq             Json?
-  readingTime     Int?     // minutes
-  published       Boolean  @default(true)
-  publishedAt     DateTime @default(now())
-  viewCount       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([category, published])
-  @@index([slug])
-  @@index([published, publishedAt])
 }
 
 model Comparison {
-  id              String           @id @default(cuid())
-  slug            String           @unique
-  title           String
-  summaryAr       String           @db.Text
-  verdict         String?          @db.Text
-  criteria        Json?            // { name: string, weights: number }[]
-  published       Boolean          @default(true)
-  viewCount       Int              @default(0)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  sides           ComparisonSide[]
+  id        String           @id @default(cuid())
+  slug      String           @unique
+  title     String
+  summaryAr String           @db.Text
+  verdict   String?          @db.Text
+  criteria  Json?
+  published Boolean          @default(true)
+  viewCount Int              @default(0)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  sides     ComparisonSide[]
 
   @@index([slug])
   @@index([published])
@@ -378,7 +246,7 @@ model ComparisonSide {
   comparison   Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
   toolId       String
   tool         AITool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
-  score        Int?       // 0–100 overall score
+  score        Int?
   notes        String?    @db.Text
   strengths    String[]
   weaknesses   String[]
@@ -389,7 +257,6 @@ model ComparisonSide {
   @@index([toolId])
 }
 
-// Tracks tool view/like events for analytics
 model ToolEvent {
   id        String   @id @default(cuid())
   toolId    String
@@ -398,4 +265,17 @@ model ToolEvent {
 
   @@index([toolId, type])
   @@index([createdAt])
+}
+
+// ─── Analytics ───────────────────────────────────────────────────────────────
+
+model TrendingKeyword {
+  id        String   @id @default(cuid())
+  keyword   String
+  count     Int      @default(1)
+  type      String   @default("tag")
+  createdAt DateTime @default(now())
+
+  @@unique([keyword, type])
+  @@index([type, count])
 }

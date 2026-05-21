@@ -10,8 +10,8 @@ export async function POST(
   const { slug } = await params;
 
   try {
-    await prisma.article.update({
-      where: { slug, published: true },
+    await prisma.review.update({
+      where: { slug },
       data: { viewCount: { increment: 1 } },
     });
   } catch {
