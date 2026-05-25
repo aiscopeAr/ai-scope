@@ -364,7 +364,7 @@ export default async function AIToolPage({
               {/* Related reviews */}
               {relatedReviews.length > 0 && (
                 <section className="mb-8">
-                  <h2 className="mb-4 text-xl font-black text-white">سكريفات ذات صلة</h2>
+                  <h2 className="mb-4 text-xl font-black text-white">تقارير ذات صلة</h2>
                   <div className="space-y-3">
                     {relatedReviews.map((r) => (
                       <Link

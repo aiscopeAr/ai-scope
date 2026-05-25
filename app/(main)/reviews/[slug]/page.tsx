@@ -224,7 +224,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
 
         {/* Share bar */}
         <div className="mb-8 flex items-center justify-between gap-4 rounded-2xl border border-white/8 bg-white/3 px-5 py-4">
-          <p className="text-sm font-semibold text-slate-400">أعجبتك السكريفة؟ شاركها مع أصدقائك</p>
+          <p className="text-sm font-semibold text-slate-400">أعجبك التقرير؟ شاركه مع أصدقائك</p>
           <ShareButtons url={reviewUrl} title={review.titleAr} />
         </div>
 
@@ -264,10 +264,10 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
                 </div>
                 <p className="mb-1.5 text-xs text-slate-500">{author.titleAr}</p>
                 <p className="text-xs leading-relaxed text-slate-400">
-                  كُتبت هذه السكريفة بمساعدة {author.nameAr}، نظام ذكاء اصطناعي متخصص في {author.specialtyAr}، استناداً إلى {sources.length} مصدر موثوق مع مراجعة تحريرية.
+                  كُتب هذا التقرير بمساعدة {author.nameAr}، نظام ذكاء اصطناعي متخصص في {author.specialtyAr}، استناداً إلى {sources.length} مصدر موثوق مع مراجعة تحريرية.
                 </p>
                 <Link href={`/author/${author.slug}`} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold hover:underline" style={{ color: author.accentColor }}>
-                  جميع سكريفات {author.nameAr}
+                  جميع تقارير {author.nameAr}
                   <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                 </Link>
               </div>

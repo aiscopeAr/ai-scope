@@ -55,7 +55,7 @@ export default function ReviewEditorPage() {
   }
 
   async function del() {
-    if (!confirm("حذف هذه السكريفة نهائياً؟")) return;
+    if (!confirm("حذف هذا التقرير نهائياً؟")) return;
     await fetch(`/api/admin/reviews/${id}`, { method: "DELETE" });
     router.push("/admin/reviews");
   }

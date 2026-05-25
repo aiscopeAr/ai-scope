@@ -96,7 +96,7 @@ export default function AdminQueuePage() {
         <Link href="/admin" className="text-slate-400 hover:text-slate-700">
           <ArrowRight className="h-5 w-5" />
         </Link>
-        <h1 className="text-2xl font-black text-slate-900">طابور السكريفات</h1>
+        <h1 className="text-2xl font-black text-slate-900">طابور التقارير</h1>
         <button onClick={load} className="mr-auto rounded-xl bg-slate-100 p-2 hover:bg-slate-200">
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
         </button>

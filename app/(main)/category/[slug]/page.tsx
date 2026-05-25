@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!data) return {};
 
   const url = absoluteUrl(`/category/${slug}`);
-  const description = `سكريفات وتحليلات في تصنيف ${data.category.nameAr} على ${SITE_NAME_AR}.`;
+  const description = `تقارير وتحليلات في تصنيف ${data.category.nameAr} على ${SITE_NAME_AR}.`;
 
   return {
     title: `${data.category.nameAr} | ${SITE_NAME_AR}`,
@@ -91,7 +91,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       <nav className="mb-6 flex items-center gap-2 text-sm text-slate-500">
         <Link href="/" className="hover:text-violet-400 transition-colors">الرئيسية</Link>
         <span>/</span>
-        <Link href="/reviews" className="hover:text-violet-400 transition-colors">السكريفات</Link>
+        <Link href="/reviews" className="hover:text-violet-400 transition-colors">التقارير</Link>
         <span>/</span>
         <span className="text-slate-300">{category.nameAr}</span>
       </nav>
@@ -100,7 +100,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         <p className="mb-3 text-sm font-semibold text-violet-300">تصنيف تحريري</p>
         <h1 className="mb-3 text-3xl font-black text-white md:text-5xl">{category.nameAr}</h1>
         <p className="max-w-3xl text-sm leading-relaxed text-slate-400 md:text-base">
-          كل السكريفات المنشورة في هذا التصنيف، مرتبة من الأحدث إلى الأقدم.
+          كل التقارير المنشورة في هذا التصنيف، مرتبة من الأحدث إلى الأقدم.
         </p>
       </section>
 
@@ -123,10 +123,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
       {reviews.length === 0 ? (
         <section className="rounded-2xl border border-white/8 bg-white/3 p-8 text-center">
-          <h2 className="mb-2 text-xl font-bold text-white">لا توجد سكريفات في هذا التصنيف بعد</h2>
-          <p className="mb-4 text-slate-500">يمكنك العودة إلى جميع السكريفات أو متابعة تصنيف آخر.</p>
+          <h2 className="mb-2 text-xl font-bold text-white">لا توجد تقارير في هذا التصنيف بعد</h2>
+          <p className="mb-4 text-slate-500">يمكنك العودة إلى جميع التقارير أو متابعة تصنيف آخر.</p>
           <Link href="/reviews" className="text-sm font-semibold text-violet-400 hover:text-violet-300">
-            عرض جميع السكريفات
+            عرض جميع التقارير
           </Link>
         </section>
       ) : (

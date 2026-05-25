@@ -93,7 +93,7 @@ export default async function AdminDashboardPage() {
     {
       href: "/admin/queue",
       icon: ClipboardList,
-      label: "طابور السكريفات",
+      label: "طابور التقارير",
       sub: `${data.processedQueue} جاهز · ${data.failedQueue} فشل`,
       value: data.pendingQueue,
       valueLabel: "معلّق",
@@ -103,10 +103,10 @@ export default async function AdminDashboardPage() {
     {
       href: "/admin/reviews",
       icon: BookOpen,
-      label: "السكريفات",
+      label: "التقارير",
       sub: `${data.publishedCount} منشورة`,
       value: data.reviewCount,
-      valueLabel: "سكريفة",
+      valueLabel: "تقرير",
       color: "violet",
     },
     {
@@ -182,7 +182,7 @@ export default async function AdminDashboardPage() {
       {/* Stats strip */}
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "إجمالي السكريفات", value: data.reviewCount, sub: `${data.publishedCount} منشورة` },
+          { label: "إجمالي التقارير", value: data.reviewCount, sub: `${data.publishedCount} منشورة` },
           { label: "نُشر اليوم", value: data.publishedToday, sub: "منذ منتصف الليل", highlight: data.publishedToday > 0 },
           { label: "في الطابور", value: data.pendingQueue + data.processedQueue, sub: data.failedQueue > 0 ? `${data.failedQueue} فشل` : "لا أخطاء", urgent: data.failedQueue > 0 },
           { label: "مشاهدات إجمالية", value: data.totalViews.toLocaleString("ar-EG"), sub: `${data.pendingNewsItems} خبر جديد` },
@@ -296,7 +296,7 @@ export default async function AdminDashboardPage() {
         {/* Recent reviews */}
         <div className="rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60">
           <div className="mb-5 flex items-center justify-between">
-            <h2 className="font-black text-slate-900">آخر السكريفات</h2>
+            <h2 className="font-black text-slate-900">آخر التقارير</h2>
             <Link href="/admin/reviews" className="text-xs font-semibold text-[#667eea] hover:underline">عرض الكل</Link>
           </div>
           <div className="divide-y divide-slate-100">

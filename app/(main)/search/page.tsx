@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: `البحث | ${SITE_NAME_AR}`,
-  description: "ابحث في السكريفات وأدوات الذكاء الاصطناعي داخل AI Scope.",
+  description: "ابحث في التقارير وأدوات الذكاء الاصطناعي داخل AI Scope.",
   alternates: { canonical: absoluteUrl("/search") },
   robots: {
     index: false,
@@ -166,7 +166,7 @@ export default async function SearchPage({
         <div className="mt-4 flex flex-wrap gap-2">
           {[
             { value: "all", label: "الكل" },
-            { value: "reviews", label: "السكريفات" },
+            { value: "reviews", label: "التقارير" },
             { value: "tools", label: "الأدوات" },
           ].map((item) => {
             const href = item.value === "all"
@@ -197,13 +197,13 @@ export default async function SearchPage({
             : `لا توجد نتائج لعبارة "${q}".`}
         </p>
       ) : (
-        <p className="mb-6 text-sm text-slate-500">ابدأ بكتابة كلمة مفتاحية للبحث في السكريفات والدليل.</p>
+        <p className="mb-6 text-sm text-slate-500">ابدأ بكتابة كلمة مفتاحية للبحث في التقارير والدليل.</p>
       )}
 
       {reviews.length > 0 && (
         <section className="mb-12">
           <div className="mb-5 flex items-center gap-3">
-            <h2 className="text-xl font-black text-white">السكريفات</h2>
+            <h2 className="text-xl font-black text-white">التقارير</h2>
             <div className="h-px flex-1 bg-white/5" />
           </div>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

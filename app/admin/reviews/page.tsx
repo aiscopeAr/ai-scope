@@ -44,7 +44,7 @@ export default function AdminReviewsPage() {
         <Link href="/admin" className="text-slate-400 hover:text-slate-700">
           <ArrowRight className="h-5 w-5" />
         </Link>
-        <h1 className="text-2xl font-black text-slate-900">السكريفات</h1>
+        <h1 className="text-2xl font-black text-slate-900">التقارير</h1>
         <button onClick={load} className="mr-auto rounded-xl bg-slate-100 p-2 hover:bg-slate-200">
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
         </button>
@@ -69,7 +69,7 @@ export default function AdminReviewsPage() {
       {loading ? (
         <p className="text-slate-400">جارٍ التحميل...</p>
       ) : filtered.length === 0 ? (
-        <p className="text-slate-400">لا توجد سكريفات</p>
+        <p className="text-slate-400">لا توجد تقارير</p>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <table className="w-full text-sm">

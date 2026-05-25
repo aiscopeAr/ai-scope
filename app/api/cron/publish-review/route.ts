@@ -68,6 +68,9 @@ export async function GET(request: Request) {
       let imageUrl = item.imageUrl ?? undefined;
       if (!imageUrl && item.featuredImagePrompt) {
         imageUrl = await generateReviewImage(item.featuredImagePrompt) ?? undefined;
+        if (!imageUrl) {
+          console.error(`[publish-review] Image generation returned null for queue item ${item.id}`);
+        }
       }
 
       const reviewId = await approveReview(item.id, {

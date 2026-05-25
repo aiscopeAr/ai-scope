@@ -66,7 +66,7 @@ export default async function HomePage() {
         {latestReviews.length > 0 && (
           <section className="mb-12">
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-black text-white">آخر السكريفات</h2>
+              <h2 className="text-xl font-black text-white">آخر التقارير</h2>
               <Link href="/reviews" className="text-sm font-semibold text-violet-400 hover:text-violet-300">
                 عرض الكل ←
               </Link>
@@ -102,7 +102,7 @@ export default async function HomePage() {
 
         {/* Authors intro */}
         <section className="mb-12 rounded-2xl border border-white/8 bg-white/3 p-6">
-          <h2 className="mb-6 text-center text-xl font-black text-white">فريق السكريفات</h2>
+          <h2 className="mb-6 text-center text-xl font-black text-white">فريق التقارير</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {[
               { slug: "zayd", name: "زيد", title: "محلل نماذج الذكاء الاصطناعي", accent: "#6366f1", desc: "يحلل النماذج الكبرى ويقارن قدراتها بعيناً نقدية — لا يصدق الضجيج التسويقي." },

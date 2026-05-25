@@ -30,7 +30,7 @@ export default function Footer() {
             <ul className="space-y-3">
               {[
                 { href: "/", label: "الرئيسية" },
-                { href: "/reviews", label: "السكريفات" },
+                { href: "/reviews", label: "التقارير" },
                 { href: "/ai-tools", label: "أدوات AI" },
                 { href: "/compare", label: "المقارنات" },
                 { href: "/search", label: "البحث" },

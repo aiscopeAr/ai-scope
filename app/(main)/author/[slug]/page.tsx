@@ -80,7 +80,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
               <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-start">
                 <div className="text-center">
                   <p className="text-2xl font-black text-white">{totalCount}</p>
-                  <p className="text-xs text-slate-500">سكريفة</p>
+                  <p className="text-xs text-slate-500">تقرير</p>
                 </div>
                 <div className="h-8 w-px bg-white/10" />
                 <div className="text-center">
@@ -120,12 +120,12 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
       {/* Reviews */}
       <section className="container mx-auto max-w-4xl px-4 py-12">
         <h2 className="mb-6 text-xl font-black text-white">
-          سكريفات {author.nameAr}
+          تقارير {author.nameAr}
           {totalCount > 0 && <span className="mr-2 text-base font-normal text-slate-500">({totalCount})</span>}
         </h2>
 
         {reviews.length === 0 ? (
-          <p className="text-slate-500">لا توجد سكريفات بعد.</p>
+          <p className="text-slate-500">لا توجد تقارير بعد.</p>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {reviews.map((r) => {

@@ -8,11 +8,11 @@ import AdSlot from "@/components/AdSlot";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: `سكريفات وتحليلات الذكاء الاصطناعي | ${SITE_NAME_AR}`,
+  title: `تقارير وتحليلات الذكاء الاصطناعي | ${SITE_NAME_AR}`,
   description: SITE_DESCRIPTION_AR,
   alternates: { canonical: absoluteUrl("/reviews") },
   openGraph: {
-    title: `سكريفات وتحليلات الذكاء الاصطناعي | ${SITE_NAME_AR}`,
+    title: `تقارير وتحليلات الذكاء الاصطناعي | ${SITE_NAME_AR}`,
     description: SITE_DESCRIPTION_AR,
     url: absoluteUrl("/reviews"),
     type: "website",
@@ -71,7 +71,7 @@ export default async function ReviewsIndexPage() {
           <span className="h-2 w-2 rounded-full bg-violet-400" />
           تحليلات معمقة بالعربية
         </div>
-        <h1 className="mb-3 text-3xl font-black text-white md:text-5xl">أحدث السكريفات</h1>
+        <h1 className="mb-3 text-3xl font-black text-white md:text-5xl">أحدث التقارير</h1>
         <p className="max-w-3xl text-sm leading-relaxed text-slate-400 md:text-base">
           أرشيف تحليلات AI Scope: مراجعات عربية عميقة لأهم أخبار النماذج والأبحاث والشركات والسياسات في عالم الذكاء الاصطناعي.
         </p>
@@ -98,7 +98,7 @@ export default async function ReviewsIndexPage() {
 
       {reviews.length === 0 ? (
         <section className="rounded-2xl border border-white/8 bg-white/3 p-8 text-center">
-          <h2 className="mb-2 text-xl font-bold text-white">لا توجد سكريفات منشورة بعد</h2>
+          <h2 className="mb-2 text-xl font-bold text-white">لا توجد تقارير منشورة بعد</h2>
           <p className="text-slate-500">بمجرد نشر أول تحليل سيظهر هنا تلقائيًا.</p>
         </section>
       ) : (
