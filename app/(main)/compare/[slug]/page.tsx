@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import HoverLink from "@/components/HoverLink";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, truncate } from "@/lib/seo";
@@ -53,13 +54,9 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
   return (
     <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
       <nav className="mb-6 flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
-        <Link href="/" className="transition-colors" style={{ color: "var(--text-muted)" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}>الرئيسية</Link>
+        <Link href="/" className="link-muted transition-colors">الرئيسية</Link>
         <span>/</span>
-        <Link href="/compare" className="transition-colors" style={{ color: "var(--text-muted)" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}>المقارنات</Link>
+        <Link href="/compare" className="link-muted transition-colors">المقارنات</Link>
         <span>/</span>
         <span className="line-clamp-1 font-medium" style={{ color: "var(--text-secondary)" }}>{comparison.title}</span>
       </nav>

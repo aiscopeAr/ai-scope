@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import HoverLink from "@/components/HoverLink";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME, SITE_NAME_AR, SITE_URL, truncate } from "@/lib/seo";
 import { getCategoryMeta } from "@/lib/tool-categories";
@@ -194,15 +195,14 @@ export default async function AIToolPage({
                     {PRICING_LABELS[tool.pricing] ?? tool.pricing}
                     {tool.monthlyPrice && tool.pricing !== "free" ? ` — يبدأ من $${tool.monthlyPrice}/شهر` : ""}
                   </span>
-                  <Link
+                  <HoverLink
                     href={`/ai-tools/for/${tool.toolCategory}`}
                     className="rounded-[6px] border px-3 py-1 text-sm transition"
-                    style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)" }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
+                    baseStyle={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)" }}
+                    hoverStyle={{ color: "var(--accent)", borderColor: "var(--accent)" }}
                   >
                     {catMeta.icon} {catMeta.labelAr}
-                  </Link>
+                  </HoverLink>
                   {tool.arabicSupport && (
                     <span className="rounded-[3px] border px-2.5 py-1 text-xs font-bold"
                       style={{ backgroundColor: "#f0fdfa", color: "#0d9488", borderColor: "#99f6e4" }}>يدعم العربية ✓</span>
@@ -218,15 +218,8 @@ export default async function AIToolPage({
             {/* Action buttons */}
             <div className="mt-5 flex flex-wrap items-center gap-3 border-t pt-5" style={{ borderColor: "var(--border-subtle)" }}>
               {tool.website && (
-                <a
-                  href={tool.website}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  className="flex items-center gap-2 rounded-[6px] px-5 py-2.5 text-sm font-bold transition"
-                  style={{ backgroundColor: "var(--accent)", color: "var(--text-on-accent)" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent-hover)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent)"; }}
-                >
+                <a href={tool.website} target="_blank" rel="noopener noreferrer nofollow"
+                  className="btn-primary flex items-center gap-2">
                   زيارة الموقع الرسمي ↗
                 </a>
               )}
@@ -362,17 +355,16 @@ export default async function AIToolPage({
                   <h2 className="mb-4 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>مقارنات تتضمن {tool.name}</h2>
                   <div className="space-y-3">
                     {tool.comparisons.map((side) => (
-                      <Link
+                      <HoverLink
                         key={side.id}
                         href={`/compare/${side.comparison.slug}`}
                         className="flex items-center justify-between rounded-[6px] border p-4 transition"
-                        style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)"; }}
+                        baseStyle={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
+                        hoverStyle={{ borderColor: "var(--border-medium)" }}
                       >
                         <span className="font-medium" style={{ color: "var(--text-primary)" }}>{side.comparison.title}</span>
                         <span className="text-sm" style={{ color: "var(--accent)" }}>عرض المقارنة ←</span>
-                      </Link>
+                      </HoverLink>
                     ))}
                   </div>
                 </section>
@@ -384,20 +376,19 @@ export default async function AIToolPage({
                   <h2 className="mb-4 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>تقارير ذات صلة</h2>
                   <div className="space-y-3">
                     {relatedReviews.map((r) => (
-                      <Link
+                      <HoverLink
                         key={r.id}
                         href={`/reviews/${r.slug}`}
                         className="flex items-start gap-3 rounded-[6px] border p-4 transition group"
-                        style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)"; }}
+                        baseStyle={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
+                        hoverStyle={{ borderColor: "var(--border-medium)" }}
                       >
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold transition-opacity group-hover:opacity-75 line-clamp-1" style={{ color: "var(--text-primary)" }}>{r.titleAr}</p>
                           {r.summary && <p className="mt-1 text-xs line-clamp-1" style={{ color: "var(--text-muted)" }}>{r.summary}</p>}
                         </div>
                         <span className="shrink-0 text-xs" style={{ color: "var(--text-muted)" }}>{r.authorSlug}</span>
-                      </Link>
+                      </HoverLink>
                     ))}
                   </div>
                 </section>
@@ -443,15 +434,8 @@ export default async function AIToolPage({
                   )}
                 </dl>
                 {tool.website && (
-                  <a
-                    href={tool.website}
-                    target="_blank"
-                    rel="noopener noreferrer nofollow"
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-[6px] border px-4 py-2.5 text-sm font-bold transition"
-                    style={{ borderColor: "var(--accent)", color: "var(--accent)", backgroundColor: "var(--accent-bg)" }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent)"; (e.currentTarget as HTMLElement).style.color = "var(--text-on-accent)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent-bg)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
-                  >
+                  <a href={tool.website} target="_blank" rel="noopener noreferrer nofollow"
+                    className="btn-primary mt-4 flex w-full items-center justify-center gap-2">
                     زيارة الموقع ↗
                   </a>
                 )}
@@ -461,15 +445,14 @@ export default async function AIToolPage({
               <div className="rounded-[6px] border p-5" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
                 <h3 className="mb-2 font-bold text-sm" style={{ color: "var(--text-primary)" }}>قارن مع أداة أخرى</h3>
                 <p className="mb-3 text-xs" style={{ color: "var(--text-muted)" }}>اكتشف الأنسب لك بمقارنة مفصّلة</p>
-                <Link
+                <HoverLink
                   href="/compare"
                   className="flex w-full items-center justify-center gap-2 rounded-[6px] border px-4 py-2 text-xs font-semibold transition"
-                  style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-subtle)" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
+                  baseStyle={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-subtle)" }}
+                  hoverStyle={{ borderColor: "var(--accent)", color: "var(--accent)" }}
                 >
                   ⚖️ فتح أداة المقارنة
-                </Link>
+                </HoverLink>
               </div>
 
               {/* Related topics */}
@@ -499,19 +482,13 @@ export default async function AIToolPage({
 
           {/* Back links */}
           <div className="mt-8 border-t pt-6 flex flex-wrap items-center gap-4" style={{ borderColor: "var(--border-subtle)" }}>
-            <Link href="/ai-tools" className="text-sm transition" style={{ color: "var(--accent)" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.7"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}>
+            <Link href="/ai-tools" className="text-sm hover-opacity transition" style={{ color: "var(--accent)" }}>
               ← جميع أدوات الذكاء الاصطناعي
             </Link>
-            <Link href={`/ai-tools/for/${tool.toolCategory}`} className="text-sm transition" style={{ color: "var(--text-muted)" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}>
+            <Link href={`/ai-tools/for/${tool.toolCategory}`} className="link-secondary text-sm transition">
               أدوات {catMeta.labelAr}
             </Link>
-            <Link href="/compare" className="text-sm transition" style={{ color: "var(--text-muted)" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}>
+            <Link href="/compare" className="link-secondary text-sm transition">
               مقارن الأدوات
             </Link>
           </div>

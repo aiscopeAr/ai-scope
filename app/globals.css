@@ -175,6 +175,33 @@ h1, h2, h3, h4, h5, h6 {
   animation: shimmer 1.4s infinite;
 }
 
+/* ── Hover utility classes (replaces onMouseEnter/Leave on Server Components) ── */
+.hover-accent:hover       { color: var(--accent) !important; }
+.hover-text-primary:hover { color: var(--text-primary) !important; }
+.hover-bg-subtle:hover    { background-color: var(--bg-subtle) !important; }
+.hover-border-accent:hover { border-color: var(--accent) !important; }
+.hover-border-medium:hover { border-color: var(--border-medium) !important; }
+.hover-opacity:hover      { opacity: 0.75; }
+.link-muted {
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+.link-muted:hover { color: var(--accent); }
+.link-secondary {
+  color: var(--text-secondary);
+  transition: color 0.15s;
+}
+.link-secondary:hover { color: var(--text-primary); }
+.nav-item {
+  color: var(--text-secondary);
+  transition: background 0.15s, color 0.15s;
+  border-radius: 6px;
+}
+.nav-item:hover {
+  background-color: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
 /* ── Reading progress bar ────────────────────────────────────────── */
 #reading-progress {
   position: fixed;

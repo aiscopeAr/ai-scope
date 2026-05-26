@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR } from "@/lib/seo";
 import ReviewCard from "@/components/ReviewCard";
 import AdSlot from "@/components/AdSlot";
+import HoverLink from "@/components/HoverLink";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,6 @@ async function getCategoryPageData(slug: string) {
       where: { slug },
       select: { id: true, slug: true, nameAr: true, name: true },
     });
-
     if (!category) return null;
 
     const [reviews, relatedCategories] = await Promise.all([
@@ -31,10 +31,7 @@ async function getCategoryPageData(slug: string) {
       prisma.category.findMany({
         where: { slug: { not: slug } },
         orderBy: { nameAr: "asc" },
-        select: {
-          id: true, slug: true, nameAr: true,
-          _count: { select: { reviews: true } },
-        },
+        select: { id: true, slug: true, nameAr: true, _count: { select: { reviews: true } } },
       }),
     ]);
 
@@ -52,10 +49,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const data = await getCategoryPageData(slug);
   if (!data) return {};
-
   const url = absoluteUrl(`/category/${slug}`);
   const description = `تقارير وتحليلات في تصنيف ${data.category.nameAr} على ${SITE_NAME_AR}.`;
-
   return {
     title: `${data.category.nameAr} | ${SITE_NAME_AR}`,
     description,
@@ -68,19 +63,14 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   const { slug } = await params;
   const data = await getCategoryPageData(slug);
   if (!data) notFound();
-
   const { category, reviews, relatedCategories } = data;
 
   return (
     <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
       <nav className="mb-6 flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
-        <Link href="/" className="transition-colors" style={{ color: "var(--text-muted)" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}>الرئيسية</Link>
+        <Link href="/" className="link-muted transition-colors">الرئيسية</Link>
         <span>/</span>
-        <Link href="/reviews" className="transition-colors" style={{ color: "var(--text-muted)" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}>التقارير</Link>
+        <Link href="/reviews" className="link-muted transition-colors">التقارير</Link>
         <span>/</span>
         <span className="font-medium" style={{ color: "var(--text-secondary)" }}>{category.nameAr}</span>
       </nav>
@@ -96,17 +86,16 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       {relatedCategories.length > 0 && (
         <section className="mb-8 flex flex-wrap gap-2">
           {relatedCategories.map((item) => (
-            <Link
+            <HoverLink
               key={item.id}
               href={`/category/${item.slug}`}
               className="rounded-[6px] border px-4 py-2 text-sm transition"
-              style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
+              baseStyle={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
+              hoverStyle={{ borderColor: "var(--accent)", color: "var(--accent)" }}
             >
               {item.nameAr}
               <span className="mr-2" style={{ color: "var(--text-muted)" }}>({item._count.reviews})</span>
-            </Link>
+            </HoverLink>
           ))}
         </section>
       )}
@@ -117,9 +106,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         <section className="rounded-[6px] border p-8 text-center" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
           <h2 className="mb-2 text-xl font-bold" style={{ color: "var(--text-primary)" }}>لا توجد تقارير في هذا التصنيف بعد</h2>
           <p className="mb-4" style={{ color: "var(--text-muted)" }}>يمكنك العودة إلى جميع التقارير أو متابعة تصنيف آخر.</p>
-          <Link href="/reviews" className="text-sm font-semibold transition" style={{ color: "var(--accent)" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.7"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}>
+          <Link href="/reviews" className="text-sm font-semibold hover-opacity transition" style={{ color: "var(--accent)" }}>
             عرض جميع التقارير
           </Link>
         </section>

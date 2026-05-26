@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { SITE_NAME, SITE_NAME_AR, absoluteUrl } from "@/lib/seo";
 import { AUTHORS } from "@/lib/authors";
+import HoverLink from "@/components/HoverLink";
 
 export const metadata: Metadata = {
   title: `من نحن | ${SITE_NAME_AR}`,
@@ -80,13 +81,12 @@ export default function AboutPage() {
           <h2 className="mb-8 text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>فريق التقارير</h2>
           <div className="grid gap-5 sm:grid-cols-2">
             {Object.values(AUTHORS).map((author) => (
-              <Link
+              <HoverLink
                 key={author.slug}
                 href={`/author/${author.slug}`}
-                className="group flex gap-4 rounded-[6px] border p-5 transition"
-                style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)"; }}
+                className="flex gap-4 rounded-[6px] border p-5 transition"
+                baseStyle={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
+                hoverStyle={{ borderColor: "var(--border-medium)" }}
               >
                 <div className="h-16 w-16 shrink-0 overflow-hidden rounded-[6px]"
                   style={{ outline: `2px solid ${author.accentColor}50`, outlineOffset: "2px" }}>
@@ -102,7 +102,7 @@ export default function AboutPage() {
                     جميع تقاريره ←
                   </span>
                 </div>
-              </Link>
+              </HoverLink>
             ))}
           </div>
         </section>
@@ -133,10 +133,7 @@ export default function AboutPage() {
           <p className="mb-5" style={{ color: "var(--text-secondary)" }}>نسعد بتواصلك في أي وقت.</p>
           <Link
             href="/contact"
-            className="inline-flex items-center gap-2 rounded-[6px] px-6 py-3 text-sm font-bold transition"
-            style={{ backgroundColor: "var(--accent)", color: "var(--text-on-accent)" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent-hover)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent)"; }}
+            className="btn-primary inline-flex items-center gap-2"
           >
             تواصل معنا
           </Link>

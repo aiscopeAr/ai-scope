@@ -8,6 +8,7 @@ import { ar } from "date-fns/locale";
 import { prisma } from "@/lib/db";
 import { AUTHORS, type AuthorSlug } from "@/lib/authors";
 import { SITE_NAME_AR, absoluteUrl } from "@/lib/seo";
+import HoverLink from "@/components/HoverLink";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +73,8 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
             <div className="flex-1 text-center sm:text-right">
               <div className="mb-1 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <h1 className="text-3xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{author.nameAr}</h1>
-                <span className="rounded-[3px] border px-3 py-0.5 text-xs font-semibold" style={{ color: author.accentColor, borderColor: `${author.accentColor}40`, backgroundColor: `${author.accentColor}12` }}>
+                <span className="rounded-[3px] border px-3 py-0.5 text-xs font-semibold"
+                  style={{ color: author.accentColor, borderColor: `${author.accentColor}40`, backgroundColor: `${author.accentColor}12` }}>
                   إنتاج آلي
                 </span>
               </div>
@@ -93,9 +95,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
                   <>
                     <div className="h-8 w-px" style={{ backgroundColor: "var(--border-medium)" }} />
                     <a href={author.socialTwitter} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-sm transition" style={{ color: "var(--text-secondary)" }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-primary)"; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}>
+                      className="link-secondary flex items-center gap-1.5 text-sm transition">
                       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.63 5.906-5.63Zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                       </svg>
@@ -138,11 +138,11 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
                 ? formatDistanceToNow(new Date(r.publishedAt), { addSuffix: true, locale: ar })
                 : null;
               return (
-                <Link key={r.id} href={`/reviews/${r.slug}`}
+                <HoverLink key={r.id} href={`/reviews/${r.slug}`}
                   className="group flex flex-col overflow-hidden rounded-[6px] border transition"
-                  style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)"; }}>
+                  baseStyle={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
+                  hoverStyle={{ borderColor: "var(--border-medium)" }}
+                >
                   <div className="relative h-44 w-full shrink-0" style={{ backgroundColor: "var(--bg-subtle)" }}>
                     {r.imageUrl ? (
                       <Image src={r.imageUrl} alt={r.titleAr} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -166,7 +166,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
                     <p className="mb-3 line-clamp-2 text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>{r.summary}</p>
                     {timeAgo && <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>{timeAgo}</p>}
                   </div>
-                </Link>
+                </HoverLink>
               );
             })}
           </div>

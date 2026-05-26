@@ -2,6 +2,7 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import HoverLink from "@/components/HoverLink";
 import { notFound } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -115,17 +116,9 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
 
         {/* Breadcrumb */}
         <nav className="mb-6 flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
-          <Link href="/" className="transition-colors" style={{ color: "var(--text-muted)" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}>
-            الرئيسية
-          </Link>
+          <Link href="/" className="link-muted transition-colors">الرئيسية</Link>
           <span>/</span>
-          <Link href={`/category/${review.category.slug}`} className="transition-colors" style={{ color: "var(--text-muted)" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}>
-            {review.category.nameAr}
-          </Link>
+          <Link href={`/category/${review.category.slug}`} className="link-muted transition-colors">{review.category.nameAr}</Link>
           <span>/</span>
           <span className="line-clamp-1 font-medium" style={{ color: "var(--text-secondary)" }}>{review.titleAr}</span>
         </nav>
@@ -133,15 +126,14 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
         <AdSlot position="article-top" className="mb-6" />
 
         {/* Category badge */}
-        <Link
+        <HoverLink
           href={`/category/${review.category.slug}`}
           className="mb-4 inline-block rounded-[3px] border px-4 py-1 text-sm font-semibold transition"
-          style={{ backgroundColor: "var(--accent-bg)", borderColor: "var(--accent)", color: "var(--accent)" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent)"; (e.currentTarget as HTMLElement).style.color = "var(--text-on-accent)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent-bg)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
+          baseStyle={{ backgroundColor: "var(--accent-bg)", borderColor: "var(--accent)", color: "var(--accent)" }}
+          hoverStyle={{ backgroundColor: "var(--accent)", color: "var(--text-on-accent)" }}
         >
           {review.category.nameAr}
-        </Link>
+        </HoverLink>
 
         {/* Title */}
         <h1 className="mb-6 text-3xl font-bold leading-tight md:text-4xl" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{review.titleAr}</h1>

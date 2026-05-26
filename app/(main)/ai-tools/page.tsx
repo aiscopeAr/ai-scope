@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import HoverLink from "@/components/HoverLink";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR } from "@/lib/seo";
 import { TOOL_CATEGORIES } from "@/lib/tool-categories";
@@ -80,9 +81,7 @@ export default async function AIToolsPage({
       <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{title}</h2>
       <div className="h-px flex-1" style={{ backgroundColor: "var(--border-subtle)" }} />
       {href && (
-        <Link href={href} className="text-xs transition" style={{ color: "var(--accent)" }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.7"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}>
+        <Link href={href} className="text-xs hover-opacity transition" style={{ color: "var(--accent)" }}>
           عرض الكل
         </Link>
       )}
@@ -112,17 +111,16 @@ export default async function AIToolsPage({
             {/* Quick category pills */}
             <div className="mt-8 flex flex-wrap justify-center gap-2">
               {TOOL_CATEGORIES.slice(0, 8).map((cat) => (
-                <Link
+                <HoverLink
                   key={cat.value}
                   href={`/ai-tools?cat=${cat.value}`}
                   className="flex items-center gap-1.5 rounded-[6px] border px-3 py-1.5 text-xs transition"
-                  style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
+                  baseStyle={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
+                  hoverStyle={{ borderColor: "var(--accent)", color: "var(--accent)" }}
                 >
                   <span>{cat.icon}</span>
                   <span>{cat.labelAr}</span>
-                </Link>
+                </HoverLink>
               ))}
             </div>
           </div>
@@ -182,13 +180,12 @@ export default async function AIToolsPage({
               {TOOL_CATEGORIES.filter((c) => c.value !== "other").map((cat) => {
                 const count = byCategory[cat.value]?.length ?? 0;
                 return (
-                  <Link
+                  <HoverLink
                     key={cat.value}
                     href={`/ai-tools/for/${cat.value}`}
                     className="group flex items-center gap-4 rounded-[6px] border p-4 transition"
-                    style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)"; }}
+                    baseStyle={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
+                    hoverStyle={{ borderColor: "var(--border-medium)" }}
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[6px] text-xl" style={{ backgroundColor: "var(--bg-subtle)" }}>{cat.icon}</span>
                     <div className="min-w-0">
@@ -196,7 +193,7 @@ export default async function AIToolsPage({
                       <p className="text-xs" style={{ color: "var(--text-muted)" }}>{cat.descAr.slice(0, 45)}…</p>
                     </div>
                     <span className="mr-auto shrink-0 rounded-[3px] px-2 py-0.5 text-xs" style={{ backgroundColor: "var(--bg-subtle)", color: "var(--text-muted)" }}>{count}</span>
-                  </Link>
+                  </HoverLink>
                 );
               })}
             </div>
@@ -216,17 +213,16 @@ export default async function AIToolsPage({
                 { href: "/ai-tools/for/no-code",    label: "أدوات بدون برمجة",           icon: "🔧" },
                 { href: "/ai-tools/for/startups",   label: "أدوات AI للشركات الناشئة",  icon: "🚀" },
               ].map((item) => (
-                <Link
+                <HoverLink
                   key={item.href}
                   href={item.href}
                   className="flex items-center gap-2 rounded-[6px] border px-3 py-2.5 text-sm transition"
-                  style={{ borderColor: "var(--border-subtle)", color: "var(--text-secondary)", backgroundColor: "var(--bg-subtle)" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)"; }}
+                  baseStyle={{ borderColor: "var(--border-subtle)", color: "var(--text-secondary)", backgroundColor: "var(--bg-subtle)" }}
+                  hoverStyle={{ color: "var(--accent)", borderColor: "var(--accent)" }}
                 >
                   <span>{item.icon}</span>
                   <span>{item.label}</span>
-                </Link>
+                </HoverLink>
               ))}
             </div>
           </section>

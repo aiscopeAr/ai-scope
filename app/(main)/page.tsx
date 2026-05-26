@@ -3,6 +3,7 @@ import Link from "next/link";
 import ReviewCard from "@/components/ReviewCard";
 import ToolCard from "@/components/ToolCard";
 import AdSlot from "@/components/AdSlot";
+import HoverLink from "@/components/HoverLink";
 import { prisma } from "@/lib/db";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
 
@@ -66,13 +67,7 @@ export default async function HomePage() {
         <section className="mb-12">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>آخر التقارير</h2>
-            <Link
-              href="/reviews"
-              className="text-sm font-semibold transition"
-              style={{ color: "var(--accent)" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.7"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
-            >
+            <Link href="/reviews" className="text-sm font-semibold hover-opacity transition" style={{ color: "var(--accent)" }}>
               عرض الكل ←
             </Link>
           </div>
@@ -91,13 +86,7 @@ export default async function HomePage() {
         <section className="mb-12">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>اكتشف أدوات الذكاء الاصطناعي</h2>
-            <Link
-              href="/ai-tools"
-              className="text-sm font-semibold transition"
-              style={{ color: "var(--accent)" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.7"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
-            >
+            <Link href="/ai-tools" className="text-sm font-semibold hover-opacity transition" style={{ color: "var(--accent)" }}>
               عرض الكل ←
             </Link>
           </div>
@@ -117,13 +106,12 @@ export default async function HomePage() {
             { slug: "zayd", name: "زيد", title: "محلل نماذج الذكاء الاصطناعي", accent: "#6366f1", desc: "يحلل النماذج الكبرى ويقارن قدراتها بعيناً نقدية — لا يصدق الضجيج التسويقي." },
             { slug: "lina", name: "لينا", title: "مراسلة شؤون الشركات والسياسات", accent: "#ec4899", desc: "تقرأ بين سطور قرارات شركات AI وتربط الأحداث بالصورة الاقتصادية الأشمل." },
           ].map((a) => (
-            <Link
+            <HoverLink
               key={a.slug}
               href={`/author/${a.slug}`}
-              className="group flex items-center gap-4 rounded-[6px] border p-4 transition"
-              style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)"; }}
+              className="flex items-center gap-4 rounded-[6px] border p-4 transition"
+              baseStyle={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }}
+              hoverStyle={{ borderColor: "var(--border-medium)" }}
             >
               <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[6px]" style={{ outline: `2px solid ${a.accent}50`, outlineOffset: "2px" }}>
                 <img src={`/images/authors/${a.slug}.svg`} alt={a.name} className="h-full w-full object-cover" />
@@ -133,7 +121,7 @@ export default async function HomePage() {
                 <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{a.title}</p>
                 <p className="mt-1 text-xs line-clamp-2" style={{ color: "var(--text-muted)" }}>{a.desc}</p>
               </div>
-            </Link>
+            </HoverLink>
           ))}
         </div>
       </section>

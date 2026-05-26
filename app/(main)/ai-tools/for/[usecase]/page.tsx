@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import HoverLink from "@/components/HoverLink";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, SITE_URL } from "@/lib/seo";
 import { TOOL_CATEGORIES, getCategoryMeta } from "@/lib/tool-categories";
@@ -144,12 +145,7 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
               <div className="mt-10 rounded-[6px] border p-6 text-center" style={{ borderColor: "var(--accent)", backgroundColor: "var(--accent-bg)" }}>
                 <h3 className="mb-2 font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>Not sure which to pick?</h3>
                 <p className="mb-4 text-sm" style={{ color: "var(--text-secondary)" }}>Use the comparison tool to make the right decision</p>
-                <Link href="/compare"
-                  className="inline-flex items-center gap-2 rounded-[6px] px-5 py-2.5 text-sm font-bold transition"
-                  style={{ backgroundColor: "var(--accent)", color: "var(--text-on-accent)" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent-hover)"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent)"; }}
-                >
+                <Link href="/compare" className="btn-primary inline-flex items-center gap-2">
                   Compare tools
                 </Link>
               </div>
@@ -163,18 +159,17 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
                   {TOOL_CATEGORIES.filter((c) => c.value !== usecase && c.value !== "other").map((cat) => {
                     const cnt = otherCats.find((o) => o.toolCategory === cat.value)?._count?.id ?? 0;
                     return (
-                      <Link
+                      <HoverLink
                         key={cat.value}
                         href={`/ai-tools/for/${cat.value}`}
                         className="flex items-center gap-2 rounded-[6px] px-3 py-2 text-sm transition"
-                        style={{ color: "var(--text-secondary)" }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--bg-subtle)"; (e.currentTarget as HTMLElement).style.color = "var(--text-primary)"; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
+                        baseStyle={{ color: "var(--text-secondary)" }}
+                        hoverStyle={{ backgroundColor: "var(--bg-subtle)", color: "var(--text-primary)" }}
                       >
                         <span>{cat.icon}</span>
                         <span className="flex-1">{cat.labelAr}</span>
                         {cnt > 0 && <span className="text-xs" style={{ color: "var(--text-muted)" }}>{cnt}</span>}
-                      </Link>
+                      </HoverLink>
                     );
                   })}
                 </div>
@@ -187,14 +182,13 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
                     { href: "/ai-tools", label: "All tools" },
                     { href: "/compare", label: "Compare tools" },
                   ].map((item) => (
-                    <Link key={item.href} href={item.href}
+                    <HoverLink key={item.href} href={item.href}
                       className="block rounded-[6px] px-3 py-2 text-sm transition"
-                      style={{ color: "var(--text-secondary)" }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--bg-subtle)"; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
+                      baseStyle={{ color: "var(--text-secondary)" }}
+                      hoverStyle={{ backgroundColor: "var(--bg-subtle)" }}
                     >
                       {item.label}
-                    </Link>
+                    </HoverLink>
                   ))}
                 </div>
               </div>

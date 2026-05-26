@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR } from "@/lib/seo";
+import HoverLink from "@/components/HoverLink";
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +25,7 @@ async function getComparisons() {
       orderBy: { updatedAt: "desc" },
       include: {
         sides: {
-          include: {
-            tool: { select: { id: true, name: true, slug: true, tagline: true, logoUrl: true } },
-          },
+          include: { tool: { select: { id: true, name: true, slug: true, tagline: true, logoUrl: true } } },
         },
       },
       take: 24,
@@ -58,13 +56,12 @@ export default async function CompareIndexPage() {
       ) : (
         <section className="grid gap-5 lg:grid-cols-2">
           {comparisons.map((comparison) => (
-            <Link
+            <HoverLink
               key={comparison.id}
               href={`/compare/${comparison.slug}`}
               className="rounded-[6px] border p-5 transition"
-              style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)"; }}
+              baseStyle={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
+              hoverStyle={{ borderColor: "var(--border-medium)" }}
             >
               <div className="mb-4 flex flex-wrap items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
                 <span>{comparison.sides.length} أدوات</span>
@@ -81,7 +78,7 @@ export default async function CompareIndexPage() {
                   </span>
                 ))}
               </div>
-            </Link>
+            </HoverLink>
           ))}
         </section>
       )}

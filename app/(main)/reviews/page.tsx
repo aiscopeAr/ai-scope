@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
 import ReviewCard from "@/components/ReviewCard";
 import AdSlot from "@/components/AdSlot";
+import HoverLink from "@/components/HoverLink";
 
 export const dynamic = "force-dynamic";
 
@@ -28,33 +29,17 @@ async function getData() {
         orderBy: { publishedAt: "desc" },
         take: 24,
         select: {
-          id: true,
-          slug: true,
-          titleAr: true,
-          summary: true,
-          imageUrl: true,
-          publishedAt: true,
-          authorSlug: true,
-          tags: true,
-          viewCount: true,
+          id: true, slug: true, titleAr: true, summary: true, imageUrl: true,
+          publishedAt: true, authorSlug: true, tags: true, viewCount: true,
           category: { select: { nameAr: true, slug: true } },
         },
       }),
       prisma.category.findMany({
         orderBy: { nameAr: "asc" },
-        select: {
-          id: true,
-          slug: true,
-          nameAr: true,
-          _count: { select: { reviews: true } },
-        },
+        select: { id: true, slug: true, nameAr: true, _count: { select: { reviews: true } } },
       }),
     ]);
-
-    return {
-      reviews,
-      categories: categories.filter((category) => category._count.reviews > 0),
-    };
+    return { reviews, categories: categories.filter((c) => c._count.reviews > 0) };
   } catch {
     return { reviews: [], categories: [] };
   }
@@ -83,17 +68,16 @@ export default async function ReviewsIndexPage() {
         <section className="mb-8">
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => (
-              <Link
+              <HoverLink
                 key={category.id}
                 href={`/category/${category.slug}`}
                 className="rounded-[6px] border px-4 py-2 text-sm transition"
-                style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
+                baseStyle={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
+                hoverStyle={{ borderColor: "var(--accent)", color: "var(--accent)" }}
               >
                 {category.nameAr}
                 <span className="mr-2" style={{ color: "var(--text-muted)" }}>({category._count.reviews})</span>
-              </Link>
+              </HoverLink>
             ))}
           </div>
         </section>
