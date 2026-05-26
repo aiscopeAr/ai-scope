@@ -38,7 +38,10 @@
       "Bash(curl -s http://localhost:3000/reviews/nvidia-chip-market-challenges)",
       "Bash(curl -s http://localhost:3000/)",
       "Bash(node --env-file=.env scripts/backfill-images.mjs)",
-      "Bash(mkdir -p \"d:/AIScope/app/api/admin/reviews/[id]/generate-image\")"
+      "Bash(mkdir -p \"d:/AIScope/app/api/admin/reviews/[id]/generate-image\")",
+      "Bash(node scripts/seed-tools.mjs)",
+      "Bash(Start-Sleep -Seconds 15)",
+      "Bash(Get-Content \"C:\\\\Users\\\\MOMENT~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--AIScope\\\\3fc3a761-5615-4974-8642-732fd1c7ccde\\\\tasks\\\\bq2ky30lf.output\" -Tail 30)"
     ],
     "additionalDirectories": [
       "d:\\AIScope\\app\\api\\admin\\ai-tools\\[id]",

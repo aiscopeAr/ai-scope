@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Pencil, Trash2, Loader2, Wrench, ExternalLink, Wand2, Star, CheckCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Wrench, ExternalLink, Wand2, Star, CheckCircle, Clock, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 
 const inputCls = "w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#667eea] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#667eea]/20 transition";
@@ -82,6 +82,8 @@ export default function AdminAIToolsPage() {
   const [generatingId, setGeneratingId] = React.useState<string | null>(null);
   const [filterCat, setFilterCat] = React.useState("");
   const [filterStatus, setFilterStatus] = React.useState("");
+  const [activeTab, setActiveTab] = React.useState<"all" | "pending">("pending");
+  const [ingesting, setIngesting] = React.useState(false);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -176,10 +178,26 @@ export default function AdminAIToolsPage() {
     load();
   }
 
+  async function runIngest() {
+    setIngesting(true);
+    try {
+      const res = await fetch("/api/cron/ingest-tools", {
+        headers: { authorization: `Bearer ${process.env.NEXT_PUBLIC_CRON_SECRET ?? "dev"}` },
+      });
+      const data = await res.json();
+      toast(`✅ ${data.created ?? 0} نُشر، ${data.duplicates ?? 0} مكرر، ${data.failed ?? 0} فشل`);
+      load();
+    } catch {
+      toast("فشل الـ ingest", "error");
+    } finally {
+      setIngesting(false);
+    }
+  }
+
+  const pending = tools.filter((t) => !t.published);
   const filtered = tools.filter((t) => {
+    if (!t.published) return false; // pending queue is separate tab
     if (filterCat && t.toolCategory !== filterCat) return false;
-    if (filterStatus === "published" && !t.published) return false;
-    if (filterStatus === "draft" && t.published) return false;
     return true;
   });
 
@@ -190,7 +208,7 @@ export default function AdminAIToolsPage() {
         <div>
           <p className="mb-1 text-sm font-semibold text-[#667eea]">Admin Panel</p>
           <h1 className="text-3xl font-black text-slate-900">AI Tools Directory</h1>
-          <p className="mt-1 text-slate-500">{tools.length} tools — {tools.filter((t) => t.published).length} published</p>
+          <p className="mt-1 text-slate-500">{tools.filter((t) => t.published).length} published · <span className={pending.length > 0 ? "text-amber-600 font-semibold" : ""}>{pending.length} ينتظر الموافقة</span></p>
         </div>
         <div className="flex flex-wrap gap-3">
           <a href="/admin" className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition">Dashboard</a>
@@ -198,15 +216,12 @@ export default function AdminAIToolsPage() {
             <ExternalLink className="size-3.5" /> View Site
           </a>
           <button
-            onClick={async () => {
-              const res = await fetch("/api/cron/fetch-tools", { headers: { authorization: `Bearer ${process.env.NEXT_PUBLIC_CRON_SECRET ?? ""}` } });
-              const data = await res.json();
-              toast(`Ingested: ${data.created} created, ${data.duplicates} dupes, ${data.failed} failed`);
-              load();
-            }}
-            className="flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 transition"
+            onClick={runIngest}
+            disabled={ingesting}
+            className="flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-60 transition"
           >
-            <Wand2 className="size-4" /> Auto-Ingest
+            {ingesting ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+            Ingest from ProductHunt
           </button>
           <button onClick={openNew} className="flex items-center gap-2 rounded-2xl bg-[#667eea] px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a6fd6] transition">
             <Plus className="size-4" /> Add Tool
@@ -214,95 +229,183 @@ export default function AdminAIToolsPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="mb-6 flex flex-wrap gap-3">
-        <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:outline-none">
-          <option value="">All Categories</option>
-          {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-        </select>
-        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:outline-none">
-          <option value="">All Status</option>
-          <option value="published">Published</option>
-          <option value="draft">Draft</option>
-        </select>
-        <span className="flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 shadow-sm">{filtered.length} results</span>
+      {/* Tabs */}
+      <div className="mb-6 flex gap-2">
+        <button
+          onClick={() => setActiveTab("pending")}
+          className={`flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold transition ${activeTab === "pending" ? "bg-amber-500 text-white" : "bg-white text-slate-600 shadow-sm hover:bg-slate-50"}`}
+        >
+          <Clock className="size-3.5" />
+          ينتظر الموافقة
+          {pending.length > 0 && <span className={`rounded-full px-1.5 text-xs font-black ${activeTab === "pending" ? "bg-white/25 text-white" : "bg-amber-100 text-amber-700"}`}>{pending.length}</span>}
+        </button>
+        <button
+          onClick={() => setActiveTab("all")}
+          className={`flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold transition ${activeTab === "all" ? "bg-[#667eea] text-white" : "bg-white text-slate-600 shadow-sm hover:bg-slate-50"}`}
+        >
+          <Wrench className="size-3.5" />
+          كل الأدوات ({tools.filter((t) => t.published).length})
+        </button>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-32"><Loader2 className="size-8 animate-spin text-[#667eea]" /></div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-[2rem] bg-white py-24 shadow-lg shadow-slate-200/60">
-          <Wrench className="size-12 text-slate-300 mb-4" />
-          <p className="text-lg font-semibold text-slate-700">No tools yet</p>
-          <button onClick={openNew} className="mt-6 flex items-center gap-2 rounded-2xl bg-[#667eea] px-5 py-2.5 text-sm font-semibold text-white">
-            <Plus className="size-4" /> Add Tool
-          </button>
-        </div>
-      ) : (
-        <div className="rounded-[2rem] bg-white shadow-lg shadow-slate-200/60 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="border-b border-slate-100 bg-slate-50">
-              <tr>
-                <th className="px-5 py-3 text-right font-semibold text-slate-600">Tool</th>
-                <th className="px-5 py-3 text-right font-semibold text-slate-600 hidden lg:table-cell">Category</th>
-                <th className="px-5 py-3 text-right font-semibold text-slate-600 hidden md:table-cell">Pricing</th>
-                <th className="px-5 py-3 text-right font-semibold text-slate-600 hidden md:table-cell">Stats</th>
-                <th className="px-5 py-3 text-right font-semibold text-slate-600">Status</th>
-                <th className="px-5 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filtered.map((t) => (
-                <tr key={t.id} className="hover:bg-slate-50 transition">
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-2">
-                      {t.logoUrl && <img src={t.logoUrl} alt={t.name} className="h-7 w-7 rounded-lg object-cover border border-slate-100" />}
-                      <div>
-                        <p className="font-semibold text-slate-900 flex items-center gap-1.5">
-                          {t.name}
-                          {t.editorPick && <Star className="size-3 text-amber-400 fill-amber-400" />}
-                          {t.featured && <span className="text-[10px] font-bold text-violet-600 bg-violet-100 px-1.5 rounded">featured</span>}
-                        </p>
-                        <p className="text-xs text-slate-400">{t.slug}</p>
+      {/* Pending approval queue */}
+      {activeTab === "pending" && (
+        loading ? (
+          <div className="flex justify-center py-32"><Loader2 className="size-8 animate-spin text-amber-500" /></div>
+        ) : pending.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-[2rem] bg-white py-24 shadow-lg shadow-slate-200/60">
+            <CheckCircle className="size-12 text-emerald-300 mb-4" />
+            <p className="text-lg font-semibold text-slate-700">لا توجد أدوات تنتظر الموافقة</p>
+            <p className="mt-2 text-sm text-slate-400">ستظهر هنا الأدوات القادمة من ProductHunt</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {pending.map((t) => (
+              <div key={t.id} className="flex flex-col gap-3 rounded-[2rem] border-2 border-amber-200 bg-amber-50 p-5 sm:flex-row sm:items-start">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  {t.logoUrl
+                    ? <img src={t.logoUrl} alt={t.name} className="h-12 w-12 rounded-2xl object-cover border border-amber-200 shrink-0" />
+                    : <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-200 text-amber-700 font-black text-xl shrink-0">{t.name[0]}</div>
+                  }
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <p className="font-black text-slate-900 text-lg">{t.name}</p>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${t.pricing === "free" ? "bg-emerald-100 text-emerald-700" : t.pricing === "paid" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>{t.pricing}</span>
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">{t.toolCategory}</span>
+                      {t.sourceUrl && <a href={t.sourceUrl} target="_blank" rel="noopener" className="flex items-center gap-1 text-xs text-blue-600 hover:underline"><ExternalLink className="size-3" /> ProductHunt</a>}
+                    </div>
+                    <p className="text-sm text-slate-600 line-clamp-2">{t.descriptionAr}</p>
+                    {t.tags.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {t.tags.slice(0, 5).map((tag) => (
+                          <span key={tag} className="rounded-full bg-white border border-slate-200 px-2 py-0.5 text-xs text-slate-500">{tag}</span>
+                        ))}
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 hidden lg:table-cell text-slate-600 text-xs">{t.toolCategory}</td>
-                  <td className="px-5 py-4 hidden md:table-cell">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${t.pricing === "free" ? "bg-emerald-100 text-emerald-700" : t.pricing === "paid" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
-                      {t.pricing}{t.monthlyPrice ? ` $${t.monthlyPrice}` : ""}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4 hidden md:table-cell text-xs text-slate-500">
-                    👁 {t.viewCount} · ♥ {t.likes}
-                    {t.arabicSupport && <span className="ml-1 text-teal-600">عربي</span>}
-                    {t.hasApi && <span className="ml-1 text-blue-600">API</span>}
-                  </td>
-                  <td className="px-5 py-4">
-                    <button onClick={() => togglePublished(t)} className={`rounded-full px-2.5 py-0.5 text-xs font-bold transition ${t.published ? "bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-700" : "bg-amber-100 text-amber-700 hover:bg-emerald-100 hover:text-emerald-700"}`}>
-                      {t.published ? "Published" : "Draft"}
-                    </button>
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <a href={`/ai-tools/${t.slug}`} target="_blank" rel="noopener" className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-[#667eea] transition"><ExternalLink className="size-3.5" /></a>
-                      <button
-                        onClick={() => regenerate(t.id)}
-                        disabled={generatingId === t.id}
-                        title="Regenerate AI content"
-                        className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-emerald-600 disabled:opacity-40 transition"
-                      >
-                        {generatingId === t.id ? <Loader2 className="size-3.5 animate-spin" /> : <Wand2 className="size-3.5" />}
-                      </button>
-                      <button onClick={() => openEdit(t)} className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-[#667eea] transition"><Pencil className="size-3.5" /></button>
-                      <button onClick={() => setDeleteId(t.id)} className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-red-600 transition"><Trash2 className="size-3.5" /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {t.website && (
+                    <a href={t.website} target="_blank" rel="noopener" className="flex items-center gap-1 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                      <ExternalLink className="size-3" /> الموقع
+                    </a>
+                  )}
+                  <button
+                    onClick={() => regenerate(t.id)}
+                    disabled={generatingId === t.id}
+                    className="flex items-center gap-1 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition"
+                  >
+                    {generatingId === t.id ? <Loader2 className="size-3 animate-spin" /> : <Wand2 className="size-3" />}
+                    أعد التوليد
+                  </button>
+                  <button onClick={() => openEdit(t)} className="flex items-center gap-1 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+                    <Pencil className="size-3" /> تعديل
+                  </button>
+                  <button
+                    onClick={() => togglePublished(t)}
+                    className="flex items-center gap-1 rounded-xl bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 transition"
+                  >
+                    <CheckCircle className="size-3" /> نشر ✓
+                  </button>
+                  <button onClick={() => setDeleteId(t.id)} className="rounded-xl bg-red-50 border border-red-200 p-1.5 text-red-400 hover:text-red-600 transition">
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      )}
+
+      {/* All published tools */}
+      {activeTab === "all" && (
+        <>
+          {/* Filters */}
+          <div className="mb-6 flex flex-wrap gap-3">
+            <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:outline-none">
+              <option value="">All Categories</option>
+              {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+            <span className="flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 shadow-sm">{filtered.length} results</span>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-32"><Loader2 className="size-8 animate-spin text-[#667eea]" /></div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-[2rem] bg-white py-24 shadow-lg shadow-slate-200/60">
+              <Wrench className="size-12 text-slate-300 mb-4" />
+              <p className="text-lg font-semibold text-slate-700">No tools yet</p>
+              <button onClick={openNew} className="mt-6 flex items-center gap-2 rounded-2xl bg-[#667eea] px-5 py-2.5 text-sm font-semibold text-white">
+                <Plus className="size-4" /> Add Tool
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-[2rem] bg-white shadow-lg shadow-slate-200/60 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="border-b border-slate-100 bg-slate-50">
+                  <tr>
+                    <th className="px-5 py-3 text-right font-semibold text-slate-600">Tool</th>
+                    <th className="px-5 py-3 text-right font-semibold text-slate-600 hidden lg:table-cell">Category</th>
+                    <th className="px-5 py-3 text-right font-semibold text-slate-600 hidden md:table-cell">Pricing</th>
+                    <th className="px-5 py-3 text-right font-semibold text-slate-600 hidden md:table-cell">Stats</th>
+                    <th className="px-5 py-3 text-right font-semibold text-slate-600">Status</th>
+                    <th className="px-5 py-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filtered.map((t) => (
+                    <tr key={t.id} className="hover:bg-slate-50 transition">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          {t.logoUrl && <img src={t.logoUrl} alt={t.name} className="h-7 w-7 rounded-lg object-cover border border-slate-100" />}
+                          <div>
+                            <p className="font-semibold text-slate-900 flex items-center gap-1.5">
+                              {t.name}
+                              {t.editorPick && <Star className="size-3 text-amber-400 fill-amber-400" />}
+                              {t.featured && <span className="text-[10px] font-bold text-violet-600 bg-violet-100 px-1.5 rounded">featured</span>}
+                            </p>
+                            <p className="text-xs text-slate-400">{t.slug}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 hidden lg:table-cell text-slate-600 text-xs">{t.toolCategory}</td>
+                      <td className="px-5 py-4 hidden md:table-cell">
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${t.pricing === "free" ? "bg-emerald-100 text-emerald-700" : t.pricing === "paid" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
+                          {t.pricing}{t.monthlyPrice ? ` $${t.monthlyPrice}` : ""}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 hidden md:table-cell text-xs text-slate-500">
+                        👁 {t.viewCount} · ♥ {t.likes}
+                        {t.arabicSupport && <span className="ml-1 text-teal-600">عربي</span>}
+                        {t.hasApi && <span className="ml-1 text-blue-600">API</span>}
+                      </td>
+                      <td className="px-5 py-4">
+                        <button onClick={() => togglePublished(t)} className={`rounded-full px-2.5 py-0.5 text-xs font-bold transition ${t.published ? "bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-700" : "bg-amber-100 text-amber-700 hover:bg-emerald-100 hover:text-emerald-700"}`}>
+                          {t.published ? "Published" : "Draft"}
+                        </button>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <a href={`/ai-tools/${t.slug}`} target="_blank" rel="noopener" className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-[#667eea] transition"><ExternalLink className="size-3.5" /></a>
+                          <button
+                            onClick={() => regenerate(t.id)}
+                            disabled={generatingId === t.id}
+                            title="Regenerate AI content"
+                            className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-emerald-600 disabled:opacity-40 transition"
+                          >
+                            {generatingId === t.id ? <Loader2 className="size-3.5 animate-spin" /> : <Wand2 className="size-3.5" />}
+                          </button>
+                          <button onClick={() => openEdit(t)} className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-[#667eea] transition"><Pencil className="size-3.5" /></button>
+                          <button onClick={() => setDeleteId(t.id)} className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-red-600 transition"><Trash2 className="size-3.5" /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
 
       {/* Form modal */}
