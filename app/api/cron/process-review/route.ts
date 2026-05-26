@@ -11,6 +11,7 @@ import {
   markReviewProcessed,
   markReviewFailed,
 } from "@/lib/review-queue";
+import { generateReviewImage } from "@/lib/images";
 import type { AuthorSlug } from "@/lib/authors";
 
 export const dynamic = "force-dynamic";
@@ -88,6 +89,23 @@ export async function GET(request: Request) {
       }
 
       await markReviewProcessed(item.id, draft);
+
+      // Generate image immediately while we have time (300s budget)
+      // This avoids the 60s timeout pressure in publish-review
+      if (draft.featuredImagePrompt) {
+        try {
+          const imageUrl = await generateReviewImage(draft.featuredImagePrompt);
+          if (imageUrl) {
+            await prisma.reviewQueue.update({
+              where: { id: item.id },
+              data: { imageUrl },
+            });
+          }
+        } catch {
+          // non-blocking — publish-review will retry if missing
+        }
+      }
+
       results.push({ id: item.id, status: "processed", title: draft.titleAr });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";

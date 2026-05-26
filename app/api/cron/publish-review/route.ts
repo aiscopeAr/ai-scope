@@ -8,7 +8,7 @@ import { approveReview } from "@/lib/review-queue";
 import { generateReviewImage } from "@/lib/images";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300; // image generation fallback can take ~40s × 3 items
 
 const DAILY_PUBLISH_LIMIT = 3;
 
