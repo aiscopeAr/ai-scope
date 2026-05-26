@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import HoverLink from "@/components/HoverLink";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, SITE_URL } from "@/lib/seo";
 import { TOOL_CATEGORIES, getCategoryMeta } from "@/lib/tool-categories";
@@ -159,17 +158,16 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
                   {TOOL_CATEGORIES.filter((c) => c.value !== usecase && c.value !== "other").map((cat) => {
                     const cnt = otherCats.find((o) => o.toolCategory === cat.value)?._count?.id ?? 0;
                     return (
-                      <HoverLink
+                      <Link
                         key={cat.value}
                         href={`/ai-tools/for/${cat.value}`}
-                        className="flex items-center gap-2 rounded-[6px] px-3 py-2 text-sm transition"
-                        baseStyle={{ color: "var(--text-secondary)" }}
-                        hoverStyle={{ backgroundColor: "var(--bg-subtle)", color: "var(--text-primary)" }}
+                        className="nav-item "
+                        style={{ color: "var(--text-secondary)" }}
                       >
                         <span>{cat.icon}</span>
                         <span className="flex-1">{cat.labelAr}</span>
                         {cnt > 0 && <span className="text-xs" style={{ color: "var(--text-muted)" }}>{cnt}</span>}
-                      </HoverLink>
+                      </Link>
                     );
                   })}
                 </div>
@@ -182,13 +180,12 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
                     { href: "/ai-tools", label: "All tools" },
                     { href: "/compare", label: "Compare tools" },
                   ].map((item) => (
-                    <HoverLink key={item.href} href={item.href}
-                      className="block rounded-[6px] px-3 py-2 text-sm transition"
-                      baseStyle={{ color: "var(--text-secondary)" }}
-                      hoverStyle={{ backgroundColor: "var(--bg-subtle)" }}
+                    <Link key={item.href} href={item.href}
+                      className="hover-bg-subtle "
+                      style={{ color: "var(--text-secondary)" }}
                     >
                       {item.label}
-                    </HoverLink>
+                    </Link>
                   ))}
                 </div>
               </div>

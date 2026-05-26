@@ -175,32 +175,42 @@ h1, h2, h3, h4, h5, h6 {
   animation: shimmer 1.4s infinite;
 }
 
-/* ── Hover utility classes (replaces onMouseEnter/Leave on Server Components) ── */
-.hover-accent:hover       { color: var(--accent) !important; }
-.hover-text-primary:hover { color: var(--text-primary) !important; }
-.hover-bg-subtle:hover    { background-color: var(--bg-subtle) !important; }
+/* ── Hover utility classes (CSS-only, no JS event handlers needed) ── */
+.hover-accent:hover        { color: var(--accent) !important; }
+.hover-text-primary:hover  { color: var(--text-primary) !important; }
+.hover-bg-subtle:hover     { background-color: var(--bg-subtle) !important; }
 .hover-border-accent:hover { border-color: var(--accent) !important; }
 .hover-border-medium:hover { border-color: var(--border-medium) !important; }
-.hover-opacity:hover      { opacity: 0.75; }
-.link-muted {
-  color: var(--text-muted);
-  transition: color 0.15s;
-}
+.hover-opacity:hover       { opacity: 0.75; }
+
+/* Breadcrumb / inline links */
+.link-muted { color: var(--text-muted); transition: color 0.15s; }
 .link-muted:hover { color: var(--accent); }
-.link-secondary {
-  color: var(--text-secondary);
-  transition: color 0.15s;
-}
+
+.link-secondary { color: var(--text-secondary); transition: color 0.15s; }
 .link-secondary:hover { color: var(--text-primary); }
-.nav-item {
-  color: var(--text-secondary);
-  transition: background 0.15s, color 0.15s;
+
+/* Sidebar nav items */
+.nav-item { color: var(--text-secondary); transition: background 0.15s, color 0.15s; border-radius: 6px; }
+.nav-item:hover { background-color: var(--bg-subtle); color: var(--text-primary); }
+
+/* Card border hover */
+.card-hover { transition: border-color 0.15s; }
+.card-hover:hover { border-color: var(--border-medium) !important; }
+
+/* Category pill hover: border + color → accent */
+.pill-hover { transition: border-color 0.15s, color 0.15s; }
+.pill-hover:hover { border-color: var(--accent) !important; color: var(--accent) !important; }
+
+/* Accent button fill on hover (outline → filled) */
+.btn-outline-accent {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  background-color: var(--accent-bg);
   border-radius: 6px;
+  transition: background-color 0.15s, color 0.15s;
 }
-.nav-item:hover {
-  background-color: var(--bg-subtle);
-  color: var(--text-primary);
-}
+.btn-outline-accent:hover { background-color: var(--accent); color: var(--text-on-accent); }
 
 /* ── Reading progress bar ────────────────────────────────────────── */
 #reading-progress {

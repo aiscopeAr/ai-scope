@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import HoverLink from "@/components/HoverLink";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, truncate } from "@/lib/seo";

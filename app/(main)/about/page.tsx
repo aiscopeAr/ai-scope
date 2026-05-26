@@ -3,7 +3,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { SITE_NAME, SITE_NAME_AR, absoluteUrl } from "@/lib/seo";
 import { AUTHORS } from "@/lib/authors";
-import HoverLink from "@/components/HoverLink";
 
 export const metadata: Metadata = {
   title: `من نحن | ${SITE_NAME_AR}`,
@@ -81,12 +80,11 @@ export default function AboutPage() {
           <h2 className="mb-8 text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>فريق التقارير</h2>
           <div className="grid gap-5 sm:grid-cols-2">
             {Object.values(AUTHORS).map((author) => (
-              <HoverLink
+              <Link
                 key={author.slug}
                 href={`/author/${author.slug}`}
-                className="flex gap-4 rounded-[6px] border p-5 transition"
-                baseStyle={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
-                hoverStyle={{ borderColor: "var(--border-medium)" }}
+                className="card-hover flex gap-4 rounded-[6px] border p-5 transition"
+                style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
               >
                 <div className="h-16 w-16 shrink-0 overflow-hidden rounded-[6px]"
                   style={{ outline: `2px solid ${author.accentColor}50`, outlineOffset: "2px" }}>
@@ -102,7 +100,7 @@ export default function AboutPage() {
                     جميع تقاريره ←
                   </span>
                 </div>
-              </HoverLink>
+              </Link>
             ))}
           </div>
         </section>
@@ -131,10 +129,7 @@ export default function AboutPage() {
         <section className="rounded-[6px] border p-8 text-center" style={{ borderColor: "var(--accent)", backgroundColor: "var(--accent-bg)" }}>
           <h2 className="mb-3 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>سؤال أو تعاون؟</h2>
           <p className="mb-5" style={{ color: "var(--text-secondary)" }}>نسعد بتواصلك في أي وقت.</p>
-          <Link
-            href="/contact"
-            className="btn-primary inline-flex items-center gap-2"
-          >
+          <Link href="/contact" className="btn-primary inline-flex items-center gap-2">
             تواصل معنا
           </Link>
         </section>

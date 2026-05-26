@@ -2,7 +2,6 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import HoverLink from "@/components/HoverLink";
 import { notFound } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -126,14 +125,12 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
         <AdSlot position="article-top" className="mb-6" />
 
         {/* Category badge */}
-        <HoverLink
+        <Link
           href={`/category/${review.category.slug}`}
-          className="mb-4 inline-block rounded-[3px] border px-4 py-1 text-sm font-semibold transition"
-          baseStyle={{ backgroundColor: "var(--accent-bg)", borderColor: "var(--accent)", color: "var(--accent)" }}
-          hoverStyle={{ backgroundColor: "var(--accent)", color: "var(--text-on-accent)" }}
+          className="btn-outline-accent mb-4 inline-block rounded-[3px] px-4 py-1 text-sm font-semibold transition"
         >
           {review.category.nameAr}
-        </HoverLink>
+        </Link>
 
         {/* Title */}
         <h1 className="mb-6 text-3xl font-bold leading-tight md:text-4xl" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{review.titleAr}</h1>

@@ -8,7 +8,6 @@ import { ar } from "date-fns/locale";
 import { prisma } from "@/lib/db";
 import { AUTHORS, type AuthorSlug } from "@/lib/authors";
 import { SITE_NAME_AR, absoluteUrl } from "@/lib/seo";
-import HoverLink from "@/components/HoverLink";
 
 export const dynamic = "force-dynamic";
 
@@ -138,10 +137,9 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
                 ? formatDistanceToNow(new Date(r.publishedAt), { addSuffix: true, locale: ar })
                 : null;
               return (
-                <HoverLink key={r.id} href={`/reviews/${r.slug}`}
-                  className="group flex flex-col overflow-hidden rounded-[6px] border transition"
-                  baseStyle={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
-                  hoverStyle={{ borderColor: "var(--border-medium)" }}
+                <Link key={r.id} href={`/reviews/${r.slug}`}
+                  className="card-hover "
+                  style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
                 >
                   <div className="relative h-44 w-full shrink-0" style={{ backgroundColor: "var(--bg-subtle)" }}>
                     {r.imageUrl ? (
@@ -166,7 +164,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
                     <p className="mb-3 line-clamp-2 text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>{r.summary}</p>
                     {timeAgo && <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>{timeAgo}</p>}
                   </div>
-                </HoverLink>
+                </Link>
               );
             })}
           </div>

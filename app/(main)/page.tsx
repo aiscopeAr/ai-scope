@@ -3,7 +3,6 @@ import Link from "next/link";
 import ReviewCard from "@/components/ReviewCard";
 import ToolCard from "@/components/ToolCard";
 import AdSlot from "@/components/AdSlot";
-import HoverLink from "@/components/HoverLink";
 import { prisma } from "@/lib/db";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
 
@@ -106,12 +105,11 @@ export default async function HomePage() {
             { slug: "zayd", name: "زيد", title: "محلل نماذج الذكاء الاصطناعي", accent: "#6366f1", desc: "يحلل النماذج الكبرى ويقارن قدراتها بعيناً نقدية — لا يصدق الضجيج التسويقي." },
             { slug: "lina", name: "لينا", title: "مراسلة شؤون الشركات والسياسات", accent: "#ec4899", desc: "تقرأ بين سطور قرارات شركات AI وتربط الأحداث بالصورة الاقتصادية الأشمل." },
           ].map((a) => (
-            <HoverLink
+            <Link
               key={a.slug}
               href={`/author/${a.slug}`}
-              className="flex items-center gap-4 rounded-[6px] border p-4 transition"
-              baseStyle={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }}
-              hoverStyle={{ borderColor: "var(--border-medium)" }}
+              className="card-hover "
+              style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }}
             >
               <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[6px]" style={{ outline: `2px solid ${a.accent}50`, outlineOffset: "2px" }}>
                 <img src={`/images/authors/${a.slug}.svg`} alt={a.name} className="h-full w-full object-cover" />
@@ -121,7 +119,7 @@ export default async function HomePage() {
                 <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{a.title}</p>
                 <p className="mt-1 text-xs line-clamp-2" style={{ color: "var(--text-muted)" }}>{a.desc}</p>
               </div>
-            </HoverLink>
+            </Link>
           ))}
         </div>
       </section>

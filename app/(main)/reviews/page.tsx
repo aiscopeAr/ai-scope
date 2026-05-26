@@ -4,7 +4,6 @@ import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
 import ReviewCard from "@/components/ReviewCard";
 import AdSlot from "@/components/AdSlot";
-import HoverLink from "@/components/HoverLink";
 
 export const dynamic = "force-dynamic";
 
@@ -68,16 +67,15 @@ export default async function ReviewsIndexPage() {
         <section className="mb-8">
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => (
-              <HoverLink
+              <Link
                 key={category.id}
                 href={`/category/${category.slug}`}
-                className="rounded-[6px] border px-4 py-2 text-sm transition"
-                baseStyle={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
-                hoverStyle={{ borderColor: "var(--accent)", color: "var(--accent)" }}
+                className="pill-hover "
+                style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
               >
                 {category.nameAr}
                 <span className="mr-2" style={{ color: "var(--text-muted)" }}>({category._count.reviews})</span>
-              </HoverLink>
+              </Link>
             ))}
           </div>
         </section>

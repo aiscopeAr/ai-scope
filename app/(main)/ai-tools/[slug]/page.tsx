@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import HoverLink from "@/components/HoverLink";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME, SITE_NAME_AR, SITE_URL, truncate } from "@/lib/seo";
 import { getCategoryMeta } from "@/lib/tool-categories";
@@ -195,14 +194,13 @@ export default async function AIToolPage({
                     {PRICING_LABELS[tool.pricing] ?? tool.pricing}
                     {tool.monthlyPrice && tool.pricing !== "free" ? ` — يبدأ من $${tool.monthlyPrice}/شهر` : ""}
                   </span>
-                  <HoverLink
+                  <Link
                     href={`/ai-tools/for/${tool.toolCategory}`}
-                    className="rounded-[6px] border px-3 py-1 text-sm transition"
-                    baseStyle={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)" }}
-                    hoverStyle={{ color: "var(--accent)", borderColor: "var(--accent)" }}
+                    className="pill-hover "
+                    style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)" }}
                   >
                     {catMeta.icon} {catMeta.labelAr}
-                  </HoverLink>
+                  </Link>
                   {tool.arabicSupport && (
                     <span className="rounded-[3px] border px-2.5 py-1 text-xs font-bold"
                       style={{ backgroundColor: "#f0fdfa", color: "#0d9488", borderColor: "#99f6e4" }}>يدعم العربية ✓</span>
@@ -355,16 +353,15 @@ export default async function AIToolPage({
                   <h2 className="mb-4 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>مقارنات تتضمن {tool.name}</h2>
                   <div className="space-y-3">
                     {tool.comparisons.map((side) => (
-                      <HoverLink
+                      <Link
                         key={side.id}
                         href={`/compare/${side.comparison.slug}`}
-                        className="flex items-center justify-between rounded-[6px] border p-4 transition"
-                        baseStyle={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
-                        hoverStyle={{ borderColor: "var(--border-medium)" }}
+                        className="card-hover "
+                        style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
                       >
                         <span className="font-medium" style={{ color: "var(--text-primary)" }}>{side.comparison.title}</span>
                         <span className="text-sm" style={{ color: "var(--accent)" }}>عرض المقارنة ←</span>
-                      </HoverLink>
+                      </Link>
                     ))}
                   </div>
                 </section>
@@ -376,19 +373,18 @@ export default async function AIToolPage({
                   <h2 className="mb-4 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>تقارير ذات صلة</h2>
                   <div className="space-y-3">
                     {relatedReviews.map((r) => (
-                      <HoverLink
+                      <Link
                         key={r.id}
                         href={`/reviews/${r.slug}`}
-                        className="flex items-start gap-3 rounded-[6px] border p-4 transition group"
-                        baseStyle={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
-                        hoverStyle={{ borderColor: "var(--border-medium)" }}
+                        className="card-hover "
+                        style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
                       >
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold transition-opacity group-hover:opacity-75 line-clamp-1" style={{ color: "var(--text-primary)" }}>{r.titleAr}</p>
                           {r.summary && <p className="mt-1 text-xs line-clamp-1" style={{ color: "var(--text-muted)" }}>{r.summary}</p>}
                         </div>
                         <span className="shrink-0 text-xs" style={{ color: "var(--text-muted)" }}>{r.authorSlug}</span>
-                      </HoverLink>
+                      </Link>
                     ))}
                   </div>
                 </section>
@@ -445,14 +441,13 @@ export default async function AIToolPage({
               <div className="rounded-[6px] border p-5" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
                 <h3 className="mb-2 font-bold text-sm" style={{ color: "var(--text-primary)" }}>قارن مع أداة أخرى</h3>
                 <p className="mb-3 text-xs" style={{ color: "var(--text-muted)" }}>اكتشف الأنسب لك بمقارنة مفصّلة</p>
-                <HoverLink
+                <Link
                   href="/compare"
-                  className="flex w-full items-center justify-center gap-2 rounded-[6px] border px-4 py-2 text-xs font-semibold transition"
-                  baseStyle={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-subtle)" }}
-                  hoverStyle={{ borderColor: "var(--accent)", color: "var(--accent)" }}
+                  className="pill-hover "
+                  style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-subtle)" }}
                 >
                   ⚖️ فتح أداة المقارنة
-                </HoverLink>
+                </Link>
               </div>
 
               {/* Related topics */}
