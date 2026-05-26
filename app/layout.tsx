@@ -57,11 +57,20 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: `${SITE_NAME} — ${SITE_NAME_AR}`,
     description: SITE_DESCRIPTION_AR,
+    images: [
+      {
+        url: `${SITE_URL}/opengraph-image`,
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME} — ${SITE_NAME_AR}`,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     site: "@AIScope_ar",
     creator: "@AIScope_ar",
+    images: [`${SITE_URL}/opengraph-image`],
   },
   verification: {
     google: process.env.NEXT_PUBLIC_GSC_VERIFICATION ?? undefined,
@@ -69,7 +78,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: SITE_URL,
     languages: { ar: SITE_URL },
-    types: { "application/rss+xml": `${SITE_URL}/rss.xml` },
+    types: {
+      "application/rss+xml": `${SITE_URL}/rss.xml`,
+      "application/xml": `${SITE_URL}/sitemap.xml`,
+    },
   },
 };
 

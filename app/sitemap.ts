@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/seo";
+import { TOOL_CATEGORIES } from "@/lib/tool-categories";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,14 @@ const staticPages: MetadataRoute.Sitemap = [
   { url: `${SITE_URL}/contact`,     lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
   { url: `${SITE_URL}/privacy`,     lastModified: new Date(), changeFrequency: "yearly",  priority: 0.2 },
   { url: `${SITE_URL}/terms`,       lastModified: new Date(), changeFrequency: "yearly",  priority: 0.2 },
+  { url: `${SITE_URL}/search`,      lastModified: new Date(), changeFrequency: "weekly",  priority: 0.5 },
+  // /ai-tools/for/[usecase] — one page per tool category
+  ...TOOL_CATEGORIES.map((c) => ({
+    url: `${SITE_URL}/ai-tools/for/${c.value}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.75,
+  })),
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

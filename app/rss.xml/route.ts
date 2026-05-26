@@ -1,5 +1,6 @@
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { SITE_URL, SITE_NAME, SITE_DESCRIPTION_AR } from "@/lib/seo";
+import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -13,30 +14,63 @@ function escapeXml(str: string): string {
 }
 
 export async function GET() {
-  const reviews = await prisma.review.findMany({
-    where: { published: true },
-    orderBy: { publishedAt: "desc" },
-    take: 50,
-    include: { category: true },
-  });
+  let reviews: {
+    slug: string;
+    titleAr: string;
+    summary: string;
+    publishedAt: Date | null;
+    tags: string[];
+    imageUrl: string | null;
+    authorSlug: string;
+    category: { nameAr: string };
+  }[] = [];
+
+  try {
+    reviews = await prisma.review.findMany({
+      where: { published: true },
+      select: {
+        slug: true,
+        titleAr: true,
+        summary: true,
+        publishedAt: true,
+        tags: true,
+        imageUrl: true,
+        authorSlug: true,
+        category: { select: { nameAr: true } },
+      },
+      orderBy: { publishedAt: "desc" },
+      take: 50,
+    });
+  } catch {
+    // return empty feed on DB error
+  }
+
+  const buildDate = new Date().toUTCString();
 
   const items = reviews
-    .map((review) => {
-      const url = `${SITE_URL}/reviews/${review.slug}`;
-      const pubDate = review.publishedAt
-        ? new Date(review.publishedAt).toUTCString()
-        : new Date(review.createdAt).toUTCString();
-      const description = escapeXml(review.summary.slice(0, 300));
+    .filter((r) => r.publishedAt !== null)
+    .map((r) => {
+      const url = `${SITE_URL}/reviews/${r.slug}`;
+      const pubDate = (r.publishedAt as Date).toUTCString();
+      const description = escapeXml(r.summary.slice(0, 300));
+      const image = r.imageUrl
+        ? `<enclosure url="${escapeXml(r.imageUrl)}" type="image/jpeg" length="0"/>`
+        : "";
+      const categories = r.tags
+        .slice(0, 5)
+        .map((t) => `      <category>${escapeXml(t)}</category>`)
+        .join("\n");
 
       return `    <item>
-      <title>${escapeXml(review.titleAr)}</title>
+      <title>${escapeXml(r.titleAr)}</title>
       <link>${url}</link>
       <guid isPermaLink="true">${url}</guid>
       <description>${description}</description>
-      <category>${escapeXml(review.category.nameAr)}</category>
-      <author>${escapeXml(review.authorSlug)}</author>
       <pubDate>${pubDate}</pubDate>
-      ${review.imageUrl ? `<enclosure url="${escapeXml(review.imageUrl)}" type="image/jpeg" length="0"/>` : ""}
+      <dc:creator>${escapeXml(r.authorSlug)}</dc:creator>
+      <category>${escapeXml(r.category.nameAr)}</category>
+${categories}
+      ${image}
     </item>`;
     })
     .join("\n");
@@ -44,23 +78,27 @@ export async function GET() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"
   xmlns:atom="http://www.w3.org/2005/Atom"
-  xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
-    <title>${escapeXml(SITE_NAME)} — أخبار الذكاء الاصطناعي بالعربية</title>
+    <title>${escapeXml(SITE_NAME)} — ${escapeXml(SITE_NAME_AR)}</title>
     <link>${SITE_URL}</link>
     <description>${escapeXml(SITE_DESCRIPTION_AR)}</description>
     <language>ar</language>
-    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+    <lastBuildDate>${buildDate}</lastBuildDate>
     <atom:link href="${SITE_URL}/rss.xml" rel="self" type="application/rss+xml"/>
-    <ttl>60</ttl>
+    <image>
+      <url>${SITE_URL}/og-default.png</url>
+      <title>${escapeXml(SITE_NAME)}</title>
+      <link>${SITE_URL}</link>
+    </image>
 ${items}
   </channel>
 </rss>`;
 
-  return new Response(xml, {
+  return new NextResponse(xml, {
     headers: {
-      "Content-Type": "application/rss+xml; charset=utf-8",
-      "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+      "Content-Type": "application/xml; charset=utf-8",
+      "Cache-Control": "public, max-age=1800, s-maxage=1800",
     },
   });
 }
