@@ -4,80 +4,112 @@ import { SITE_NAME, SITE_NAME_AR, absoluteUrl } from "@/lib/seo";
 export const metadata: Metadata = {
   title: `سياسة الخصوصية | ${SITE_NAME_AR}`,
   description:
-    "تعرف على كيفية جمع AI Scope للبيانات واستخدامها وحمايتها، وحقوقك كمستخدم لمنصتنا.",
+    `تعرّف على كيفية جمع ${SITE_NAME} للبيانات واستخدامها وحمايتها، وحقوقك كزائر للمنصة.`,
   alternates: { canonical: absoluteUrl("/privacy") },
 };
 
+const sections = [
+  {
+    n: "1",
+    title: "المعلومات التي نجمعها",
+    body: `عند زيارتك لـ ${SITE_NAME} نجمع تلقائياً بيانات غير شخصية مثل نوع المتصفح، الجهاز المستخدم، الصفحات التي تزورها، ومصدر الزيارة. هذه البيانات مجهولة الهوية تماماً ولا تُربط بهويتك الشخصية.`,
+  },
+  {
+    n: "2",
+    title: "ملفات تعريف الارتباط (Cookies)",
+    body: "نستخدم Cookies لأغراض تحليلية فقط عبر Google Analytics 4. لا نستخدمها لتتبع الهوية الشخصية. يمكنك تعطيلها من إعدادات متصفحك في أي وقت.",
+  },
+  {
+    n: "3",
+    title: "Google Analytics",
+    body: "نستخدم Google Analytics 4 لفهم كيفية تصفح الزوار للمنصة وتحسين تجربتهم. البيانات المجمعة مجهولة الهوية وتخضع لسياسة خصوصية Google المستقلة.",
+  },
+  {
+    n: "4",
+    title: "الإعلانات",
+    body: "قد تظهر إعلانات من شبكات خارجية. هذه الشبكات تعمل بسياسات خصوصية مستقلة، ولا نشارك بياناتك الشخصية معها، ولا نتحكم في Cookies الخاصة بها.",
+  },
+  {
+    n: "5",
+    title: "أمان البيانات",
+    body: "نستخدم HTTPS وقواعد بيانات مؤمَّنة. لا نبيع أي بيانات لأطراف ثالثة في أي حال من الأحوال.",
+  },
+  {
+    n: "6",
+    title: "حقوقك",
+    body: null, // special — rendered separately with email link
+  },
+  {
+    n: "7",
+    title: "التعديلات على هذه السياسة",
+    body: "قد نحدّث هذه السياسة من وقت لآخر. تاريخ آخر تحديث يظهر أعلى هذه الصفحة. استمرارك في استخدام المنصة يُعدّ قبولاً للسياسة المحدَّثة.",
+  },
+];
+
 export default function PrivacyPage() {
   return (
-    <section className="container mx-auto max-w-3xl px-4 py-16" dir="rtl">
-      <h1 className="mb-4 text-4xl font-black text-slate-900">سياسة الخصوصية</h1>
-      <p className="mb-10 text-slate-500">آخر تحديث: مايو 2026</p>
+    <div dir="rtl">
 
-      <div className="space-y-8 leading-8 text-slate-700">
-        <div>
-          <h2 className="mb-3 text-xl font-bold text-slate-900">1. المعلومات التي نجمعها</h2>
-          <p>
-            عند زيارتك لموقع {SITE_NAME}، قد نجمع معلومات غير شخصية تلقائياً مثل نوع المتصفح،
-            الجهاز المستخدم، الصفحات التي تزورها، ومصدر الزيارة. هذه البيانات مجهولة الهوية
-            ولا تُستخدم إلا لتحسين تجربة المستخدم.
-          </p>
+      {/* Hero */}
+      <section className="border-b border-white/8 bg-gradient-to-b from-white/3 to-transparent py-20">
+        <div className="container mx-auto max-w-3xl px-4">
+          <h1 className="mb-3 text-4xl font-black text-white md:text-5xl">سياسة الخصوصية</h1>
+          <p className="text-slate-500">آخر تحديث: مايو 2026</p>
+        </div>
+      </section>
+
+      <div className="container mx-auto max-w-3xl px-4 py-16">
+        <div className="space-y-2">
+          {sections.map((sec) => (
+            <details
+              key={sec.n}
+              className="group rounded-2xl border border-white/8 bg-white/3 open:bg-white/5 transition"
+              open={sec.n === "1"}
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 marker:hidden">
+                <div className="flex items-center gap-3">
+                  <span className="w-7 shrink-0 text-sm font-black text-violet-500">{sec.n}.</span>
+                  <span className="font-bold text-slate-200">{sec.title}</span>
+                </div>
+                <svg
+                  className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-open:rotate-180"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <div className="px-6 pb-5 text-sm leading-relaxed text-slate-400">
+                {sec.n === "6" ? (
+                  <p>
+                    يحق لك في أي وقت طلب معرفة البيانات التي نحتفظ بها المتعلقة بزيارتك، أو طلب حذفها.
+                    للتواصل راسلنا على{" "}
+                    <a
+                      href="mailto:hanna.obead@gmail.com"
+                      className="font-semibold text-violet-400 hover:text-violet-300 hover:underline"
+                    >
+                      hanna.obead@gmail.com
+                    </a>
+                  </p>
+                ) : (
+                  <p>{sec.body}</p>
+                )}
+              </div>
+            </details>
+          ))}
         </div>
 
-        <div>
-          <h2 className="mb-3 text-xl font-bold text-slate-900">2. ملفات تعريف الارتباط (Cookies)</h2>
+        <div className="mt-8 rounded-2xl border border-white/8 bg-white/3 p-6 text-sm text-slate-500">
           <p>
-            نستخدم ملفات تعريف الارتباط لأغراض تحليلية عبر Google Analytics 4 لفهم كيفية تصفح
-            الزوار للموقع. لا نستخدم cookies لتتبع الهوية الشخصية. يمكنك تعطيل cookies من
-            إعدادات متصفحك في أي وقت.
-          </p>
-        </div>
-
-        <div>
-          <h2 className="mb-3 text-xl font-bold text-slate-900">3. Google Analytics</h2>
-          <p>
-            نستخدم Google Analytics 4 لتحليل حركة الزوار. تخضع هذه الخدمة لسياسة خصوصية
-            Google المستقلة. البيانات المجمعة مجهولة الهوية ولا تتيح لنا التعرف على هوية
-            الزوار بشكل شخصي.
-          </p>
-        </div>
-
-        <div>
-          <h2 className="mb-3 text-xl font-bold text-slate-900">4. الإعلانات</h2>
-          <p>
-            قد تظهر على الموقع إعلانات من شبكات إعلانية خارجية. هذه الشبكات قد تستخدم cookies
-            خاصة بها وفق سياساتها المستقلة. لا نتحكم في هذه الملفات ولا نشارك بياناتك الشخصية
-            معها.
-          </p>
-        </div>
-
-        <div>
-          <h2 className="mb-3 text-xl font-bold text-slate-900">5. أمان البيانات</h2>
-          <p>
-            نتخذ إجراءات تقنية معقولة لحماية بيانات الموقع، بما في ذلك استخدام HTTPS وقواعد
-            بيانات مؤمّنة. لا نبيع أي بيانات لأطراف ثالثة.
-          </p>
-        </div>
-
-        <div>
-          <h2 className="mb-3 text-xl font-bold text-slate-900">6. حقوقك</h2>
-          <p>
-            يحق لك في أي وقت طلب معرفة البيانات التي نحتفظ بها المتعلقة بزيارتك، أو طلب حذفها.
-            للتواصل بشأن ذلك راسلنا على:{" "}
-            <a href="mailto:hanna.obead@gmail.com" className="text-[#667eea] hover:underline font-semibold">
+            لأي استفسار حول هذه السياسة:{" "}
+            <a
+              href="mailto:hanna.obead@gmail.com"
+              className="font-semibold text-violet-400 hover:text-violet-300 hover:underline"
+            >
               hanna.obead@gmail.com
             </a>
           </p>
         </div>
-
-        <div>
-          <h2 className="mb-3 text-xl font-bold text-slate-900">7. التعديلات على هذه السياسة</h2>
-          <p>
-            قد نحدّث هذه السياسة من وقت لآخر. سيُنشر تاريخ آخر تحديث في أعلى هذه الصفحة.
-            استمرارك في استخدام {SITE_NAME} بعد أي تعديل يُعدّ قبولاً للسياسة المحدّثة.
-          </p>
-        </div>
       </div>
-    </section>
+    </div>
   );
 }

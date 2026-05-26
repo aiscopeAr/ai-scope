@@ -47,7 +47,7 @@ function buildUserPrompt(
   memoryBlock: string,
 ): string {
   const sourcesText = sources
-    .map((s, i) => `## مصدر ${i + 1}: ${s.name}\nالعنوان: ${s.title}\nURL: ${s.url}\n\n${s.content.slice(0, 3000)}`)
+    .map((s, i) => `## مصدر ${i + 1}: ${s.name}\nالعنوان: ${s.title}\nURL: ${s.url}\n\n${s.content}`)
     .join("\n\n---\n\n");
 
   return `إليك ${sources.length} مصدر حول نفس الموضوع. مهمتك: اكتب تقريراً عربياً أصيلاً ومعمّقاً — لا تلخيصاً، بل تحليلاً حقيقياً بصوت الكاتب.${memoryBlock}

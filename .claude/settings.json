@@ -26,7 +26,18 @@
       "Bash(mkdir -p \"d:/AIScope/app/\\(main\\)/author/[slug]\")",
       "PowerShell(cd d:/AIScope; Get-ChildItem app/api/cron -Recurse -ErrorAction SilentlyContinue | Select-Object FullName; Get-ChildItem app/\\(main\\) | Select-Object Name; Get-ChildItem app/admin | Select-Object Name)",
       "Bash(mkdir -p \"d:/AIScope/app/api/admin/reviews\" \"d:/AIScope/app/api/admin/reviews/[id]\" \"d:/AIScope/app/api/admin/queue\" \"d:/AIScope/app/api/admin/queue/[id]\" \"d:/AIScope/app/api/views/[slug]\")",
-      "Bash(mkdir -p \"d:/AIScope/app/\\(main\\)/reviews/[slug]\" \"d:/AIScope/app/\\(main\\)/author/[slug]\")"
+      "Bash(mkdir -p \"d:/AIScope/app/\\(main\\)/reviews/[slug]\" \"d:/AIScope/app/\\(main\\)/author/[slug]\")",
+      "Bash(node -e ' *)",
+      "Bash(gh secret *)",
+      "Bash(vercel env *)",
+      "Bash(curl -s http://localhost:3000/api/cron/fetch-news)",
+      "Bash(curl -s http://localhost:3000/api/cron/cluster-news)",
+      "Bash(curl -s http://localhost:3000/api/cron/process-review)",
+      "Bash(curl -s http://localhost:3000/api/admin/queue)",
+      "Bash(curl -s http://localhost:3000/api/cron/publish-review)",
+      "Bash(curl -s http://localhost:3000/reviews/nvidia-chip-market-challenges)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(node --env-file=.env scripts/backfill-images.mjs)"
     ],
     "additionalDirectories": [
       "d:\\AIScope\\app\\api\\admin\\ai-tools\\[id]",
