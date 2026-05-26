@@ -28,7 +28,7 @@ export const AUTHORS: Record<AuthorSlug, Author> = {
     specialty: "AI Models & Research",
     specialtyAr: "نماذج الذكاء الاصطناعي والأبحاث",
     categories: ["ai-models", "research", "tools"],
-    avatarUrl: "/images/authors/zayd.webp",
+    avatarUrl: "/images/authors/zayd.svg",
     accentColor: "#6366f1", // indigo
     voiceTraits: [
       "تقني ودقيق بدون تعقيد غير ضروري",
@@ -63,7 +63,7 @@ export const AUTHORS: Record<AuthorSlug, Author> = {
     specialty: "AI Companies & Policy",
     specialtyAr: "شركات الذكاء الاصطناعي والسياسات",
     categories: ["companies", "policy"],
-    avatarUrl: "/images/authors/lina.webp",
+    avatarUrl: "/images/authors/lina.svg",
     accentColor: "#ec4899", // pink
     voiceTraits: [
       "تربط الخبر بالسياق الأوسع: الاقتصاد، السياسة، المجتمع",

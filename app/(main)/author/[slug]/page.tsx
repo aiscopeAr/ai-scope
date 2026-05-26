@@ -62,7 +62,8 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
           <div className="flex flex-col items-center gap-8 sm:flex-row sm:items-start">
             <div className="relative shrink-0">
               <div className="h-28 w-28 overflow-hidden rounded-full" style={{ outline: `4px solid ${author.accentColor}`, outlineOffset: "3px" }}>
-                <Image src={author.avatarUrl} alt={author.nameAr} width={112} height={112} className="h-full w-full object-cover" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={author.avatarUrl} alt={author.nameAr} width={112} height={112} className="h-full w-full object-cover" />
               </div>
               <span className="absolute -bottom-1 -left-1 rounded-full border border-white/10 bg-[#0d0d12] px-2 py-0.5 text-[10px] font-bold" style={{ color: author.accentColor }}>AI</span>
             </div>

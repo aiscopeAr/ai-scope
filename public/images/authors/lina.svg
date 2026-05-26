@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="bg2" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#1a0f1e"/>
+      <stop offset="100%" stop-color="#0d0d18"/>
+    </radialGradient>
+    <radialGradient id="face2" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#c9a882"/>
+      <stop offset="100%" stop-color="#a88060"/>
+    </radialGradient>
+    <filter id="glow2">
+      <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <circle cx="100" cy="100" r="100" fill="url(#bg2)"/>
+
+  <!-- Subtle decorative dots -->
+  <g opacity="0.2" fill="#ec4899">
+    <circle cx="25" cy="55" r="1.5"/><circle cx="35" cy="45" r="1"/><circle cx="45" cy="55" r="1.5"/>
+    <circle cx="175" cy="55" r="1.5"/><circle cx="165" cy="45" r="1"/><circle cx="155" cy="55" r="1.5"/>
+    <circle cx="30" cy="145" r="1"/><circle cx="170" cy="145" r="1"/>
+  </g>
+
+  <!-- Shirt / body -->
+  <path d="M52 175 Q55 142 100 142 Q145 142 148 175 L148 200 L52 200 Z" fill="#1a0f1e"/>
+  <!-- Blouse collar -->
+  <path d="M88 142 L100 158 L112 142" fill="none" stroke="#ec4899" stroke-width="1.5"/>
+  <!-- Small necklace -->
+  <path d="M93 152 Q100 158 107 152" fill="none" stroke="#ec4899" stroke-width="1" opacity="0.7"/>
+  <circle cx="100" cy="158" r="1.5" fill="#ec4899" opacity="0.8"/>
+
+  <!-- Neck -->
+  <rect x="91" y="126" width="18" height="20" rx="6" fill="url(#face2)"/>
+
+  <!-- Head -->
+  <ellipse cx="100" cy="105" rx="33" ry="35" fill="url(#face2)"/>
+
+  <!-- Hair — long, dark, flowing -->
+  <!-- Back hair -->
+  <path d="M67 100 Q62 130 68 158 Q75 165 82 162 Q78 145 80 125 Q70 110 67 100Z" fill="#1a0a05"/>
+  <path d="M133 100 Q138 130 132 158 Q125 165 118 162 Q122 145 120 125 Q130 110 133 100Z" fill="#1a0a05"/>
+  <!-- Top hair -->
+  <path d="M67 100 Q68 70 100 66 Q132 70 133 100 Q128 68 100 67 Q72 68 67 100Z" fill="#1a0a05"/>
+  <!-- Hair highlights -->
+  <path d="M75 72 Q85 68 90 72" stroke="#3d1a0a" stroke-width="2" fill="none" opacity="0.5"/>
+  <path d="M110 70 Q118 68 125 73" stroke="#3d1a0a" stroke-width="2" fill="none" opacity="0.5"/>
+
+  <!-- Earrings -->
+  <circle cx="67" cy="112" r="2.5" fill="#ec4899" opacity="0.9"/>
+  <circle cx="133" cy="112" r="2.5" fill="#ec4899" opacity="0.9"/>
+  <line x1="67" y1="114" x2="67" y2="120" stroke="#ec4899" stroke-width="1" opacity="0.7"/>
+  <line x1="133" y1="114" x2="133" y2="120" stroke="#ec4899" stroke-width="1" opacity="0.7"/>
+
+  <!-- Eyebrows — shaped -->
+  <path d="M81 94 Q88 91 94 93" stroke="#1a0a05" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M106 93 Q112 91 119 94" stroke="#1a0a05" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Eyes — slightly larger, expressive -->
+  <ellipse cx="88" cy="101" rx="6" ry="5.5" fill="white"/>
+  <ellipse cx="112" cy="101" rx="6" ry="5.5" fill="white"/>
+  <!-- Iris -->
+  <circle cx="88" cy="101" r="3.5" fill="#3d2010"/>
+  <circle cx="112" cy="101" r="3.5" fill="#3d2010"/>
+  <!-- Pupil -->
+  <circle cx="88" cy="101" r="2" fill="#0d0d18"/>
+  <circle cx="112" cy="101" r="2" fill="#0d0d18"/>
+  <!-- Highlight -->
+  <circle cx="89" cy="100" r="1" fill="white" opacity="0.9"/>
+  <circle cx="113" cy="100" r="1" fill="white" opacity="0.9"/>
+  <!-- Eyelashes upper -->
+  <path d="M82 97 Q85 94 88 96 Q91 94 94 97" stroke="#1a0a05" stroke-width="0.8" fill="none"/>
+  <path d="M106 97 Q109 94 112 96 Q115 94 118 97" stroke="#1a0a05" stroke-width="0.8" fill="none"/>
+
+  <!-- Nose -->
+  <path d="M99 107 Q97 114 99 116 Q101 117 103 116 Q105 114 101 107" fill="none" stroke="#9a7050" stroke-width="1" stroke-linecap="round"/>
+
+  <!-- Mouth — warm smile -->
+  <path d="M90 122 Q100 128 110 122" stroke="#c07060" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M92 122 Q100 125 108 122" fill="#e08070" opacity="0.3"/>
+
+  <!-- Subtle pink glow ring -->
+  <circle cx="100" cy="100" r="97" fill="none" stroke="#ec4899" stroke-width="0.5" opacity="0.3"/>
+
+  <!-- AI badge -->
+  <g filter="url(#glow2)">
+    <circle cx="140" cy="155" r="14" fill="#1a0f1e" stroke="#ec4899" stroke-width="1.5"/>
+    <text x="140" y="159" text-anchor="middle" font-size="8" font-weight="bold" fill="#ec4899" font-family="monospace">AI</text>
+  </g>
+</svg>
