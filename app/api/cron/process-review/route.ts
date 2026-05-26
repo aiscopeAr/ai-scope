@@ -1,6 +1,7 @@
 /**
- * Pick one pending ReviewQueue cluster and write a deep review with OpenAI.
- * Runs every ~30 min. One review per invocation (gpt-4o takes ~20–40s).
+ * Pick pending ReviewQueue clusters and write deep reviews with OpenAI.
+ * Runs once daily (Vercel Hobby). Processes up to MAX_PER_RUN items per invocation
+ * so the backlog doesn't pile up.
  */
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
@@ -13,9 +14,10 @@ import {
 import type { AuthorSlug } from "@/lib/authors";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 300; // 5 min — up to 3 reviews × ~60s each
 
 const MAX_RETRIES = 3;
+const MAX_PER_RUN = 3; // process up to 3 items per cron run to clear backlog
 
 function verifyCronSecret(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -35,7 +37,7 @@ export async function GET(request: Request) {
     data: { status: "pending", failureReason: "Reset from stale processing" },
   });
 
-  const item = await prisma.reviewQueue.findFirst({
+  const items = await prisma.reviewQueue.findMany({
     where: {
       OR: [
         { status: "pending" },
@@ -43,6 +45,7 @@ export async function GET(request: Request) {
       ],
     },
     orderBy: { createdAt: "asc" },
+    take: MAX_PER_RUN,
     include: {
       newsItems: {
         select: { title: true, content: true, sourceUrl: true, sourceName: true },
@@ -50,40 +53,55 @@ export async function GET(request: Request) {
     },
   });
 
-  if (!item) {
+  if (items.length === 0) {
     return NextResponse.json({ ok: true, message: "No pending review clusters" });
   }
 
-  if (item.newsItems.length === 0) {
-    await markReviewFailed(item.id, "Cluster has no news items");
-    return NextResponse.json({ ok: true, skipped: item.id });
-  }
+  const results: Array<{ id: string; status: "processed" | "rejected" | "failed"; title?: string; error?: string }> = [];
 
-  try {
-    await markReviewProcessing(item.id);
-
-    const sources = item.newsItems.map((n) => ({
-      title: n.title,
-      content: n.content,
-      url: n.sourceUrl,
-      name: n.sourceName,
-    }));
-
-    const draft = await writeReview(item.topic, sources, item.authorSlug as AuthorSlug);
-
-    if (!draft.isAiRelated) {
-      await prisma.reviewQueue.update({
-        where: { id: item.id },
-        data: { status: "rejected", failureReason: "Not AI-related per AI classifier" },
-      });
-      return NextResponse.json({ ok: true, rejected: item.id });
+  for (const item of items) {
+    if (item.newsItems.length === 0) {
+      await markReviewFailed(item.id, "Cluster has no news items");
+      results.push({ id: item.id, status: "failed", error: "No news items" });
+      continue;
     }
 
-    await markReviewProcessed(item.id, draft);
-    return NextResponse.json({ ok: true, processed: item.id, title: draft.titleAr });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    await markReviewFailed(item.id, message);
-    return NextResponse.json({ ok: true, failed: item.id, error: message });
+    try {
+      await markReviewProcessing(item.id);
+
+      const sources = item.newsItems.map((n) => ({
+        title: n.title,
+        content: n.content,
+        url: n.sourceUrl,
+        name: n.sourceName,
+      }));
+
+      const draft = await writeReview(item.topic, sources, item.authorSlug as AuthorSlug);
+
+      if (!draft.isAiRelated) {
+        await prisma.reviewQueue.update({
+          where: { id: item.id },
+          data: { status: "rejected", failureReason: "Not AI-related per AI classifier" },
+        });
+        results.push({ id: item.id, status: "rejected" });
+        continue;
+      }
+
+      await markReviewProcessed(item.id, draft);
+      results.push({ id: item.id, status: "processed", title: draft.titleAr });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      await markReviewFailed(item.id, message);
+      results.push({ id: item.id, status: "failed", error: message });
+    }
   }
+
+  return NextResponse.json({
+    ok: true,
+    total: items.length,
+    processed: results.filter((r) => r.status === "processed").length,
+    rejected: results.filter((r) => r.status === "rejected").length,
+    failed: results.filter((r) => r.status === "failed").length,
+    results,
+  });
 }

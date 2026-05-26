@@ -40,6 +40,8 @@ export async function GET(request: Request) {
   const remaining = DAILY_PUBLISH_LIMIT - publishedToday;
 
   // Pick processed items that have a slug (required for auto-publish)
+  // "processed" = written by AI, awaiting auto-publish
+  // Note: "approved" means admin already manually published them via the queue page
   const items = await prisma.reviewQueue.findMany({
     where: { status: "processed", slug: { not: null } },
     orderBy: { processedAt: "asc" },
