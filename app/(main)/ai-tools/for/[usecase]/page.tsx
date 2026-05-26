@@ -5,7 +5,8 @@ import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, SITE_URL } from "@/lib/seo";
 import { TOOL_CATEGORIES, getCategoryMeta } from "@/lib/tool-categories";
 import AdSlot from "@/components/AdSlot";
-import Breadcrumbs, { buildBreadcrumbJsonLd } from "@/components/Breadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
 import ToolCard from "@/components/ToolCard";
 
 export const revalidate = 600;

@@ -41,7 +41,8 @@
       "Bash(mkdir -p \"d:/AIScope/app/api/admin/reviews/[id]/generate-image\")",
       "Bash(node scripts/seed-tools.mjs)",
       "Bash(Start-Sleep -Seconds 15)",
-      "Bash(Get-Content \"C:\\\\Users\\\\MOMENT~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--AIScope\\\\3fc3a761-5615-4974-8642-732fd1c7ccde\\\\tasks\\\\bq2ky30lf.output\" -Tail 30)"
+      "Bash(Get-Content \"C:\\\\Users\\\\MOMENT~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--AIScope\\\\3fc3a761-5615-4974-8642-732fd1c7ccde\\\\tasks\\\\bq2ky30lf.output\" -Tail 30)",
+      "Bash(read f *)"
     ],
     "additionalDirectories": [
       "d:\\AIScope\\app\\api\\admin\\ai-tools\\[id]",

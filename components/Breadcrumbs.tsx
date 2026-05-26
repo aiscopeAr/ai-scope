@@ -1,29 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { SITE_URL } from "@/lib/seo";
+import type { BreadcrumbItem } from "@/lib/breadcrumb-jsonld";
 
-export interface BreadcrumbItem {
-  name: string;
-  href?: string;
-}
+export type { BreadcrumbItem };
+export { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
 
 interface BreadcrumbsProps {
   items: BreadcrumbItem[];
   className?: string;
-}
-
-export function buildBreadcrumbJsonLd(items: BreadcrumbItem[]) {
-  return {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: items.map((item, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      name: item.name,
-      ...(item.href ? { item: `${SITE_URL}${item.href}` } : {}),
-    })),
-  };
 }
 
 export default function Breadcrumbs({ items, className = "" }: BreadcrumbsProps) {
@@ -39,10 +24,7 @@ export default function Breadcrumbs({ items, className = "" }: BreadcrumbsProps)
           {item.href ? (
             <Link
               href={item.href}
-              className="transition-colors"
-              style={{ color: "var(--text-muted)" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}
+              className="link-muted transition-colors"
             >
               {item.name}
             </Link>
