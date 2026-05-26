@@ -52,9 +52,21 @@ export async function PUT(
   const review = await prisma.review.update({
     where: { id },
     data: {
-      ...body,
-      publishedAt:
-        body.published && !wasPublished ? new Date() : undefined,
+      ...(body.titleAr      !== undefined && { titleAr: body.titleAr }),
+      ...(body.summary      !== undefined && { summary: body.summary }),
+      ...(body.content      !== undefined && { content: body.content }),
+      ...(body.slug         !== undefined && { slug: body.slug }),
+      ...(body.authorSlug   !== undefined && { authorSlug: body.authorSlug }),
+      ...(body.categoryId   !== undefined && { categoryId: body.categoryId }),
+      ...(body.tags         !== undefined && { tags: body.tags }),
+      ...(body.keywords     !== undefined && { keywords: body.keywords }),
+      ...(body.faq          !== undefined && { faq: body.faq ?? undefined }),
+      ...(body.imageUrl     !== undefined && { imageUrl: body.imageUrl }),
+      ...(body.imageAlt     !== undefined && { imageAlt: body.imageAlt }),
+      ...(body.seoTitle     !== undefined && { seoTitle: body.seoTitle }),
+      ...(body.seoDescription !== undefined && { seoDescription: body.seoDescription }),
+      ...(body.published    !== undefined && { published: body.published }),
+      ...(body.published && !wasPublished  && { publishedAt: new Date() }),
     },
   });
 
