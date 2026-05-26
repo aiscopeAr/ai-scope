@@ -10,6 +10,7 @@ import {
   Share2,
   Wrench,
   BookOpen,
+  Users,
 } from "lucide-react";
 
 import AdminSignOutButton from "@/components/AdminSignOutButton";
@@ -136,6 +137,15 @@ export default async function AdminDashboardPage() {
       value: data.toolCount,
       valueLabel: "أداة",
       color: "cyan",
+    },
+    {
+      href: "/admin/authors",
+      icon: Users,
+      label: "الكتّاب",
+      sub: "زيد · لينا",
+      value: 2,
+      valueLabel: "كاتب",
+      color: "violet",
     },
     {
       href: "/admin/ads",
