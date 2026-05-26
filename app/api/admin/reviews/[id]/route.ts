@@ -34,9 +34,11 @@ export async function PUT(
     content?: string;
     slug?: string;
     categoryId?: string;
+    authorSlug?: string;
     tags?: string[];
     keywords?: string[];
-    imageUrl?: string;
+    faq?: Array<{ question: string; answer: string }> | null;
+    imageUrl?: string | null;
     imageAlt?: string;
     seoTitle?: string;
     seoDescription?: string;

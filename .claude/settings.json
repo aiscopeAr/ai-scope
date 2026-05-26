@@ -37,13 +37,15 @@
       "Bash(curl -s http://localhost:3000/api/cron/publish-review)",
       "Bash(curl -s http://localhost:3000/reviews/nvidia-chip-market-challenges)",
       "Bash(curl -s http://localhost:3000/)",
-      "Bash(node --env-file=.env scripts/backfill-images.mjs)"
+      "Bash(node --env-file=.env scripts/backfill-images.mjs)",
+      "Bash(mkdir -p \"d:/AIScope/app/api/admin/reviews/[id]/generate-image\")"
     ],
     "additionalDirectories": [
       "d:\\AIScope\\app\\api\\admin\\ai-tools\\[id]",
       "d:\\AIScope\\app\\(main)\\author",
       "d:\\AIScope\\app\\api\\admin\\reviews",
-      "d:\\AIScope\\app\\(main)\\reviews"
+      "d:\\AIScope\\app\\(main)\\reviews",
+      "d:\\AIScope\\app\\api\\admin\\reviews\\[id]"
     ]
   }
 }
