@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ArrowRight, RefreshCw, ExternalLink, Pencil } from "lucide-react";
+import { RefreshCw, ExternalLink, Pencil } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
 
@@ -39,13 +39,10 @@ export default function AdminReviewsPage() {
   });
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-8" dir="rtl">
-      <div className="mb-6 flex items-center gap-3">
-        <Link href="/admin" className="text-slate-400 hover:text-slate-700">
-          <ArrowRight className="h-5 w-5" />
-        </Link>
-        <h1 className="text-2xl font-black text-slate-900">التقارير</h1>
-        <button onClick={load} className="mr-auto rounded-xl bg-slate-100 p-2 hover:bg-slate-200">
+    <div className="p-6" dir="rtl">
+      <div className="mb-5 flex items-center gap-3">
+        <h1 className="text-xl font-bold text-slate-900 flex-1">التقارير</h1>
+        <button onClick={load} className="rounded-xl bg-slate-100 p-2 hover:bg-slate-200">
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
@@ -56,7 +53,7 @@ export default function AdminReviewsPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${filter === f ? "bg-[#667eea] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${filter === f ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
           >
             {{ all: "الكل", published: "منشورة", draft: "مسودات" }[f]}
             <span className="mr-1.5 opacity-60">

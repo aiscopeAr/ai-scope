@@ -4,7 +4,7 @@ import * as React from "react";
 import { Plus, Pencil, Trash2, Loader2, Wrench, ExternalLink, Wand2, Star, CheckCircle, Clock, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 
-const inputCls = "w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#667eea] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#667eea]/20 transition";
+const inputCls = "w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition";
 const labelCls = "mb-1.5 block text-sm font-semibold text-slate-700";
 
 const CATEGORIES = [
@@ -202,31 +202,27 @@ export default function AdminAIToolsPage() {
   });
 
   return (
-    <div className="container mx-auto px-4 py-8" dir="rtl">
+    <div className="p-6" dir="rtl">
       {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="mb-1 text-sm font-semibold text-[#667eea]">Admin Panel</p>
-          <h1 className="text-3xl font-black text-slate-900">AI Tools Directory</h1>
-          <p className="mt-1 text-slate-500">{tools.filter((t) => t.published).length} published · <span className={pending.length > 0 ? "text-amber-600 font-semibold" : ""}>{pending.length} ينتظر الموافقة</span></p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <a href="/admin" className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition">Dashboard</a>
-          <a href="/ai-tools" target="_blank" rel="noopener" className="flex items-center gap-1.5 rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition">
-            <ExternalLink className="size-3.5" /> View Site
-          </a>
-          <button
-            onClick={runIngest}
-            disabled={ingesting}
-            className="flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-60 transition"
-          >
-            {ingesting ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
-            Ingest from ProductHunt
-          </button>
-          <button onClick={openNew} className="flex items-center gap-2 rounded-2xl bg-[#667eea] px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a6fd6] transition">
-            <Plus className="size-4" /> Add Tool
-          </button>
-        </div>
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <p className="text-xs text-slate-400 flex-1">
+          {tools.filter((t) => t.published).length} منشورة
+          {pending.length > 0 && <span className="mr-2 font-semibold text-amber-600">· {pending.length} ينتظر الموافقة</span>}
+        </p>
+        <a href="/ai-tools" target="_blank" rel="noopener" className="flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition">
+          <ExternalLink className="size-3.5" /> عرض الموقع
+        </a>
+        <button
+          onClick={runIngest}
+          disabled={ingesting}
+          className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-60 transition"
+        >
+          {ingesting ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+          Ingest من ProductHunt
+        </button>
+        <button onClick={openNew} className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition">
+          <Plus className="size-4" /> أضف أداة
+        </button>
       </div>
 
       {/* Tabs */}
@@ -241,7 +237,7 @@ export default function AdminAIToolsPage() {
         </button>
         <button
           onClick={() => setActiveTab("all")}
-          className={`flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold transition ${activeTab === "all" ? "bg-[#667eea] text-white" : "bg-white text-slate-600 shadow-sm hover:bg-slate-50"}`}
+          className={`flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold transition ${activeTab === "all" ? "bg-indigo-600 text-white" : "bg-white text-slate-600 shadow-sm hover:bg-slate-50"}`}
         >
           <Wrench className="size-3.5" />
           كل الأدوات ({tools.filter((t) => t.published).length})
@@ -330,12 +326,12 @@ export default function AdminAIToolsPage() {
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-32"><Loader2 className="size-8 animate-spin text-[#667eea]" /></div>
+            <div className="flex justify-center py-32"><Loader2 className="size-8 animate-spin text-indigo-600" /></div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-[2rem] bg-white py-24 shadow-lg shadow-slate-200/60">
               <Wrench className="size-12 text-slate-300 mb-4" />
               <p className="text-lg font-semibold text-slate-700">No tools yet</p>
-              <button onClick={openNew} className="mt-6 flex items-center gap-2 rounded-2xl bg-[#667eea] px-5 py-2.5 text-sm font-semibold text-white">
+              <button onClick={openNew} className="mt-6 flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white">
                 <Plus className="size-4" /> Add Tool
               </button>
             </div>
@@ -386,7 +382,7 @@ export default function AdminAIToolsPage() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-1.5">
-                          <a href={`/ai-tools/${t.slug}`} target="_blank" rel="noopener" className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-[#667eea] transition"><ExternalLink className="size-3.5" /></a>
+                          <a href={`/ai-tools/${t.slug}`} target="_blank" rel="noopener" className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-indigo-600 transition"><ExternalLink className="size-3.5" /></a>
                           <button
                             onClick={() => regenerate(t.id)}
                             disabled={generatingId === t.id}
@@ -395,7 +391,7 @@ export default function AdminAIToolsPage() {
                           >
                             {generatingId === t.id ? <Loader2 className="size-3.5 animate-spin" /> : <Wand2 className="size-3.5" />}
                           </button>
-                          <button onClick={() => openEdit(t)} className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-[#667eea] transition"><Pencil className="size-3.5" /></button>
+                          <button onClick={() => openEdit(t)} className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-indigo-600 transition"><Pencil className="size-3.5" /></button>
                           <button onClick={() => setDeleteId(t.id)} className="rounded-lg bg-slate-100 p-1.5 text-slate-500 hover:text-red-600 transition"><Trash2 className="size-3.5" /></button>
                         </div>
                       </td>
@@ -537,7 +533,7 @@ export default function AdminAIToolsPage() {
                   <label key={key} className="flex cursor-pointer items-center gap-2.5 select-none">
                     <div className="relative">
                       <input type="checkbox" className="sr-only" checked={!!form[key]} onChange={(e) => set(key, e.target.checked)} />
-                      <div className={`h-5 w-10 rounded-full transition-colors ${form[key] ? "bg-[#667eea]" : "bg-slate-200"}`} />
+                      <div className={`h-5 w-10 rounded-full transition-colors ${form[key] ? "bg-indigo-600" : "bg-slate-200"}`} />
                       <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${form[key] ? "-translate-x-5" : "-translate-x-0.5"}`} />
                     </div>
                     <span className="text-sm font-semibold text-slate-700">{label}</span>
@@ -548,7 +544,7 @@ export default function AdminAIToolsPage() {
 
             <div className="mt-8 flex justify-end gap-3">
               <button onClick={() => setShowForm(false)} className="rounded-2xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-200">Cancel</button>
-              <button onClick={save} disabled={saving} className="flex items-center gap-2 rounded-2xl bg-[#667eea] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#5a6fd6] disabled:opacity-60">
+              <button onClick={save} disabled={saving} className="flex items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
                 {saving && <Loader2 className="size-4 animate-spin" />}
                 {editId ? "Save" : "Create"}
               </button>

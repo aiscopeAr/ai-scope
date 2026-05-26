@@ -21,8 +21,8 @@ type AuthorData = {
   reviewCount: number;
 };
 
-const inputCls = "w-full rounded-xl border border-slate-700 bg-slate-800/60 px-3.5 py-2.5 text-sm text-slate-200 placeholder:text-slate-500 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition";
-const labelCls = "mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400";
+const inputCls = "w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition";
+const labelCls = "mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500";
 
 const ACCENT_PRESETS = ["#6366f1", "#ec4899", "#f59e0b", "#10b981", "#06b6d4", "#8b5cf6", "#ef4444", "#f97316"];
 
@@ -33,11 +33,11 @@ function Section({ title, children, defaultOpen = true }: {
 }) {
   const [open, setOpen] = React.useState(defaultOpen);
   return (
-    <div className="rounded-2xl border border-white/8 bg-white/3">
+    <div className="rounded-2xl border border-slate-200 bg-white">
       <button type="button" onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between px-5 py-4 text-right">
-        <span className="text-sm font-bold text-slate-300">{title}</span>
-        {open ? <ChevronUp className="size-4 text-slate-500" /> : <ChevronDown className="size-4 text-slate-500" />}
+        <span className="text-sm font-bold text-slate-700">{title}</span>
+        {open ? <ChevronUp className="size-4 text-slate-400" /> : <ChevronDown className="size-4 text-slate-400" />}
       </button>
       {open && <div className="px-5 pb-5 space-y-4">{children}</div>}
     </div>
@@ -103,11 +103,11 @@ function AvatarUpload({ value, onChange, accent }: {
             onDrop={onDrop}
             onDragOver={e => e.preventDefault()}
             onClick={() => fileRef.current?.click()}
-            className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-slate-700 bg-slate-800/40 px-4 py-3 text-center transition hover:border-violet-500 hover:bg-slate-800/60"
+            className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-center transition hover:border-indigo-400 hover:bg-indigo-50/40"
           >
             <Upload className="size-5 text-slate-500" />
-            <p className="text-xs text-slate-400">اسحب أو <span className="font-semibold text-violet-400">اختر ملفاً</span></p>
-            <p className="text-[10px] text-slate-600">PNG · JPG · WebP · SVG</p>
+            <p className="text-xs text-slate-400">اسحب أو <span className="font-semibold text-indigo-500">اختر ملفاً</span></p>
+            <p className="text-[10px] text-slate-400">PNG · JPG · WebP · SVG</p>
           </div>
           <input ref={fileRef} type="file" accept="image/*" className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
@@ -122,7 +122,7 @@ function AvatarUpload({ value, onChange, accent }: {
             className={`${inputCls} flex-1`} dir="ltr" placeholder="https://... or /images/authors/..." />
           {value && (
             <button type="button" onClick={() => onChange("")}
-              className="rounded-xl border border-slate-700 p-2.5 text-slate-500 hover:text-red-400 transition">
+              className="rounded-xl border border-slate-200 p-2.5 text-slate-400 hover:text-red-500 transition">
               <X className="size-4" />
             </button>
           )}
@@ -299,7 +299,7 @@ function AuthorEditor({ author, onSaved }: { author: AuthorData; onSaved: () => 
     <div className="space-y-4" dir="rtl">
 
       {/* Quick save bar */}
-      <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/3 px-5 py-3">
+      <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3">
         <div className="flex items-center gap-3">
           {/* Live avatar preview */}
           <div className="h-10 w-10 overflow-hidden rounded-full" style={{ outline: `2px solid ${accent}`, outlineOffset: "2px" }}>
@@ -315,7 +315,7 @@ function AuthorEditor({ author, onSaved }: { author: AuthorData; onSaved: () => 
         </div>
         <div className="flex items-center gap-2">
           <a href={`/author/${author.slug}`} target="_blank" rel="noopener"
-            className="flex items-center gap-1.5 rounded-xl bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white transition">
+            className="flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition">
             <ExternalLink className="size-3.5" /> الصفحة
           </a>
           <button onClick={save} disabled={saving}
@@ -379,8 +379,8 @@ function AuthorEditor({ author, onSaved }: { author: AuthorData; onSaved: () => 
         </div>
 
         {/* Live preview */}
-        <div className="rounded-xl border border-white/8 bg-white/3 p-4">
-          <p className="mb-2 text-xs text-slate-500">معاينة كما تظهر في الكتبة</p>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <p className="mb-2 text-xs text-slate-400">معاينة كما تظهر في الكتبة</p>
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 overflow-hidden rounded-full" style={{ outline: `2px solid ${accent}50`, outlineOffset: "2px" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -388,11 +388,11 @@ function AuthorEditor({ author, onSaved }: { author: AuthorData; onSaved: () => 
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
             </div>
             <span className="text-sm font-semibold" style={{ color: accent }}>{form.nameAr}</span>
-            <span className="text-xs text-slate-600">· إنتاج آلي</span>
-            <span className="text-slate-700 text-xs">•</span>
-            <span className="text-xs text-slate-500">منذ ساعتين</span>
-            <span className="text-slate-700 text-xs">•</span>
-            <span className="text-xs text-slate-500">5 دقائق قراءة</span>
+            <span className="text-xs text-slate-400">· إنتاج آلي</span>
+            <span className="text-slate-300 text-xs">•</span>
+            <span className="text-xs text-slate-400">منذ ساعتين</span>
+            <span className="text-slate-300 text-xs">•</span>
+            <span className="text-xs text-slate-400">5 دقائق قراءة</span>
           </div>
         </div>
       </Section>
@@ -411,7 +411,7 @@ function AuthorEditor({ author, onSaved }: { author: AuthorData; onSaved: () => 
                 }}
                 className={`${inputCls} flex-1`} />
               <button type="button" onClick={() => removeTrait(i)}
-                className="shrink-0 rounded-lg p-1.5 text-slate-600 hover:text-red-400 transition">
+                className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:text-red-500 transition">
                 <Trash2 className="size-3.5" />
               </button>
             </div>
@@ -432,17 +432,17 @@ function AuthorEditor({ author, onSaved }: { author: AuthorData; onSaved: () => 
 
       {/* System prompt */}
       <Section title="🤖 System Prompt" defaultOpen={false}>
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-xs text-amber-400">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
           ⚠️ يؤثر مباشرة على أسلوب الكتابة في كل تقرير جديد.
         </div>
         <div>
           <textarea rows={14} value={form.systemPrompt}
             onChange={e => set("systemPrompt", e.target.value)}
             className={`${inputCls} font-mono text-xs leading-relaxed`} dir="rtl" />
-          <div className="mt-1 flex justify-between text-xs text-slate-600">
+          <div className="mt-1 flex justify-between text-xs text-slate-400">
             <span>{form.systemPrompt.length} حرف</span>
             <button type="button" onClick={() => set("systemPrompt", author.systemPrompt)}
-              className="flex items-center gap-1 text-slate-500 hover:text-white transition">
+              className="flex items-center gap-1 text-slate-400 hover:text-slate-700 transition">
               <RefreshCw className="size-3" /> استعادة الأصلي
             </button>
           </div>
@@ -490,26 +490,16 @@ export default function AdminAuthorsPage() {
   const active = authors.find(a => a.slug === activeSlug);
 
   return (
-    <div className="min-h-screen bg-[#0d0d12]" dir="rtl">
-      <div className="container mx-auto max-w-5xl px-4 py-8">
-
+    <div className="p-6" dir="rtl">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-          <div>
-            <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-violet-400">Admin Panel</p>
-            <h1 className="text-2xl font-black text-white">إدارة الكتّاب</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <a href="/admin" className="rounded-xl bg-white/5 px-4 py-2 text-sm font-semibold text-slate-400 hover:text-white transition">
-              ← لوحة التحكم
-            </a>
-            <button
-              onClick={() => setShowNew(true)}
-              className="flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-500 transition"
-            >
-              <UserPlus className="size-4" /> كاتب جديد
-            </button>
-          </div>
+          <p className="text-xs text-slate-400">تعديل الملفات الشخصية والإعدادات</p>
+          <button
+            onClick={() => setShowNew(true)}
+            className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700 transition"
+          >
+            <UserPlus className="size-4" /> كاتب جديد
+          </button>
         </div>
 
         {loading ? (
@@ -519,15 +509,15 @@ export default function AdminAuthorsPage() {
         ) : (
           <div className="flex gap-6">
             {/* Sidebar tabs */}
-            <div className="w-52 shrink-0 space-y-2">
+            <div className="w-52 shrink-0 space-y-1">
               {authors.map(a => (
                 <button
                   key={a.slug}
                   onClick={() => setActiveSlug(a.slug)}
-                  className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-right transition ${
+                  className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-right transition ${
                     activeSlug === a.slug
-                      ? "bg-white/8 shadow-lg"
-                      : "hover:bg-white/4"
+                      ? "bg-white shadow-sm border border-slate-200"
+                      : "hover:bg-slate-100"
                   }`}
                   style={activeSlug === a.slug ? { borderRight: `3px solid ${a.accentColor}` } : { borderRight: "3px solid transparent" }}
                 >
@@ -541,11 +531,11 @@ export default function AdminAuthorsPage() {
                       }} />
                   </div>
                   <div className="min-w-0 text-right">
-                    <p className={`truncate text-sm font-bold ${activeSlug === a.slug ? "text-white" : "text-slate-400"}`}
+                    <p className="truncate text-sm font-bold text-slate-700"
                       style={activeSlug === a.slug ? { color: a.accentColor } : {}}>
                       {a.nameAr}
                     </p>
-                    <p className="truncate text-[11px] text-slate-600">{a.reviewCount} تقرير</p>
+                    <p className="truncate text-[11px] text-slate-400">{a.reviewCount} تقرير</p>
                   </div>
                 </button>
               ))}
@@ -553,7 +543,7 @@ export default function AdminAuthorsPage() {
               {/* Add new shortcut */}
               <button
                 onClick={() => setShowNew(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 px-4 py-3 text-sm text-slate-600 hover:border-violet-500/40 hover:text-violet-400 transition"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-400 hover:border-indigo-400 hover:text-indigo-600 transition"
               >
                 <Plus className="size-4" /> إضافة كاتب
               </button>
@@ -564,14 +554,13 @@ export default function AdminAuthorsPage() {
               {active ? (
                 <AuthorEditor key={active.slug} author={active} onSaved={load} />
               ) : (
-                <div className="flex h-64 items-center justify-center rounded-2xl border border-white/8 text-slate-600">
+                <div className="flex h-64 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400">
                   اختر كاتباً من القائمة
                 </div>
               )}
             </div>
           </div>
         )}
-      </div>
 
       {/* New author modal */}
       {showNew && (

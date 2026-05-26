@@ -177,15 +177,12 @@ export default function SocialPage() {
   const sentCount = posts.filter((p) => p.status === "sent").length;
 
   return (
-    <div className="p-6 space-y-8" dir="rtl">
+    <div className="p-6 space-y-6" dir="rtl">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">السوشيال ميديا</h1>
-          <p className="text-slate-500 text-sm mt-1">إدارة الحسابات والمنشورات التلقائية</p>
-        </div>
+        <p className="text-xs text-slate-400">إدارة الحسابات والمنشورات التلقائية</p>
         <button
           onClick={() => setShowAddAccount(true)}
-          className="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700"
+          className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
         >
           + إضافة حساب
         </button>
@@ -231,7 +228,7 @@ export default function SocialPage() {
                       onChange={(e) => toggleAccount(account.id, e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-9 h-5 bg-slate-200 peer-checked:bg-violet-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
+                    <div className="w-9 h-5 bg-slate-200 peer-checked:bg-indigo-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all" />
                   </label>
                 </div>
                 <div className="font-medium text-slate-800">{account.name}</div>
@@ -257,7 +254,7 @@ export default function SocialPage() {
                 key={s}
                 onClick={() => setPostFilter(s)}
                 className={`text-xs px-2 py-1 rounded-full transition-colors ${
-                  postFilter === s ? "bg-violet-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  postFilter === s ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
                 {s === "all" ? "الكل" : s === "pending" ? "انتظار" : s === "approved" ? "موافق" : s === "sent" ? "أُرسل" : "فشل"}
@@ -363,7 +360,7 @@ export default function SocialPage() {
               <button
                 onClick={saveAccount}
                 disabled={saving || !newName}
-                className="flex-1 bg-violet-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-violet-700 disabled:opacity-50"
+                className="flex-1 bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-violet-700 disabled:opacity-50"
               >
                 {saving ? "جاري الحفظ..." : "حفظ"}
               </button>

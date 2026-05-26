@@ -31,7 +31,7 @@ function priorityLabel(p: number) {
 }
 
 const inputCls =
-  "w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#667eea] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#667eea]/20 transition";
+  "w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition";
 
 type FormState = {
   name: string;
@@ -184,38 +184,31 @@ export default function AdminSourcesPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8" dir="rtl">
+    <div className="p-6" dir="rtl">
       {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="mb-2 text-sm font-semibold text-[#667eea]">لوحة الإدارة</p>
-          <h1 className="text-3xl font-black text-slate-900">إدارة المصادر</h1>
-          <p className="mt-1 text-slate-500">{sources.length} مصدر مسجّل</p>
+      <div className="mb-6 flex items-center gap-4">
+        <div className="flex-1">
+          <p className="text-xs text-slate-400">{sources.length} مصدر مسجّل</p>
         </div>
-        <div className="flex gap-3">
-          <a href="/admin" className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
-            الرئيسية
-          </a>
-          <button
-            onClick={openNew}
-            className="flex items-center gap-2 rounded-2xl bg-[#667eea] px-5 py-2 text-sm font-semibold text-white hover:bg-[#5a6fd6] transition"
-          >
-            <Plus className="size-4" /> مصدر جديد
-          </button>
-        </div>
+        <button
+          onClick={openNew}
+          className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
+        >
+          <Plus className="size-4" /> مصدر جديد
+        </button>
       </div>
 
       {/* Sources grid */}
       {loading ? (
         <div className="flex items-center justify-center py-32">
-          <Loader2 className="size-8 animate-spin text-[#667eea]" />
+          <Loader2 className="size-8 animate-spin text-indigo-600" />
         </div>
       ) : sources.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-[2rem] bg-white py-24 shadow-lg shadow-slate-200/60">
           <Rss className="size-12 text-slate-300 mb-4" />
           <p className="text-lg font-semibold text-slate-700">لا توجد مصادر بعد</p>
           <p className="mt-1 text-sm text-slate-400">أضف أول مصدر RSS للبدء</p>
-          <button onClick={openNew} className="mt-6 flex items-center gap-2 rounded-2xl bg-[#667eea] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#5a6fd6]">
+          <button onClick={openNew} className="mt-6 flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">
             <Plus className="size-4" /> أضف مصدراً
           </button>
         </div>
@@ -238,7 +231,7 @@ export default function AdminSourcesPage() {
                       </span>
                     </div>
                     {s.category && (
-                      <span className="mt-1 inline-block text-xs text-[#667eea] font-medium">
+                      <span className="mt-1 inline-block text-xs text-indigo-600 font-medium">
                         {s.category.nameAr}
                       </span>
                     )}
@@ -280,7 +273,7 @@ export default function AdminSourcesPage() {
                   <button
                     onClick={() => handleSync(s.id)}
                     disabled={isSyncing || !s.enabled}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#667eea]/10 py-2 text-xs font-semibold text-[#667eea] hover:bg-[#667eea]/20 disabled:opacity-40 transition"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-indigo-600/10 py-2 text-xs font-semibold text-indigo-600 hover:bg-indigo-600/20 disabled:opacity-40 transition"
                   >
                     {isSyncing
                       ? <Loader2 className="size-3.5 animate-spin" />
@@ -380,7 +373,7 @@ export default function AdminSourcesPage() {
                       checked={form.enabled}
                       onChange={(e) => setForm((f) => ({ ...f, enabled: e.target.checked }))}
                     />
-                    <div className={`h-6 w-11 rounded-full transition-colors ${form.enabled ? "bg-[#667eea]" : "bg-slate-200"}`} />
+                    <div className={`h-6 w-11 rounded-full transition-colors ${form.enabled ? "bg-indigo-600" : "bg-slate-200"}`} />
                     <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.enabled ? "-translate-x-5" : "-translate-x-0.5"}`} />
                   </div>
                   <span className="text-sm font-semibold text-slate-700">
@@ -399,7 +392,7 @@ export default function AdminSourcesPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 rounded-2xl bg-[#667eea] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#5a6fd6] disabled:opacity-60"
+                className="flex items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
               >
                 {saving && <Loader2 className="size-4 animate-spin" />}
                 {editingId ? "حفظ التعديلات" : "إضافة المصدر"}

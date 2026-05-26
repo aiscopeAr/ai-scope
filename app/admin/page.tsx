@@ -1,19 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  ClipboardList,
-  Rss,
-  Megaphone,
-  Eye,
-  ArrowLeft,
-  Bot,
-  Share2,
-  Wrench,
-  BookOpen,
-  Users,
+  ClipboardList, BookOpen, Rss, Share2, Wrench,
+  Users, Megaphone, TrendingUp, Eye, FileText,
+  AlertTriangle, CheckCircle2, Clock, ArrowUpRight,
 } from "lucide-react";
 
-import AdminSignOutButton from "@/components/AdminSignOutButton";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -24,42 +16,21 @@ async function getDashboardData() {
   todayStart.setUTCHours(0, 0, 0, 0);
 
   const [
-    reviewCount,
-    publishedCount,
-    publishedToday,
-    recentReviews,
-    topReviews,
-    pendingQueue,
-    processedQueue,
-    failedQueue,
-    pendingNewsItems,
-    totalViews,
-    activeAds,
-    activeSocialAccounts,
-    pendingSocialPosts,
-    toolCount,
-    trendingKeywords,
+    reviewCount, publishedCount, publishedToday,
+    recentReviews, topReviews,
+    pendingQueue, processedQueue, failedQueue, pendingNewsItems,
+    totalViews, activeAds, activeSocialAccounts, pendingSocialPosts,
+    toolCount, trendingKeywords,
   ] = await Promise.all([
     prisma.review.count(),
     prisma.review.count({ where: { published: true } }),
     prisma.review.count({ where: { published: true, publishedAt: { gte: todayStart } } }),
     prisma.review.findMany({
-      orderBy: { publishedAt: "desc" },
-      take: 8,
-      select: {
-        id: true,
-        titleAr: true,
-        slug: true,
-        published: true,
-        publishedAt: true,
-        authorSlug: true,
-        category: { select: { nameAr: true } },
-      },
+      orderBy: { publishedAt: "desc" }, take: 8,
+      select: { id: true, titleAr: true, slug: true, published: true, publishedAt: true, authorSlug: true, category: { select: { nameAr: true } } },
     }),
     prisma.review.findMany({
-      where: { published: true },
-      orderBy: { viewCount: "desc" },
-      take: 5,
+      where: { published: true }, orderBy: { viewCount: "desc" }, take: 5,
       select: { id: true, titleAr: true, slug: true, viewCount: true, authorSlug: true },
     }),
     prisma.reviewQueue.count({ where: { status: "pending" } }),
@@ -71,7 +42,7 @@ async function getDashboardData() {
     prisma.socialAccount.count({ where: { enabled: true } }),
     prisma.socialPost.count({ where: { status: "pending" } }),
     prisma.aITool.count({ where: { published: true } }),
-    prisma.trendingKeyword.findMany({ orderBy: { count: "desc" }, take: 12 }),
+    prisma.trendingKeyword.findMany({ orderBy: { count: "desc" }, take: 10 }),
   ]);
 
   return {
@@ -88,243 +59,214 @@ export default async function AdminDashboardPage() {
   const session = await auth();
   if (!session) redirect("/admin/login");
 
-  const data = await getDashboardData();
+  const d = await getDashboardData();
 
-  const navCards = [
+  const stats = [
     {
-      href: "/admin/queue",
-      icon: ClipboardList,
-      label: "طابور التقارير",
-      sub: `${data.processedQueue} جاهز · ${data.failedQueue} فشل`,
-      value: data.pendingQueue,
-      valueLabel: "معلّق",
-      color: "amber",
-      urgent: data.processedQueue > 0 || data.failedQueue > 0,
+      label: "إجمالي التقارير",
+      value: d.reviewCount,
+      sub: `${d.publishedCount} منشورة`,
+      icon: FileText,
+      color: "text-indigo-600",
+      bg: "bg-indigo-50",
     },
     {
-      href: "/admin/reviews",
-      icon: BookOpen,
-      label: "التقارير",
-      sub: `${data.publishedCount} منشورة`,
-      value: data.reviewCount,
-      valueLabel: "تقرير",
-      color: "violet",
+      label: "نُشر اليوم",
+      value: d.publishedToday,
+      sub: "منذ منتصف الليل UTC",
+      icon: CheckCircle2,
+      color: d.publishedToday > 0 ? "text-emerald-600" : "text-slate-400",
+      bg: d.publishedToday > 0 ? "bg-emerald-50" : "bg-slate-50",
     },
     {
-      href: "/admin/sources",
-      icon: Rss,
-      label: "المصادر",
-      sub: `${data.pendingNewsItems} خبر جديد`,
-      value: null,
-      valueLabel: "",
-      color: "sky",
+      label: "في الطابور",
+      value: d.pendingQueue + d.processedQueue,
+      sub: d.failedQueue > 0 ? `⚠ ${d.failedQueue} فشل` : "لا أخطاء",
+      icon: d.failedQueue > 0 ? AlertTriangle : Clock,
+      color: d.failedQueue > 0 ? "text-red-600" : "text-amber-600",
+      bg: d.failedQueue > 0 ? "bg-red-50" : "bg-amber-50",
+      alert: d.failedQueue > 0,
     },
     {
-      href: "/admin/social",
-      icon: Share2,
-      label: "السوشيال ميديا",
-      sub: `${data.activeSocialAccounts} حساب نشط`,
-      value: data.pendingSocialPosts,
-      valueLabel: "بانتظار النشر",
-      color: "pink",
-      urgent: data.pendingSocialPosts > 0,
-    },
-    {
-      href: "/admin/ai-tools",
-      icon: Wrench,
-      label: "أدوات AI",
-      sub: "دليل الأدوات",
-      value: data.toolCount,
-      valueLabel: "أداة",
-      color: "cyan",
-    },
-    {
-      href: "/admin/authors",
-      icon: Users,
-      label: "الكتّاب",
-      sub: "زيد · لينا",
-      value: 2,
-      valueLabel: "كاتب",
-      color: "violet",
-    },
-    {
-      href: "/admin/ads",
-      icon: Megaphone,
-      label: "الإعلانات",
-      sub: "إدارة حريز الإعلانات",
-      value: data.activeAds,
-      valueLabel: "مفعّل",
-      color: "emerald",
+      label: "إجمالي المشاهدات",
+      value: d.totalViews.toLocaleString("ar-EG"),
+      sub: `${d.pendingNewsItems} خبر جديد`,
+      icon: Eye,
+      color: "text-sky-600",
+      bg: "bg-sky-50",
     },
   ];
 
-  const colorMap: Record<string, { card: string; icon: string; badge: string }> = {
-    violet:  { card: "bg-violet-50 hover:bg-violet-100 border-violet-100",   icon: "bg-violet-500/10  text-violet-600",  badge: "bg-violet-100  text-violet-700"  },
-    amber:   { card: "bg-amber-50  hover:bg-amber-100  border-amber-100",    icon: "bg-amber-500/10   text-amber-600",   badge: "bg-amber-100   text-amber-700"   },
-    sky:     { card: "bg-sky-50    hover:bg-sky-100    border-sky-100",      icon: "bg-sky-500/10     text-sky-600",     badge: "bg-sky-100     text-sky-700"     },
-    emerald: { card: "bg-emerald-50 hover:bg-emerald-100 border-emerald-100", icon: "bg-emerald-500/10 text-emerald-600", badge: "bg-emerald-100 text-emerald-700" },
-    pink:    { card: "bg-pink-50   hover:bg-pink-100   border-pink-100",     icon: "bg-pink-500/10    text-pink-600",    badge: "bg-pink-100    text-pink-700"    },
-    cyan:    { card: "bg-cyan-50   hover:bg-cyan-100   border-cyan-100",     icon: "bg-cyan-500/10    text-cyan-600",    badge: "bg-cyan-100    text-cyan-700"    },
-  };
+  const quickLinks = [
+    { href: "/admin/queue",    icon: ClipboardList, label: "طابور التقارير",  badge: d.processedQueue > 0 ? `${d.processedQueue} جاهز` : null,   badgeColor: "bg-violet-100 text-violet-700", alert: d.failedQueue > 0 },
+    { href: "/admin/reviews",  icon: BookOpen,      label: "التقارير",         badge: `${d.publishedCount}`,                                        badgeColor: "bg-slate-100 text-slate-600"   },
+    { href: "/admin/ai-tools", icon: Wrench,        label: "أدوات AI",         badge: `${d.toolCount}`,                                             badgeColor: "bg-cyan-100 text-cyan-700"     },
+    { href: "/admin/sources",  icon: Rss,           label: "المصادر",          badge: d.pendingNewsItems > 0 ? `${d.pendingNewsItems} جديد` : null,  badgeColor: "bg-sky-100 text-sky-700"       },
+    { href: "/admin/social",   icon: Share2,        label: "السوشيال ميديا",   badge: d.pendingSocialPosts > 0 ? `${d.pendingSocialPosts} معلّق` : null, badgeColor: "bg-pink-100 text-pink-700", alert: d.pendingSocialPosts > 0 },
+    { href: "/admin/authors",  icon: Users,         label: "الكتّاب",          badge: "2",                                                          badgeColor: "bg-slate-100 text-slate-600"   },
+    { href: "/admin/ads",      icon: Megaphone,     label: "الإعلانات",        badge: `${d.activeAds} مفعّل`,                                       badgeColor: "bg-emerald-100 text-emerald-700"},
+  ];
 
   return (
-    <section className="container mx-auto px-4 py-8" dir="rtl">
+    <div className="p-6 space-y-6" dir="rtl">
 
-      {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#667eea]/10">
-            <Bot className="size-6 text-[#667eea]" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-[#667eea]">لوحة الإدارة</p>
-            <h1 className="text-2xl font-black text-slate-900">مرحبًا {session.user?.name || "Admin"}</h1>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/" className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
-            عرض الموقع
-          </Link>
-          <AdminSignOutButton />
-        </div>
-      </div>
-
-      {/* Stats strip */}
-      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: "إجمالي التقارير", value: data.reviewCount, sub: `${data.publishedCount} منشورة` },
-          { label: "نُشر اليوم", value: data.publishedToday, sub: "منذ منتصف الليل", highlight: data.publishedToday > 0 },
-          { label: "في الطابور", value: data.pendingQueue + data.processedQueue, sub: data.failedQueue > 0 ? `${data.failedQueue} فشل` : "لا أخطاء", urgent: data.failedQueue > 0 },
-          { label: "مشاهدات إجمالية", value: data.totalViews.toLocaleString("ar-EG"), sub: `${data.pendingNewsItems} خبر جديد` },
-        ].map((s) => (
-          <div key={s.label} className={`rounded-[1.5rem] bg-white p-4 shadow-md shadow-slate-200/60 ${(s as {urgent?: boolean}).urgent ? "ring-2 ring-red-400" : ""}`}>
-            <p className="text-xs text-slate-400">{s.label}</p>
-            <p className={`mt-2 text-2xl font-black ${(s as {highlight?: boolean}).highlight ? "text-emerald-600" : (s as {urgent?: boolean}).urgent ? "text-red-600" : "text-slate-900"}`}>{s.value}</p>
-            <p className="mt-0.5 text-[11px] text-slate-400">{s.sub}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Navigation cards */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {navCards.map((card) => {
-          const c = colorMap[card.color];
-          const Icon = card.icon;
+      {/* Stats row */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {stats.map((s) => {
+          const Icon = s.icon;
           return (
-            <Link
-              key={card.href}
-              href={card.href}
-              className={`group relative flex items-center gap-4 rounded-[1.75rem] border p-5 transition ${c.card} ${(card as {urgent?: boolean}).urgent ? "ring-2 ring-amber-400" : ""}`}
-            >
-              <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl ${c.icon}`}>
-                <Icon className="size-5" />
+            <div key={s.label} className={`relative rounded-xl border bg-white p-5 shadow-sm ${s.alert ? "border-red-200 ring-1 ring-red-300" : "border-slate-200"}`}>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-medium text-slate-500">{s.label}</p>
+                  <p className={`mt-2 text-3xl font-black tracking-tight ${s.color}`}>{s.value}</p>
+                  <p className="mt-1 text-[11px] text-slate-400">{s.sub}</p>
+                </div>
+                <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${s.bg}`}>
+                  <Icon className={`h-5 w-5 ${s.color}`} />
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-black text-slate-800">{card.label}</p>
-                <p className="text-xs text-slate-500">{card.sub}</p>
-                {card.value !== null && (
-                  <span className={`mt-1.5 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${c.badge}`}>
-                    {card.value} {card.valueLabel}
-                  </span>
-                )}
-              </div>
-              <ArrowLeft className="size-4 flex-shrink-0 text-slate-300 transition group-hover:text-slate-500 group-hover:-translate-x-1" />
-              {(card as {urgent?: boolean}).urgent && (
-                <span className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[10px] font-black text-white">!</span>
-              )}
-            </Link>
+            </div>
           );
         })}
       </div>
 
+      {/* Quick links grid */}
+      <div>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">الأقسام</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+          {quickLinks.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`group relative flex flex-col items-center gap-2 rounded-xl border bg-white p-4 text-center shadow-sm transition hover:border-indigo-200 hover:shadow-md ${item.alert ? "border-amber-300 ring-1 ring-amber-300" : "border-slate-200"}`}
+              >
+                {item.alert && (
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[9px] font-black text-white">!</span>
+                )}
+                <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${item.alert ? "bg-amber-50" : "bg-slate-50"} transition group-hover:bg-indigo-50`}>
+                  <Icon className={`h-5 w-5 ${item.alert ? "text-amber-600" : "text-slate-500"} transition group-hover:text-indigo-600`} />
+                </div>
+                <p className="text-xs font-semibold text-slate-700 leading-tight">{item.label}</p>
+                {item.badge && (
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${item.badgeColor}`}>{item.badge}</span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Bottom grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-3">
 
         {/* Queue status */}
-        <div className="rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="font-black text-slate-900">حالة الطابور</h2>
-            <Link href="/admin/queue" className="text-xs font-semibold text-[#667eea] hover:underline">فتح الطابور</Link>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900">حالة الطابور</h3>
+            <Link href="/admin/queue" className="flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+              فتح <ArrowUpRight className="h-3 w-3" />
+            </Link>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-2">
             {[
-              { label: "أخبار جديدة", value: data.pendingNewsItems, color: "bg-sky-50 text-sky-700 border-sky-100" },
-              { label: "جاهز للمراجعة", value: data.processedQueue, color: "bg-violet-50 text-violet-700 border-violet-100" },
-              { label: "فشل", value: data.failedQueue, color: data.failedQueue > 0 ? "bg-red-50 text-red-700 border-red-200 ring-1 ring-red-300" : "bg-slate-50 text-slate-400 border-slate-100" },
-            ].map((q) => (
-              <div key={q.label} className={`rounded-2xl border p-4 text-center ${q.color}`}>
-                <p className="text-3xl font-black">{q.value}</p>
-                <p className="mt-1 text-[11px] font-semibold leading-tight">{q.label}</p>
+              { label: "أخبار جديدة",      value: d.pendingNewsItems,  color: "bg-sky-500",     track: "bg-sky-100"    },
+              { label: "جاهز للمراجعة",    value: d.processedQueue,    color: "bg-violet-500",  track: "bg-violet-100" },
+              { label: "قيد الانتظار",     value: d.pendingQueue,      color: "bg-amber-500",   track: "bg-amber-100"  },
+              { label: "فشل",              value: d.failedQueue,       color: "bg-red-500",     track: "bg-red-100"    },
+            ].map((row) => (
+              <div key={row.label} className="flex items-center gap-3">
+                <p className="w-28 shrink-0 text-xs text-slate-500">{row.label}</p>
+                <div className={`flex-1 rounded-full h-1.5 ${row.track}`}>
+                  <div
+                    className={`h-1.5 rounded-full ${row.color} transition-all`}
+                    style={{ width: `${Math.min(100, (row.value / Math.max(1, d.pendingNewsItems + d.processedQueue + d.pendingQueue + d.failedQueue)) * 100)}%` }}
+                  />
+                </div>
+                <span className="w-6 shrink-0 text-right text-xs font-bold text-slate-700">{row.value}</span>
               </div>
             ))}
           </div>
         </div>
 
+        {/* Top reviews */}
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900">الأكثر مشاهدة</h3>
+            <Link href="/admin/reviews" className="flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+              الكل <ArrowUpRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <ol className="space-y-3">
+            {d.topReviews.map((r, i) => (
+              <li key={r.id} className="flex items-center gap-3">
+                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black ${i === 0 ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500"}`}>{i + 1}</span>
+                <a href={`/reviews/${r.slug}`} target="_blank" rel="noopener noreferrer"
+                  className="min-w-0 flex-1 truncate text-xs font-medium text-slate-700 hover:text-indigo-600">
+                  {r.titleAr}
+                </a>
+                <span className="shrink-0 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                  {r.viewCount.toLocaleString("ar-EG")}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+
         {/* Trending keywords */}
-        <div className="rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60">
-          <h2 className="mb-4 font-black text-slate-900">الكلمات الرائجة</h2>
-          {data.trendingKeywords.length === 0 ? (
-            <p className="text-sm text-slate-400">لا توجد بيانات بعد</p>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-slate-400" />
+            <h3 className="text-sm font-bold text-slate-900">الكلمات الرائجة</h3>
+          </div>
+          {d.trendingKeywords.length === 0 ? (
+            <p className="text-xs text-slate-400">لا توجد بيانات بعد</p>
           ) : (
-            <div className="flex flex-wrap gap-2">
-              {data.trendingKeywords.map((kw, i) => (
-                <span
-                  key={kw.id}
-                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 font-semibold ${
-                    i === 0 ? "bg-[#667eea] text-white text-base" :
-                    i < 3 ? "bg-[#667eea]/10 text-[#667eea] text-sm" :
-                    "bg-slate-100 text-slate-600 text-xs"
-                  }`}
-                >
-                  {kw.keyword}<span className="opacity-60">·{kw.count}</span>
+            <div className="flex flex-wrap gap-1.5">
+              {d.trendingKeywords.map((kw, i) => (
+                <span key={kw.id} className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold ${
+                  i === 0 ? "bg-indigo-600 text-white" :
+                  i < 3   ? "bg-indigo-50 text-indigo-700" :
+                            "bg-slate-100 text-slate-600"
+                }`}>
+                  {kw.keyword}
+                  <span className="opacity-50">·{kw.count}</span>
                 </span>
               ))}
             </div>
           )}
         </div>
 
-        {/* Top reviews */}
-        <div className="rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="font-black text-slate-900">الأكثر مشاهدة</h2>
-            <Link href="/admin/reviews" className="text-xs font-semibold text-[#667eea] hover:underline">عرض الكل</Link>
-          </div>
-          <ol className="space-y-3">
-            {data.topReviews.map((r, i) => (
-              <li key={r.id} className="flex items-center gap-3">
-                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#667eea]/10 text-xs font-black text-[#667eea]">{i + 1}</span>
-                <div className="min-w-0 flex-1">
-                  <a href={`/reviews/${r.slug}`} target="_blank" rel="noopener noreferrer" className="block truncate text-sm font-semibold text-slate-800 hover:text-[#667eea]">{r.titleAr}</a>
-                  <p className="text-xs text-slate-400">{r.authorSlug}</p>
-                </div>
-                <span className="flex-shrink-0 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">{r.viewCount.toLocaleString("ar-EG")}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        {/* Recent reviews */}
-        <div className="rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="font-black text-slate-900">آخر التقارير</h2>
-            <Link href="/admin/reviews" className="text-xs font-semibold text-[#667eea] hover:underline">عرض الكل</Link>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {data.recentReviews.map((r) => (
-              <div key={r.id} className="flex items-center gap-3 py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-800">{r.titleAr}</p>
-                  <p className="text-xs text-slate-400">{r.category.nameAr} · {r.authorSlug}</p>
-                </div>
-                <span className={`flex-shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${r.published ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                  {r.published ? "منشورة" : "مسودة"}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
       </div>
-    </section>
+
+      {/* Recent reviews table */}
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <h3 className="text-sm font-bold text-slate-900">آخر التقارير</h3>
+          <Link href="/admin/reviews" className="flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+            عرض الكل <ArrowUpRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <div className="divide-y divide-slate-50">
+          {d.recentReviews.map((r) => (
+            <div key={r.id} className="flex items-center gap-4 px-5 py-3 hover:bg-slate-50 transition-colors">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-slate-800">{r.titleAr}</p>
+                <p className="text-[11px] text-slate-400">{r.category.nameAr} · {r.authorSlug}</p>
+              </div>
+              <span className={`shrink-0 rounded-md px-2.5 py-0.5 text-[11px] font-semibold ${r.published ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                {r.published ? "منشورة" : "مسودة"}
+              </span>
+              <Link href={`/admin/reviews/${r.id}`} className="shrink-0 rounded-lg border border-slate-200 p-1.5 text-slate-400 transition hover:border-indigo-200 hover:text-indigo-600">
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
   );
 }

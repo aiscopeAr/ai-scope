@@ -41,9 +41,9 @@ type Tab = "content" | "seo" | "image" | "faq";
 // ─── Shared input styles ──────────────────────────────────────────────────────
 
 const inp =
-  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-[#667eea] focus:ring-2 focus:ring-[#667eea]/20 placeholder:text-slate-300";
+  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 placeholder:text-slate-300";
 const sel =
-  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-[#667eea] focus:ring-2 focus:ring-[#667eea]/20";
+  "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20";
 const lbl = "mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-400";
 
 // ─── Markdown toolbar ─────────────────────────────────────────────────────────
@@ -183,7 +183,7 @@ export default function ReviewEditorPage() {
   const saveBg =
     saveStatus === "saved" ? "bg-emerald-600 hover:bg-emerald-500" :
     saveStatus === "error" ? "bg-red-500 hover:bg-red-400" :
-    "bg-[#667eea] hover:bg-[#5a6fd6]";
+    "bg-indigo-600 hover:bg-indigo-700";
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "content", label: "المحتوى" },
@@ -193,7 +193,7 @@ export default function ReviewEditorPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-100" dir="rtl">
+    <div dir="rtl">
 
       {/* ── Top bar ── */}
       <div className="sticky top-0 z-30 border-b border-slate-200 bg-white shadow-sm">
@@ -282,7 +282,7 @@ export default function ReviewEditorPage() {
                 onClick={() => setActiveTab(t.id)}
                 className={`border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
                   activeTab === t.id
-                    ? "border-[#667eea] text-[#667eea]"
+                    ? "border-indigo-600 text-indigo-600"
                     : "border-transparent text-slate-400 hover:text-slate-600"
                 }`}
               >
@@ -668,7 +668,7 @@ export default function ReviewEditorPage() {
                         faq: [...(review.faq ?? []), { question: "", answer: "" }],
                       })
                     }
-                    className="rounded-xl bg-[#667eea]/10 px-3 py-1.5 text-xs font-bold text-[#667eea] transition hover:bg-[#667eea]/20"
+                    className="rounded-xl bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-600 transition hover:bg-indigo-100"
                   >
                     + إضافة سؤال
                   </button>
@@ -759,7 +759,7 @@ export default function ReviewEditorPage() {
                   href={`/reviews/${review.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-2 flex items-center justify-center gap-1.5 text-xs text-[#667eea] hover:underline"
+                  className="mt-2 flex items-center justify-center gap-1.5 text-xs text-indigo-600 hover:underline"
                 >
                   <ExternalLink className="h-3 w-3" />
                   فتح التقرير المنشور
@@ -795,7 +795,7 @@ export default function ReviewEditorPage() {
                   {review.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="rounded-full bg-[#667eea]/8 px-2.5 py-0.5 text-xs font-medium text-[#667eea]"
+                      className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-600"
                     >
                       #{tag}
                     </span>

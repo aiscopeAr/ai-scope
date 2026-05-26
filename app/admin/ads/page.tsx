@@ -140,17 +140,13 @@ export default function AdminAdsPage() {
   })).filter((p) => p.ads.length > 0);
 
   return (
-    <div className="container mx-auto px-4 py-8" dir="rtl">
+    <div className="p-6" dir="rtl">
       {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 rounded-[2rem] bg-white p-6 shadow-lg shadow-slate-200/60 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="mb-2 text-sm font-semibold text-[#667eea]">لوحة الإدارة</p>
-          <h1 className="text-3xl font-black text-slate-900">إدارة الإعلانات</h1>
-          <p className="mt-1 text-slate-500">{ads.length} إعلان — {ads.filter((a) => a.enabled).length} مفعّل</p>
-        </div>
+      <div className="mb-6 flex items-center gap-4">
+        <p className="text-xs text-slate-400 flex-1">{ads.length} إعلان — {ads.filter((a) => a.enabled).length} مفعّل</p>
         <button
           onClick={openNew}
-          className="flex items-center gap-2 rounded-2xl bg-[#667eea] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#5a6fd6] transition"
+          className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
         >
           <Plus className="size-4" />
           إعلان جديد
@@ -177,7 +173,7 @@ export default function AdminAdsPage() {
 
       {/* Ads list */}
       {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="size-8 animate-spin text-[#667eea]" /></div>
+        <div className="flex justify-center py-20"><Loader2 className="size-8 animate-spin text-indigo-600" /></div>
       ) : ads.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-[2rem] bg-white py-24 shadow-lg shadow-slate-200/60">
           <p className="text-lg font-semibold text-slate-500">لا توجد إعلانات بعد</p>
@@ -210,7 +206,7 @@ export default function AdminAdsPage() {
                     </button>
                     <button
                       onClick={() => openEdit(ad)}
-                      className="rounded-xl bg-slate-100 p-2 text-slate-600 hover:bg-[#667eea]/10 hover:text-[#667eea] transition"
+                      className="rounded-xl bg-slate-100 p-2 text-slate-600 hover:bg-indigo-600/10 hover:text-indigo-600 transition"
                     >
                       <Pencil className="size-4" />
                     </button>
@@ -244,7 +240,7 @@ export default function AdminAdsPage() {
                   placeholder="مثال: AdSense — وسط المقال"
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 focus:border-[#667eea] focus:outline-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none"
                 />
               </div>
 
@@ -254,7 +250,7 @@ export default function AdminAdsPage() {
                   <select
                     value={form.position}
                     onChange={(e) => setForm((f) => ({ ...f, position: e.target.value as AdPosition }))}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 focus:border-[#667eea] focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none"
                   >
                     {POSITIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                   </select>
@@ -264,7 +260,7 @@ export default function AdminAdsPage() {
                   <select
                     value={form.type}
                     onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as AdType }))}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 focus:border-[#667eea] focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none"
                   >
                     {TYPES.map((t) => <option key={t.value} value={t.value}>{t.label} — {t.hint}</option>)}
                   </select>
@@ -286,7 +282,7 @@ export default function AdminAdsPage() {
                   }
                   value={form.code}
                   onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 font-mono text-xs text-slate-800 focus:border-[#667eea] focus:outline-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 font-mono text-xs text-slate-800 focus:border-indigo-500 focus:outline-none"
                   dir="ltr"
                 />
                 <p className="mt-1 text-xs text-slate-400">
@@ -300,7 +296,7 @@ export default function AdminAdsPage() {
                 <button
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, enabled: !f.enabled }))}
-                  className={`relative h-6 w-11 rounded-full transition-colors ${form.enabled ? "bg-[#667eea]" : "bg-slate-300"}`}
+                  className={`relative h-6 w-11 rounded-full transition-colors ${form.enabled ? "bg-indigo-600" : "bg-slate-300"}`}
                 >
                   <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${form.enabled ? "right-0.5" : "left-0.5"}`} />
                 </button>
@@ -319,7 +315,7 @@ export default function AdminAdsPage() {
               <button
                 onClick={handleSave}
                 disabled={saving || !form.name || !form.code}
-                className="flex items-center gap-2 rounded-2xl bg-[#667eea] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#5a6fd6] disabled:opacity-50"
+                className="flex items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
               >
                 {saving && <Loader2 className="size-4 animate-spin" />}
                 {editId ? "حفظ التعديلات" : "إضافة الإعلان"}
