@@ -72,7 +72,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
               <div className="mb-1 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <h1 className="text-3xl font-black text-white">{author.nameAr}</h1>
                 <span className="rounded-full border px-3 py-0.5 text-xs font-semibold" style={{ color: author.accentColor, borderColor: `${author.accentColor}40`, backgroundColor: `${author.accentColor}12` }}>
-                  نظام ذكاء اصطناعي
+                  إنتاج آلي
                 </span>
               </div>
               <p className="mb-4 text-sm font-medium text-slate-400">{author.titleAr}</p>

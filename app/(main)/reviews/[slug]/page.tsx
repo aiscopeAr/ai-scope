@@ -144,6 +144,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
                 <img src={author.avatarUrl} alt={author.nameAr} className="h-full w-full object-cover" />
               </div>
               <span className="text-sm font-semibold" style={{ color: author.accentColor }}>{author.nameAr}</span>
+              <span className="text-xs text-slate-600">· إنتاج آلي</span>
             </Link>
           )}
           <span className="text-slate-700">•</span>
@@ -259,12 +260,12 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
                 <div className="mb-0.5 flex flex-wrap items-center gap-2">
                   <Link href={`/author/${author.slug}`} className="text-sm font-bold text-slate-200 hover:text-white">{author.nameAr}</Link>
                   <span className="rounded-full border px-2 py-0.5 text-[10px] font-semibold" style={{ color: author.accentColor, borderColor: `${author.accentColor}40`, backgroundColor: `${author.accentColor}12` }}>
-                    نظام ذكاء اصطناعي
+                    إنتاج آلي
                   </span>
                 </div>
                 <p className="mb-1.5 text-xs text-slate-500">{author.titleAr}</p>
                 <p className="text-xs leading-relaxed text-slate-400">
-                  كُتب هذا التقرير بمساعدة {author.nameAr}، نظام ذكاء اصطناعي متخصص في {author.specialtyAr}، استناداً إلى {sources.length} مصدر موثوق مع مراجعة تحريرية.
+                  كُتب هذا التقرير بمساعدة {author.nameAr}، متخصص في {author.specialtyAr}، استناداً إلى {sources.length} مصدر موثوق مع مراجعة تحريرية.
                 </p>
                 <Link href={`/author/${author.slug}`} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold hover:underline" style={{ color: author.accentColor }}>
                   جميع تقارير {author.nameAr}

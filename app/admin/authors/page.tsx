@@ -195,7 +195,7 @@ function AuthorEditor({ author, onSaved }: { author: AuthorData; onSaved: () => 
                 <p className="text-xs text-slate-500">{form.titleAr}</p>
               </div>
               <span className="mr-auto rounded-full border px-3 py-1 text-xs font-semibold" style={{ color: accent, borderColor: `${accent}40`, backgroundColor: `${accent}12` }}>
-                نظام ذكاء اصطناعي
+                إنتاج آلي
               </span>
             </div>
           </div>
