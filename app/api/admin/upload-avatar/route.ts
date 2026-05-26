@@ -34,7 +34,8 @@ export async function POST(req: Request) {
 
   if (cloudName && apiKey && apiSecret) {
     try {
-      const { v2 as cloudinary } = await import("cloudinary");
+      const cloudinaryModule = await import("cloudinary");
+      const cloudinary = cloudinaryModule.v2;
       cloudinary.config({ cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret, secure: true });
 
       const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
