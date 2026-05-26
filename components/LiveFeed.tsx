@@ -38,13 +38,13 @@ function timeAgo(date: string | null) {
 
 function ArticleSkeleton() {
   return (
-    <div className="animate-pulse rounded-2xl border border-white/6 bg-white/2 overflow-hidden">
-      <div className="h-40 bg-white/5" />
+    <div className="overflow-hidden rounded-[6px] border" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+      <div className="h-40 animate-shimmer" />
       <div className="p-4 space-y-2">
-        <div className="h-3 w-1/3 rounded bg-white/8" />
-        <div className="h-4 rounded bg-white/8" />
-        <div className="h-4 w-4/5 rounded bg-white/8" />
-        <div className="h-3 w-1/4 rounded bg-white/5" />
+        <div className="h-3 w-1/3 rounded-[3px] animate-shimmer" />
+        <div className="h-4 rounded-[3px] animate-shimmer" />
+        <div className="h-4 w-4/5 rounded-[3px] animate-shimmer" />
+        <div className="h-3 w-1/4 rounded-[3px] animate-shimmer" />
       </div>
     </div>
   );
@@ -54,7 +54,6 @@ function NewsCard({ article }: { article: Article }) {
   const [time, setTime] = useState(() => timeAgo(article.publishedAt));
 
   useEffect(() => {
-    // Refresh timestamp every 60 seconds
     const t = setInterval(() => setTime(timeAgo(article.publishedAt)), 60_000);
     return () => clearInterval(t);
   }, [article.publishedAt]);
@@ -62,9 +61,12 @@ function NewsCard({ article }: { article: Article }) {
   return (
     <Link
       href={`/news/${article.slug}`}
-      className="group flex flex-col rounded-2xl border border-white/6 bg-white/2 overflow-hidden transition hover:border-violet-500/25 hover:bg-white/4"
+      className="group flex flex-col rounded-[6px] border overflow-hidden transition"
+      style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)"; }}
     >
-      <div className="relative h-40 w-full bg-white/4 shrink-0">
+      <div className="relative h-40 w-full shrink-0" style={{ backgroundColor: "var(--bg-subtle)" }}>
         {article.imageUrl ? (
           <Image
             src={article.imageUrl}
@@ -73,21 +75,23 @@ function NewsCard({ article }: { article: Article }) {
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-violet-900/30 to-blue-900/30">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(167,139,250,0.3)" strokeWidth="1.5">
-              <circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3" />
+          <div className="flex h-full w-full items-center justify-center">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" strokeWidth="1.5" style={{ stroke: "var(--border-medium)" }}>
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
             </svg>
           </div>
         )}
       </div>
       <div className="flex flex-1 flex-col p-4" dir="rtl">
-        <span className="mb-2 inline-block w-fit rounded-full bg-violet-500/10 border border-violet-500/15 px-2 py-0.5 text-[11px] font-semibold text-violet-400">
+        <span className="mb-2 inline-block w-fit rounded-[3px] px-2 py-0.5 text-[11px] font-semibold"
+          style={{ backgroundColor: "var(--accent-bg)", color: "var(--accent)" }}>
           {article.category.nameAr}
         </span>
-        <h3 className="flex-1 line-clamp-2 text-sm font-bold leading-snug text-slate-200 transition-colors group-hover:text-violet-300">
+        <h3 className="flex-1 line-clamp-2 text-sm font-bold leading-snug transition-opacity group-hover:opacity-75"
+          style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
           {article.titleAr}
         </h3>
-        <div className="mt-3 flex items-center justify-between text-[11px] text-slate-600">
+        <div className="mt-3 flex items-center justify-between text-[11px]" style={{ color: "var(--text-muted)" }}>
           <span>{article.sourceName}</span>
           {time && <span>{time}</span>}
         </div>
@@ -97,7 +101,7 @@ function NewsCard({ article }: { article: Article }) {
 }
 
 export default function LiveFeed({ initialArticles, categories, featured }: Props) {
-  const [activeCategory, setActiveCategory] = useState<string>(""); // "" = all
+  const [activeCategory, setActiveCategory] = useState<string>("");
   const [articles, setArticles] = useState<Article[]>(initialArticles);
   const [loading, setLoading] = useState(false);
 
@@ -120,22 +124,22 @@ export default function LiveFeed({ initialArticles, categories, featured }: Prop
     fetchArticles(id);
   }
 
-  // Filter out featured from grid
   const grid = articles.filter((a) => !featured || a.id !== featured.id).slice(0, 12);
 
   return (
     <>
       {/* Category tabs */}
       {categories.length > 0 && (
-        <div className="sticky top-16 z-30 border-b border-white/5 bg-[#09090b]/90 backdrop-blur-sm" dir="rtl">
-          <div className="container mx-auto flex gap-1 overflow-x-auto px-4 py-2 scrollbar-none">
+        <div className="sticky top-14 z-30 border-b" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-page)" }} dir="rtl">
+          <div className="container mx-auto flex gap-1.5 overflow-x-auto px-4 py-2.5 scrollbar-none">
             <button
               onClick={() => handleCategory("")}
-              className={`flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-semibold transition ${
-                activeCategory === ""
-                  ? "border-violet-500/40 bg-violet-500/10 text-violet-300"
-                  : "border-white/8 bg-white/4 text-slate-400 hover:border-violet-500/20 hover:text-white"
-              }`}
+              className="flex shrink-0 items-center gap-1.5 rounded-[6px] border px-3 py-1.5 text-xs font-semibold transition"
+              style={{
+                borderColor: activeCategory === "" ? "var(--accent)" : "var(--border-medium)",
+                backgroundColor: activeCategory === "" ? "var(--accent-bg)" : "transparent",
+                color: activeCategory === "" ? "var(--accent)" : "var(--text-secondary)",
+              }}
             >
               الكل
             </button>
@@ -143,14 +147,16 @@ export default function LiveFeed({ initialArticles, categories, featured }: Prop
               <button
                 key={cat.id}
                 onClick={() => handleCategory(cat.id)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-medium transition ${
-                  activeCategory === cat.id
-                    ? "border-violet-500/40 bg-violet-500/10 text-violet-300"
-                    : "border-white/8 bg-white/4 text-slate-400 hover:border-violet-500/20 hover:text-white"
-                }`}
+                className="flex shrink-0 items-center gap-1.5 rounded-[6px] border px-3 py-1.5 text-xs font-medium transition"
+                style={{
+                  borderColor: activeCategory === cat.id ? "var(--accent)" : "var(--border-medium)",
+                  backgroundColor: activeCategory === cat.id ? "var(--accent-bg)" : "transparent",
+                  color: activeCategory === cat.id ? "var(--accent)" : "var(--text-secondary)",
+                }}
               >
                 {cat.nameAr}
-                <span className="rounded-full bg-white/8 px-1.5 py-0.5 text-[10px] text-slate-600">
+                <span className="rounded-[3px] px-1 py-0.5 text-[10px]"
+                  style={{ backgroundColor: "var(--bg-subtle)", color: "var(--text-muted)" }}>
                   {cat._count.articles}
                 </span>
               </button>

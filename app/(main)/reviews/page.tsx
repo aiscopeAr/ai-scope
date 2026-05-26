@@ -66,13 +66,15 @@ export default async function ReviewsIndexPage() {
 
   return (
     <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
-      <section className="mb-10 rounded-3xl border border-white/8 bg-white/3 p-6 md:p-8">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-1.5 text-xs font-semibold text-violet-300">
-          <span className="h-2 w-2 rounded-full bg-violet-400" />
+      {/* Hero */}
+      <section className="mb-10 rounded-[6px] border p-6 md:p-8" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+        <div className="mb-4 inline-flex items-center gap-2 rounded-[3px] border px-4 py-1.5 text-xs font-semibold"
+          style={{ borderColor: "var(--accent)", backgroundColor: "var(--accent-bg)", color: "var(--accent)" }}>
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "var(--accent)" }} />
           تحليلات معمقة بالعربية
         </div>
-        <h1 className="mb-3 text-3xl font-black text-white md:text-5xl">أحدث التقارير</h1>
-        <p className="max-w-3xl text-sm leading-relaxed text-slate-400 md:text-base">
+        <h1 className="mb-3 text-3xl font-bold md:text-5xl" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>أحدث التقارير</h1>
+        <p className="max-w-3xl text-sm leading-relaxed md:text-base" style={{ color: "var(--text-secondary)" }}>
           أرشيف تحليلات AI Scope: مراجعات عربية عميقة لأهم أخبار النماذج والأبحاث والشركات والسياسات في عالم الذكاء الاصطناعي.
         </p>
       </section>
@@ -84,10 +86,13 @@ export default async function ReviewsIndexPage() {
               <Link
                 key={category.id}
                 href={`/category/${category.slug}`}
-                className="rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-300 transition hover:border-violet-500/30 hover:text-violet-300"
+                className="rounded-[6px] border px-4 py-2 text-sm transition"
+                style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
               >
                 {category.nameAr}
-                <span className="mr-2 text-slate-500">({category._count.reviews})</span>
+                <span className="mr-2" style={{ color: "var(--text-muted)" }}>({category._count.reviews})</span>
               </Link>
             ))}
           </div>
@@ -97,9 +102,9 @@ export default async function ReviewsIndexPage() {
       <AdSlot position="home-top" className="mb-8" />
 
       {reviews.length === 0 ? (
-        <section className="rounded-2xl border border-white/8 bg-white/3 p-8 text-center">
-          <h2 className="mb-2 text-xl font-bold text-white">لا توجد تقارير منشورة بعد</h2>
-          <p className="text-slate-500">بمجرد نشر أول تحليل سيظهر هنا تلقائيًا.</p>
+        <section className="rounded-[6px] border p-8 text-center" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+          <h2 className="mb-2 text-xl font-bold" style={{ color: "var(--text-primary)" }}>لا توجد تقارير منشورة بعد</h2>
+          <p style={{ color: "var(--text-muted)" }}>بمجرد نشر أول تحليل سيظهر هنا تلقائيًا.</p>
         </section>
       ) : (
         <>

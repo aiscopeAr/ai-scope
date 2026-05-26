@@ -51,79 +51,94 @@ export default async function HomePage() {
   const { featuredReview, latestReviews, featuredTools } = await getData();
 
   return (
-    <>
-      <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
-        <AdSlot position="home-top" className="mb-8" />
+    <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
+      <AdSlot position="home-top" className="mb-8" />
 
-        {/* Featured review */}
-        {featuredReview && (
-          <section className="mb-12">
-            <ReviewCard review={featuredReview} featured />
-          </section>
-        )}
+      {/* Featured review */}
+      {featuredReview && (
+        <section className="mb-12">
+          <ReviewCard review={featuredReview} featured />
+        </section>
+      )}
 
-        {/* Latest reviews grid */}
-        {latestReviews.length > 0 && (
-          <section className="mb-12">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-black text-white">آخر التقارير</h2>
-              <Link href="/reviews" className="text-sm font-semibold text-violet-400 hover:text-violet-300">
-                عرض الكل ←
-              </Link>
-            </div>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {latestReviews.map((r) => (
-                <ReviewCard key={r.id} review={r} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        <AdSlot position="home-mid" className="mb-10" />
-
-        {/* AI Tools */}
-        {featuredTools.length > 0 && (
-          <section className="mb-12">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-black text-white">اكتشف أدوات الذكاء الاصطناعي</h2>
-              </div>
-              <Link href="/ai-tools" className="text-sm font-semibold text-violet-400 hover:text-violet-300">
-                عرض الكل ←
-              </Link>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {featuredTools.map((tool) => (
-                <ToolCard key={tool.id} tool={tool} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Authors intro */}
-        <section className="mb-12 rounded-2xl border border-white/8 bg-white/3 p-6">
-          <h2 className="mb-6 text-center text-xl font-black text-white">فريق التقارير</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {[
-              { slug: "zayd", name: "زيد", title: "محلل نماذج الذكاء الاصطناعي", accent: "#6366f1", desc: "يحلل النماذج الكبرى ويقارن قدراتها بعيناً نقدية — لا يصدق الضجيج التسويقي." },
-              { slug: "lina", name: "لينا", title: "مراسلة شؤون الشركات والسياسات", accent: "#ec4899", desc: "تقرأ بين سطور قرارات شركات AI وتربط الأحداث بالصورة الاقتصادية الأشمل." },
-            ].map((a) => (
-              <Link key={a.slug} href={`/author/${a.slug}`} className="group flex items-center gap-4 rounded-xl border border-white/8 bg-white/3 p-4 transition hover:border-violet-500/20 hover:bg-white/5">
-                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full" style={{ outline: `2px solid ${a.accent}50`, outlineOffset: "2px" }}>
-                  <img src={`/images/authors/${a.slug}.webp`} alt={a.name} className="h-full w-full object-cover" />
-                </div>
-                <div>
-                  <p className="font-bold text-white" style={{ color: a.accent }}>{a.name}</p>
-                  <p className="text-xs text-slate-400">{a.title}</p>
-                  <p className="mt-1 text-xs text-slate-500 line-clamp-2">{a.desc}</p>
-                </div>
-              </Link>
+      {/* Latest reviews grid */}
+      {latestReviews.length > 0 && (
+        <section className="mb-12">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>آخر التقارير</h2>
+            <Link
+              href="/reviews"
+              className="text-sm font-semibold transition"
+              style={{ color: "var(--accent)" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.7"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+            >
+              عرض الكل ←
+            </Link>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {latestReviews.map((r) => (
+              <ReviewCard key={r.id} review={r} />
             ))}
           </div>
         </section>
+      )}
 
-        <AdSlot position="home-bottom" className="mb-4" />
-      </main>
-    </>
+      <AdSlot position="home-mid" className="mb-10" />
+
+      {/* AI Tools */}
+      {featuredTools.length > 0 && (
+        <section className="mb-12">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>اكتشف أدوات الذكاء الاصطناعي</h2>
+            <Link
+              href="/ai-tools"
+              className="text-sm font-semibold transition"
+              style={{ color: "var(--accent)" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.7"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+            >
+              عرض الكل ←
+            </Link>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {featuredTools.map((tool) => (
+              <ToolCard key={tool.id} tool={tool} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Authors intro */}
+      <section className="mb-12 rounded-[6px] border p-6" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+        <h2 className="mb-6 text-center text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>فريق التقارير</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {[
+            { slug: "zayd", name: "زيد", title: "محلل نماذج الذكاء الاصطناعي", accent: "#6366f1", desc: "يحلل النماذج الكبرى ويقارن قدراتها بعيناً نقدية — لا يصدق الضجيج التسويقي." },
+            { slug: "lina", name: "لينا", title: "مراسلة شؤون الشركات والسياسات", accent: "#ec4899", desc: "تقرأ بين سطور قرارات شركات AI وتربط الأحداث بالصورة الاقتصادية الأشمل." },
+          ].map((a) => (
+            <Link
+              key={a.slug}
+              href={`/author/${a.slug}`}
+              className="group flex items-center gap-4 rounded-[6px] border p-4 transition"
+              style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)"; }}
+            >
+              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[6px]" style={{ outline: `2px solid ${a.accent}50`, outlineOffset: "2px" }}>
+                <img src={`/images/authors/${a.slug}.svg`} alt={a.name} className="h-full w-full object-cover" />
+              </div>
+              <div>
+                <p className="font-bold" style={{ color: a.accent }}>{a.name}</p>
+                <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{a.title}</p>
+                <p className="mt-1 text-xs line-clamp-2" style={{ color: "var(--text-muted)" }}>{a.desc}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <AdSlot position="home-bottom" className="mb-4" />
+    </main>
   );
 }

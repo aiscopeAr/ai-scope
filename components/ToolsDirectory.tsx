@@ -50,55 +50,59 @@ export default function ToolsDirectory({
 
   function resetPage() { setPage(1); }
 
+  const filterBtn = (active: boolean, label: string, onClick: () => void, activeStyle?: { color: string; bg: string; border: string }) => (
+    <button
+      onClick={onClick}
+      className="rounded-[6px] border px-3 py-1 text-xs font-medium transition"
+      style={active
+        ? { borderColor: activeStyle?.border ?? "var(--accent)", backgroundColor: activeStyle?.bg ?? "var(--accent-bg)", color: activeStyle?.color ?? "var(--accent)" }
+        : { borderColor: "var(--border-medium)", backgroundColor: "transparent", color: "var(--text-secondary)" }
+      }
+    >
+      {label}
+    </button>
+  );
+
   return (
     <div>
       {/* Search + filters */}
       <div className="mb-6 space-y-3">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: "var(--text-muted)" }} />
           <input
             type="search"
             placeholder="ابحث عن أداة..."
             value={q}
             onChange={(e) => { setQ(e.target.value); resetPage(); }}
-            className="w-full rounded-xl border border-white/10 bg-white/4 py-2.5 pr-10 pl-4 text-sm text-slate-200 placeholder:text-slate-500 focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-violet-500/30"
+            className="w-full rounded-[6px] border py-2.5 pr-10 pl-4 text-sm transition focus:outline-none"
+            style={{ borderColor: "var(--border-medium)", backgroundColor: "var(--bg-surface)", color: "var(--text-primary)" }}
+            onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
+            onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
             dir="rtl"
           />
         </div>
 
         {/* Filter row */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Pricing */}
-          {(["", "free", "freemium", "paid"] as const).map((p) => (
-            <button
-              key={p}
-              onClick={() => { setPricing(p); resetPage(); }}
-              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${pricing === p ? "border-violet-500/60 bg-violet-500/20 text-violet-300" : "border-white/8 bg-white/4 text-slate-400 hover:text-white"}`}
-            >
-              {p === "" ? "كل الأسعار" : p === "free" ? "مجاني" : p === "freemium" ? "مجاني + مدفوع" : "مدفوع"}
-            </button>
-          ))}
-          <div className="h-4 w-px bg-white/10" />
-          <button
-            onClick={() => { setArabicOnly(!arabicOnly); resetPage(); }}
-            className={`rounded-full border px-3 py-1 text-xs font-medium transition ${arabicOnly ? "border-teal-500/60 bg-teal-500/15 text-teal-400" : "border-white/8 bg-white/4 text-slate-400 hover:text-white"}`}
-          >
-            يدعم العربية
-          </button>
-          <button
-            onClick={() => { setApiOnly(!apiOnly); resetPage(); }}
-            className={`rounded-full border px-3 py-1 text-xs font-medium transition ${apiOnly ? "border-blue-500/60 bg-blue-500/15 text-blue-400" : "border-white/8 bg-white/4 text-slate-400 hover:text-white"}`}
-          >
-            له API
-          </button>
+          {(["", "free", "freemium", "paid"] as const).map((p) =>
+            filterBtn(pricing === p, p === "" ? "كل الأسعار" : p === "free" ? "مجاني" : p === "freemium" ? "مجاني + مدفوع" : "مدفوع", () => { setPricing(p); resetPage(); })
+          )}
+          <div className="h-4 w-px" style={{ backgroundColor: "var(--border-medium)" }} />
+          {filterBtn(arabicOnly, "يدعم العربية", () => { setArabicOnly(!arabicOnly); resetPage(); }, { color: "#0d9488", bg: "#f0fdfa", border: "#99f6e4" })}
+          {filterBtn(apiOnly, "له API", () => { setApiOnly(!apiOnly); resetPage(); }, { color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" })}
         </div>
 
         {/* Category tabs */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           <button
             onClick={() => { setCat(""); resetPage(); }}
-            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition ${cat === "" ? "border-violet-500/60 bg-violet-500/20 text-violet-300" : "border-white/8 bg-white/4 text-slate-400 hover:text-white"}`}
+            className="shrink-0 rounded-[6px] border px-3 py-1.5 text-xs font-medium transition"
+            style={{
+              borderColor: cat === "" ? "var(--accent)" : "var(--border-medium)",
+              backgroundColor: cat === "" ? "var(--accent-bg)" : "transparent",
+              color: cat === "" ? "var(--accent)" : "var(--text-secondary)",
+            }}
           >
             الكل ({allTools.length})
           </button>
@@ -106,25 +110,36 @@ export default function ToolsDirectory({
             <button
               key={c.value}
               onClick={() => { setCat(c.value); resetPage(); }}
-              className={`shrink-0 flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition ${cat === c.value ? "border-violet-500/60 bg-violet-500/20 text-violet-300" : "border-white/8 bg-white/4 text-slate-400 hover:text-white"}`}
+              className="shrink-0 flex items-center gap-1 rounded-[6px] border px-3 py-1.5 text-xs font-medium transition"
+              style={{
+                borderColor: cat === c.value ? "var(--accent)" : "var(--border-medium)",
+                backgroundColor: cat === c.value ? "var(--accent-bg)" : "transparent",
+                color: cat === c.value ? "var(--accent)" : "var(--text-secondary)",
+              }}
             >
               <span>{c.icon}</span>
               <span>{c.labelAr}</span>
-              <span className="text-slate-600">({c.count})</span>
+              <span style={{ color: "var(--text-muted)" }}>({c.count})</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Results count */}
-      <p className="mb-4 text-xs text-slate-500">{filtered.length.toLocaleString("ar-EG")} نتيجة</p>
+      <p className="mb-4 text-xs" style={{ color: "var(--text-muted)" }}>{filtered.length.toLocaleString("ar-EG")} نتيجة</p>
 
       {/* Grid */}
       {slice.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-slate-500">
+        <div className="flex flex-col items-center justify-center py-24" style={{ color: "var(--text-muted)" }}>
           <div className="mb-3 text-4xl">🔍</div>
           <p className="font-semibold">لا توجد أدوات مطابقة</p>
-          <button onClick={() => { setQ(""); setCat(""); setPricing(""); setArabicOnly(false); setApiOnly(false); resetPage(); }} className="mt-4 text-xs text-violet-400 hover:text-violet-300">
+          <button
+            onClick={() => { setQ(""); setCat(""); setPricing(""); setArabicOnly(false); setApiOnly(false); resetPage(); }}
+            className="mt-4 text-xs transition"
+            style={{ color: "var(--accent)" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.7"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+          >
             إعادة تعيين الفلاتر
           </button>
         </div>
@@ -137,9 +152,19 @@ export default function ToolsDirectory({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-8 flex items-center justify-center gap-2">
-          <button disabled={page === 1} onClick={() => setPage(page - 1)} className="rounded-lg border border-white/8 bg-white/4 px-3 py-1.5 text-sm text-slate-400 disabled:opacity-30 hover:text-white transition">السابق</button>
-          <span className="text-sm text-slate-500">{page} / {totalPages}</span>
-          <button disabled={page === totalPages} onClick={() => setPage(page + 1)} className="rounded-lg border border-white/8 bg-white/4 px-3 py-1.5 text-sm text-slate-400 disabled:opacity-30 hover:text-white transition">التالي</button>
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            className="rounded-[6px] border px-3 py-1.5 text-sm transition disabled:opacity-30"
+            style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
+          >السابق</button>
+          <span className="text-sm" style={{ color: "var(--text-muted)" }}>{page} / {totalPages}</span>
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage(page + 1)}
+            className="rounded-[6px] border px-3 py-1.5 text-sm transition disabled:opacity-30"
+            style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
+          >التالي</button>
         </div>
       )}
     </div>

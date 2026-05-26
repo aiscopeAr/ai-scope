@@ -27,7 +27,7 @@ export default function NewsCard({ article, featured = false }: NewsCardProps) {
   if (featured) {
     return (
       <Link href={`/news/${article.slug}`} className="group block">
-        <div className="relative overflow-hidden rounded-2xl border border-white/6 bg-[#111116] card-hover transition-colors hover:border-violet-500/20">
+        <div className="relative overflow-hidden rounded-[6px] border transition" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
           <div className="grid md:grid-cols-2">
             {/* Image */}
             <div className="relative h-64 md:h-80 overflow-hidden">
@@ -39,33 +39,33 @@ export default function NewsCard({ article, featured = false }: NewsCardProps) {
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-violet-900/50 to-blue-900/50">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(167,139,250,0.4)" strokeWidth="1.5">
-                    <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3"/>
+                <div className="flex h-full w-full items-center justify-center" style={{ backgroundColor: "var(--bg-subtle)" }}>
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" strokeWidth="1.5" style={{ stroke: "var(--border-medium)" }}>
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
                   </svg>
                 </div>
               )}
-              {/* overlay fade */}
-              <div className="absolute inset-0 bg-gradient-to-l from-[#111116] via-[#111116]/30 to-transparent hidden md:block" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#111116]/80 via-transparent to-transparent md:hidden" />
+              <div className="absolute inset-0 hidden md:block" style={{ background: "linear-gradient(to left, var(--bg-surface) 0%, transparent 60%)" }} />
             </div>
 
             {/* Content */}
             <div className="flex flex-col justify-center p-8" dir="rtl">
-              <span className="mb-3 inline-flex w-fit items-center rounded-full bg-violet-500/10 px-3 py-1 text-xs font-semibold text-violet-400 border border-violet-500/20">
+              <span className="mb-3 inline-flex w-fit items-center rounded-[3px] px-2.5 py-1 text-[11px] font-semibold"
+                style={{ backgroundColor: "var(--accent-bg)", color: "var(--accent)" }}>
                 {article.category.nameAr}
               </span>
-              <h2 className="mb-3 text-2xl font-bold leading-snug text-white transition-colors group-hover:text-violet-300 line-clamp-3">
+              <h2 className="mb-3 text-2xl font-bold leading-snug line-clamp-3 transition-opacity group-hover:opacity-75"
+                style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
                 {article.titleAr}
               </h2>
               {article.excerpt && (
-                <p className="mb-4 line-clamp-3 text-sm leading-relaxed text-slate-400">{article.excerpt}</p>
+                <p className="mb-4 line-clamp-3 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>{article.excerpt}</p>
               )}
-              <div className="flex items-center gap-2 text-xs text-slate-500">
-                <span className="font-medium text-slate-400">{article.sourceName}</span>
+              <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-muted)" }}>
+                <span className="font-medium" style={{ color: "var(--text-secondary)" }}>{article.sourceName}</span>
                 {timeAgo && <><span>·</span><time>{timeAgo}</time></>}
               </div>
-              <div className="mt-5 flex items-center gap-1.5 text-sm font-semibold text-violet-400 transition-colors group-hover:text-violet-300">
+              <div className="mt-5 flex items-center gap-1.5 text-sm font-semibold transition-opacity group-hover:opacity-75" style={{ color: "var(--accent)" }}>
                 <span>اقرأ المزيد</span>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -80,7 +80,7 @@ export default function NewsCard({ article, featured = false }: NewsCardProps) {
 
   return (
     <Link href={`/news/${article.slug}`} className="group block h-full">
-      <div className="h-full overflow-hidden rounded-2xl border border-white/6 bg-[#111116] card-hover transition-colors hover:border-violet-500/20">
+      <div className="h-full overflow-hidden rounded-[6px] border transition" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
         {/* Image */}
         <div className="relative h-48 overflow-hidden">
           {article.imageUrl ? (
@@ -91,17 +91,17 @@ export default function NewsCard({ article, featured = false }: NewsCardProps) {
               className="object-cover transition-transform duration-700 group-hover:scale-110"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-violet-900/40 to-blue-900/40">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(167,139,250,0.35)" strokeWidth="1.5">
-                <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3"/>
+            <div className="flex h-full w-full items-center justify-center" style={{ backgroundColor: "var(--bg-subtle)" }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" strokeWidth="1.5" style={{ stroke: "var(--border-medium)" }}>
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
               </svg>
             </div>
           )}
-          {/* gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#111116] via-[#111116]/10 to-transparent" />
+          <div className="absolute bottom-0 inset-x-0 h-16" style={{ background: "linear-gradient(to top, var(--bg-surface), transparent)" }} />
           {/* category badge */}
-          <div className="absolute bottom-3 right-3">
-            <span className="rounded-full bg-black/60 px-2.5 py-0.5 text-xs font-medium text-violet-300 backdrop-blur-sm border border-violet-500/20">
+          <div className="absolute bottom-3 end-3">
+            <span className="rounded-[3px] px-2 py-0.5 text-[11px] font-medium"
+              style={{ backgroundColor: "var(--bg-surface)", color: "var(--accent)", border: "1px solid var(--border-subtle)" }}>
               {article.category.nameAr}
             </span>
           </div>
@@ -109,15 +109,16 @@ export default function NewsCard({ article, featured = false }: NewsCardProps) {
 
         {/* Content */}
         <div className="flex flex-col p-5" dir="rtl">
-          <h2 className="mb-2 line-clamp-2 text-base font-bold leading-snug text-white transition-colors group-hover:text-violet-300">
+          <h2 className="mb-2 line-clamp-2 text-base font-bold leading-snug transition-opacity group-hover:opacity-75"
+            style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
             {article.titleAr}
           </h2>
           {article.excerpt && (
-            <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-slate-500">{article.excerpt}</p>
+            <p className="mb-3 line-clamp-2 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>{article.excerpt}</p>
           )}
-          <div className="mt-auto flex items-center gap-2 text-xs text-slate-600 pt-2 border-t border-white/5">
-            <span className="text-slate-500">{article.sourceName}</span>
-            {timeAgo && <><span>·</span><time className="text-slate-600">{timeAgo}</time></>}
+          <div className="mt-auto flex items-center gap-2 text-xs pt-2 border-t" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
+            <span>{article.sourceName}</span>
+            {timeAgo && <><span>·</span><time>{timeAgo}</time></>}
           </div>
         </div>
       </div>

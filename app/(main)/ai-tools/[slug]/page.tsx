@@ -52,10 +52,10 @@ const PRICING_LABELS: Record<string, string> = {
   paid:     "مدفوع",
 };
 
-const PRICING_BADGE_CLS: Record<string, string> = {
-  free:     "bg-emerald-500/15 border-emerald-500/30 text-emerald-400",
-  freemium: "bg-amber-500/15 border-amber-500/30 text-amber-400",
-  paid:     "bg-red-500/15 border-red-500/30 text-red-400",
+const PRICING_BADGE: Record<string, { bg: string; color: string; border: string }> = {
+  free:     { bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
+  freemium: { bg: "#fffbeb", color: "#b45309", border: "#fde68a" },
+  paid:     { bg: "#fff1f2", color: "#be123c", border: "#fecdd3" },
 };
 
 interface FaqItem { question: string; answer: string; }
@@ -75,7 +75,6 @@ export default async function AIToolPage({
       },
     }).catch(() => null),
 
-    // Related: same category, different tool
     prisma.aITool.findMany({
       where: { published: true, slug: { not: slug } },
       orderBy: { viewCount: "desc" },
@@ -88,7 +87,6 @@ export default async function AIToolPage({
       },
     }).catch(() => []),
 
-    // Related reviews mentioning this tool
     prisma.review.findMany({
       where: { published: true },
       orderBy: { publishedAt: "desc" },
@@ -99,13 +97,12 @@ export default async function AIToolPage({
 
   if (!tool || !tool.published) notFound();
 
-  // Increment view (fire and forget)
   void prisma.aITool.update({ where: { id: tool.id }, data: { viewCount: { increment: 1 } } }).catch(() => {});
 
   const catMeta = getCategoryMeta(tool.toolCategory);
   const toolUrl = absoluteUrl(`/ai-tools/${slug}`);
   const faq = (Array.isArray(tool.faq) ? (tool.faq as unknown as FaqItem[]) : []);
-  const pricingBadge = PRICING_BADGE_CLS[tool.pricing] ?? PRICING_BADGE_CLS.freemium;
+  const pricingStyle = PRICING_BADGE[tool.pricing] ?? PRICING_BADGE.freemium;
 
   const breadcrumbItems = [
     { name: "الرئيسية", href: "/" },
@@ -163,75 +160,90 @@ export default async function AIToolPage({
 
           <AdSlot position="tool-top" className="mb-6" />
 
-          {/* ─── Hero Header ─── */}
-          <div className="mb-8 rounded-2xl border border-white/6 bg-white/3 p-6 md:p-8">
+          {/* Hero Header */}
+          <div className="mb-8 rounded-[6px] border p-6 md:p-8" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
             <div className="flex items-start gap-5">
               {tool.logoUrl ? (
-                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[6px] border" style={{ borderColor: "var(--border-subtle)" }}>
                   <Image src={tool.logoUrl} alt={tool.imageAlt ?? tool.name} fill className="object-cover" unoptimized />
                 </div>
               ) : (
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-violet-500/15 text-3xl font-black text-violet-400">
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[6px] text-3xl font-black"
+                  style={{ backgroundColor: "var(--accent-bg)", color: "var(--accent)" }}>
                   {tool.name[0]}
                 </div>
               )}
 
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <h1 className="text-3xl font-black text-white md:text-4xl">{tool.name}</h1>
+                  <h1 className="text-3xl font-bold md:text-4xl" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{tool.name}</h1>
                   {tool.editorPick && (
-                    <span className="rounded-full bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 text-xs font-bold text-amber-400">⭐ اختيار المحررين</span>
+                    <span className="rounded-[3px] border px-2 py-0.5 text-xs font-bold"
+                      style={{ backgroundColor: "#fffbeb", color: "#b45309", borderColor: "#fde68a" }}>⭐ اختيار المحررين</span>
                   )}
                   {tool.featured && (
-                    <span className="rounded-full bg-violet-500/20 border border-violet-500/30 px-2 py-0.5 text-xs font-bold text-violet-400">مميز</span>
+                    <span className="rounded-[3px] border px-2 py-0.5 text-xs font-bold"
+                      style={{ backgroundColor: "var(--accent-bg)", color: "var(--accent)", borderColor: "var(--accent)" }}>مميز</span>
                   )}
                 </div>
-                {tool.tagline && <p className="text-lg text-slate-400 mb-3">{tool.tagline}</p>}
+                {tool.tagline && <p className="text-lg mb-3" style={{ color: "var(--text-secondary)" }}>{tool.tagline}</p>}
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className={`rounded-full border px-3 py-1 text-sm font-semibold ${pricingBadge}`}>
+                  <span className="rounded-[3px] border px-3 py-1 text-sm font-semibold"
+                    style={{ backgroundColor: pricingStyle.bg, color: pricingStyle.color, borderColor: pricingStyle.border }}>
                     {PRICING_LABELS[tool.pricing] ?? tool.pricing}
                     {tool.monthlyPrice && tool.pricing !== "free" ? ` — يبدأ من $${tool.monthlyPrice}/شهر` : ""}
                   </span>
-                  <Link href={`/ai-tools/for/${tool.toolCategory}`} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-400 hover:border-violet-500/30 hover:text-violet-300 transition">
+                  <Link
+                    href={`/ai-tools/for/${tool.toolCategory}`}
+                    className="rounded-[6px] border px-3 py-1 text-sm transition"
+                    style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
+                  >
                     {catMeta.icon} {catMeta.labelAr}
                   </Link>
                   {tool.arabicSupport && (
-                    <span className="rounded-full border border-teal-500/30 bg-teal-500/10 px-2.5 py-1 text-xs font-bold text-teal-400">يدعم العربية ✓</span>
+                    <span className="rounded-[3px] border px-2.5 py-1 text-xs font-bold"
+                      style={{ backgroundColor: "#f0fdfa", color: "#0d9488", borderColor: "#99f6e4" }}>يدعم العربية ✓</span>
                   )}
                   {tool.hasApi && (
-                    <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-xs font-bold text-blue-400">API متاح</span>
+                    <span className="rounded-[3px] border px-2.5 py-1 text-xs font-bold"
+                      style={{ backgroundColor: "#eff6ff", color: "#2563eb", borderColor: "#bfdbfe" }}>API متاح</span>
                   )}
                 </div>
               </div>
             </div>
 
             {/* Action buttons */}
-            <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-white/8 pt-5">
+            <div className="mt-5 flex flex-wrap items-center gap-3 border-t pt-5" style={{ borderColor: "var(--border-subtle)" }}>
               {tool.website && (
                 <a
                   href={tool.website}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
-                  className="flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-violet-500 transition"
+                  className="flex items-center gap-2 rounded-[6px] px-5 py-2.5 text-sm font-bold transition"
+                  style={{ backgroundColor: "var(--accent)", color: "var(--text-on-accent)" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent-hover)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent)"; }}
                 >
                   زيارة الموقع الرسمي ↗
                 </a>
               )}
               <ToolInteractions toolId={tool.id} initialLikes={tool.likes} />
-              <div className="mr-auto flex items-center gap-3 text-sm text-slate-500">
+              <div className="mr-auto flex items-center gap-3 text-sm" style={{ color: "var(--text-muted)" }}>
                 <span>👁 {tool.viewCount.toLocaleString("ar-EG")} مشاهدة</span>
               </div>
             </div>
           </div>
 
-          {/* Screenshots gallery */}
+          {/* Screenshots */}
           {tool.screenshots.length > 0 && (
             <section className="mb-8">
-              <h2 className="mb-4 text-xl font-black text-white">لقطات الشاشة</h2>
+              <h2 className="mb-4 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>لقطات الشاشة</h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {tool.screenshots.map((url, i) => (
-                  <div key={i} className="relative aspect-video overflow-hidden rounded-xl border border-white/8 bg-white/3">
+                  <div key={i} className="relative aspect-video overflow-hidden rounded-[6px] border" style={{ borderColor: "var(--border-subtle)" }}>
                     <Image src={url} alt={`${tool.name} — لقطة ${i + 1}`} fill className="object-cover" unoptimized />
                   </div>
                 ))}
@@ -243,8 +255,8 @@ export default async function AIToolPage({
             <div>
               {/* Main description */}
               <section className="mb-8">
-                <h2 className="mb-4 text-xl font-black text-white">ما هو {tool.name}؟</h2>
-                <div className="text-slate-300 leading-relaxed whitespace-pre-wrap">
+                <h2 className="mb-4 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>ما هو {tool.name}؟</h2>
+                <div className="leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>
                   {tool.contentAr ?? tool.descriptionAr}
                 </div>
               </section>
@@ -253,7 +265,8 @@ export default async function AIToolPage({
               {tool.tags.length > 0 && (
                 <div className="mb-8 flex flex-wrap gap-2">
                   {tool.tags.map((t) => (
-                    <span key={t} className="rounded-full border border-white/8 bg-white/4 px-3 py-1 text-xs text-slate-400">{t}</span>
+                    <span key={t} className="rounded-[3px] border px-3 py-1 text-xs"
+                      style={{ borderColor: "var(--border-medium)", color: "var(--text-muted)", backgroundColor: "var(--bg-subtle)" }}>{t}</span>
                   ))}
                 </div>
               )}
@@ -261,15 +274,15 @@ export default async function AIToolPage({
               {/* Pros & Cons */}
               {(tool.pros.length > 0 || tool.cons.length > 0) && (
                 <section className="mb-8">
-                  <h2 className="mb-4 text-xl font-black text-white">المميزات والعيوب</h2>
+                  <h2 className="mb-4 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>المميزات والعيوب</h2>
                   <div className="grid gap-4 md:grid-cols-2">
                     {tool.pros.length > 0 && (
-                      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/8 p-5">
-                        <h3 className="mb-3 font-bold text-emerald-400">المميزات</h3>
+                      <div className="rounded-[6px] border p-5" style={{ borderColor: "#bbf7d0", backgroundColor: "#f0fdf4" }}>
+                        <h3 className="mb-3 font-bold" style={{ color: "#16a34a" }}>المميزات</h3>
                         <ul className="space-y-2">
                           {tool.pros.map((p, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm text-emerald-300">
-                              <span className="mt-0.5 shrink-0 text-emerald-500">✓</span>
+                            <li key={i} className="flex items-start gap-2 text-sm" style={{ color: "#15803d" }}>
+                              <span className="mt-0.5 shrink-0" style={{ color: "#16a34a" }}>✓</span>
                               <span>{p}</span>
                             </li>
                           ))}
@@ -277,12 +290,12 @@ export default async function AIToolPage({
                       </div>
                     )}
                     {tool.cons.length > 0 && (
-                      <div className="rounded-xl border border-red-500/20 bg-red-500/8 p-5">
-                        <h3 className="mb-3 font-bold text-red-400">العيوب</h3>
+                      <div className="rounded-[6px] border p-5" style={{ borderColor: "#fecdd3", backgroundColor: "#fff1f2" }}>
+                        <h3 className="mb-3 font-bold" style={{ color: "#be123c" }}>العيوب</h3>
                         <ul className="space-y-2">
                           {tool.cons.map((c, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm text-red-300">
-                              <span className="mt-0.5 shrink-0 text-red-500">✗</span>
+                            <li key={i} className="flex items-start gap-2 text-sm" style={{ color: "#9f1239" }}>
+                              <span className="mt-0.5 shrink-0" style={{ color: "#be123c" }}>✗</span>
                               <span>{c}</span>
                             </li>
                           ))}
@@ -296,14 +309,15 @@ export default async function AIToolPage({
               {/* Use Cases */}
               {tool.useCases.length > 0 && (
                 <section className="mb-8">
-                  <h2 className="mb-4 text-xl font-black text-white">حالات الاستخدام</h2>
+                  <h2 className="mb-4 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>حالات الاستخدام</h2>
                   <div className="grid gap-3 sm:grid-cols-2">
                     {tool.useCases.map((uc, i) => (
-                      <div key={i} className="flex items-start gap-3 rounded-xl border border-white/6 bg-white/3 p-4">
-                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-xs font-bold text-violet-400">
+                      <div key={i} className="flex items-start gap-3 rounded-[6px] border p-4" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[3px] text-xs font-bold"
+                          style={{ backgroundColor: "var(--accent-bg)", color: "var(--accent)" }}>
                           {i + 1}
                         </span>
-                        <span className="text-sm text-slate-300">{uc}</span>
+                        <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{uc}</span>
                       </div>
                     ))}
                   </div>
@@ -313,9 +327,9 @@ export default async function AIToolPage({
               {/* Pricing */}
               {tool.pricingDetails && (
                 <section className="mb-8">
-                  <h2 className="mb-4 text-xl font-black text-white">خطط الأسعار</h2>
-                  <div className="rounded-xl border border-white/6 bg-white/3 p-5">
-                    <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{tool.pricingDetails}</div>
+                  <h2 className="mb-4 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>خطط الأسعار</h2>
+                  <div className="rounded-[6px] border p-5" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                    <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>{tool.pricingDetails}</div>
                   </div>
                 </section>
               )}
@@ -325,15 +339,15 @@ export default async function AIToolPage({
               {/* FAQ */}
               {faq.length > 0 && (
                 <section className="mb-8">
-                  <h2 className="mb-4 text-xl font-black text-white">الأسئلة الشائعة</h2>
+                  <h2 className="mb-4 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>الأسئلة الشائعة</h2>
                   <div className="space-y-3">
                     {faq.map((f, i) => (
-                      <details key={i} className="group rounded-xl border border-white/6 bg-white/3 open:border-violet-500/30">
-                        <summary className="flex cursor-pointer items-center justify-between gap-3 p-4 font-semibold text-slate-200 list-none">
+                      <details key={i} className="group rounded-[6px] border transition" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                        <summary className="flex cursor-pointer items-center justify-between gap-3 p-4 font-semibold list-none" style={{ color: "var(--text-primary)" }}>
                           <span>{f.question}</span>
-                          <span className="shrink-0 text-violet-400 transition group-open:rotate-180">↓</span>
+                          <span className="shrink-0 transition group-open:rotate-180" style={{ color: "var(--accent)" }}>↓</span>
                         </summary>
-                        <div className="border-t border-white/5 px-4 pb-4 pt-3 text-sm text-slate-400 leading-relaxed">
+                        <div className="border-t px-4 pb-4 pt-3 text-sm leading-relaxed" style={{ borderColor: "var(--border-subtle)", color: "var(--text-secondary)" }}>
                           {f.answer}
                         </div>
                       </details>
@@ -345,16 +359,19 @@ export default async function AIToolPage({
               {/* Comparisons */}
               {tool.comparisons.length > 0 && (
                 <section className="mb-8">
-                  <h2 className="mb-4 text-xl font-black text-white">مقارنات تتضمن {tool.name}</h2>
+                  <h2 className="mb-4 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>مقارنات تتضمن {tool.name}</h2>
                   <div className="space-y-3">
                     {tool.comparisons.map((side) => (
                       <Link
                         key={side.id}
                         href={`/compare/${side.comparison.slug}`}
-                        className="flex items-center justify-between rounded-xl border border-white/6 bg-white/3 p-4 hover:border-violet-500/30 hover:bg-violet-500/5 transition"
+                        className="flex items-center justify-between rounded-[6px] border p-4 transition"
+                        style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)"; }}
                       >
-                        <span className="font-medium text-slate-200">{side.comparison.title}</span>
-                        <span className="text-sm text-violet-400">عرض المقارنة ←</span>
+                        <span className="font-medium" style={{ color: "var(--text-primary)" }}>{side.comparison.title}</span>
+                        <span className="text-sm" style={{ color: "var(--accent)" }}>عرض المقارنة ←</span>
                       </Link>
                     ))}
                   </div>
@@ -364,19 +381,22 @@ export default async function AIToolPage({
               {/* Related reviews */}
               {relatedReviews.length > 0 && (
                 <section className="mb-8">
-                  <h2 className="mb-4 text-xl font-black text-white">تقارير ذات صلة</h2>
+                  <h2 className="mb-4 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>تقارير ذات صلة</h2>
                   <div className="space-y-3">
                     {relatedReviews.map((r) => (
                       <Link
                         key={r.id}
                         href={`/reviews/${r.slug}`}
-                        className="flex items-start gap-3 rounded-xl border border-white/6 bg-white/3 p-4 hover:border-violet-500/30 hover:bg-violet-500/5 transition group"
+                        className="flex items-start gap-3 rounded-[6px] border p-4 transition group"
+                        style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)"; }}
                       >
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-slate-200 group-hover:text-violet-300 transition-colors line-clamp-1">{r.titleAr}</p>
-                          {r.summary && <p className="mt-1 text-xs text-slate-500 line-clamp-1">{r.summary}</p>}
+                          <p className="font-semibold transition-opacity group-hover:opacity-75 line-clamp-1" style={{ color: "var(--text-primary)" }}>{r.titleAr}</p>
+                          {r.summary && <p className="mt-1 text-xs line-clamp-1" style={{ color: "var(--text-muted)" }}>{r.summary}</p>}
                         </div>
-                        <span className="shrink-0 text-xs text-slate-600">{r.authorSlug}</span>
+                        <span className="shrink-0 text-xs" style={{ color: "var(--text-muted)" }}>{r.authorSlug}</span>
                       </Link>
                     ))}
                   </div>
@@ -387,35 +407,38 @@ export default async function AIToolPage({
             {/* Sidebar */}
             <aside className="space-y-5">
               {/* Quick info card */}
-              <div className="rounded-xl border border-white/6 bg-white/3 p-5">
-                <h3 className="mb-4 font-black text-white text-sm">معلومات سريعة</h3>
+              <div className="rounded-[6px] border p-5" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                <h3 className="mb-4 font-bold text-sm" style={{ color: "var(--text-primary)" }}>معلومات سريعة</h3>
                 <dl className="space-y-3 text-sm">
                   <div className="flex items-center justify-between gap-2">
-                    <dt className="text-slate-500">التصنيف</dt>
-                    <dd className="font-medium text-slate-300">{catMeta.icon} {catMeta.labelAr}</dd>
+                    <dt style={{ color: "var(--text-muted)" }}>التصنيف</dt>
+                    <dd className="font-medium" style={{ color: "var(--text-primary)" }}>{catMeta.icon} {catMeta.labelAr}</dd>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <dt className="text-slate-500">التسعير</dt>
-                    <dd className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${pricingBadge}`}>{PRICING_LABELS[tool.pricing]}</dd>
+                    <dt style={{ color: "var(--text-muted)" }}>التسعير</dt>
+                    <dd className="rounded-[3px] border px-2 py-0.5 text-xs font-semibold"
+                      style={{ backgroundColor: pricingStyle.bg, color: pricingStyle.color, borderColor: pricingStyle.border }}>
+                      {PRICING_LABELS[tool.pricing]}
+                    </dd>
                   </div>
                   {tool.monthlyPrice && tool.pricing !== "free" && (
                     <div className="flex items-center justify-between gap-2">
-                      <dt className="text-slate-500">يبدأ من</dt>
-                      <dd className="font-medium text-slate-300">${tool.monthlyPrice}/شهر</dd>
+                      <dt style={{ color: "var(--text-muted)" }}>يبدأ من</dt>
+                      <dd className="font-medium" style={{ color: "var(--text-primary)" }}>${tool.monthlyPrice}/شهر</dd>
                     </div>
                   )}
                   <div className="flex items-center justify-between gap-2">
-                    <dt className="text-slate-500">دعم العربية</dt>
-                    <dd className={`font-medium ${tool.arabicSupport ? "text-teal-400" : "text-slate-500"}`}>{tool.arabicSupport ? "نعم ✓" : "لا"}</dd>
+                    <dt style={{ color: "var(--text-muted)" }}>دعم العربية</dt>
+                    <dd className="font-medium" style={{ color: tool.arabicSupport ? "#0d9488" : "var(--text-muted)" }}>{tool.arabicSupport ? "نعم ✓" : "لا"}</dd>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <dt className="text-slate-500">واجهة API</dt>
-                    <dd className={`font-medium ${tool.hasApi ? "text-blue-400" : "text-slate-500"}`}>{tool.hasApi ? "متوفر ✓" : "غير متوفر"}</dd>
+                    <dt style={{ color: "var(--text-muted)" }}>واجهة API</dt>
+                    <dd className="font-medium" style={{ color: tool.hasApi ? "#2563eb" : "var(--text-muted)" }}>{tool.hasApi ? "متوفر ✓" : "غير متوفر"}</dd>
                   </div>
                   {tool.releaseDate && (
                     <div className="flex items-center justify-between gap-2">
-                      <dt className="text-slate-500">تاريخ الإصدار</dt>
-                      <dd className="font-medium text-slate-300">{tool.releaseDate.getFullYear()}</dd>
+                      <dt style={{ color: "var(--text-muted)" }}>تاريخ الإصدار</dt>
+                      <dd className="font-medium" style={{ color: "var(--text-primary)" }}>{tool.releaseDate.getFullYear()}</dd>
                     </div>
                   )}
                 </dl>
@@ -424,7 +447,10 @@ export default async function AIToolPage({
                     href={tool.website}
                     target="_blank"
                     rel="noopener noreferrer nofollow"
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600/20 border border-violet-500/30 px-4 py-2.5 text-sm font-bold text-violet-400 hover:bg-violet-600/30 transition"
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-[6px] border px-4 py-2.5 text-sm font-bold transition"
+                    style={{ borderColor: "var(--accent)", color: "var(--accent)", backgroundColor: "var(--accent-bg)" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent)"; (e.currentTarget as HTMLElement).style.color = "var(--text-on-accent)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent-bg)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
                   >
                     زيارة الموقع ↗
                   </a>
@@ -432,12 +458,15 @@ export default async function AIToolPage({
               </div>
 
               {/* Compare CTA */}
-              <div className="rounded-xl border border-white/6 bg-white/3 p-5">
-                <h3 className="mb-2 font-black text-white text-sm">قارن مع أداة أخرى</h3>
-                <p className="mb-3 text-xs text-slate-500">اكتشف الأنسب لك بمقارنة مفصّلة</p>
+              <div className="rounded-[6px] border p-5" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                <h3 className="mb-2 font-bold text-sm" style={{ color: "var(--text-primary)" }}>قارن مع أداة أخرى</h3>
+                <p className="mb-3 text-xs" style={{ color: "var(--text-muted)" }}>اكتشف الأنسب لك بمقارنة مفصّلة</p>
                 <Link
                   href="/compare"
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-slate-400 hover:border-violet-500/30 hover:text-violet-300 transition"
+                  className="flex w-full items-center justify-center gap-2 rounded-[6px] border px-4 py-2 text-xs font-semibold transition"
+                  style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-subtle)" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
                 >
                   ⚖️ فتح أداة المقارنة
                 </Link>
@@ -445,11 +474,12 @@ export default async function AIToolPage({
 
               {/* Related topics */}
               {tool.relatedTopics.length > 0 && (
-                <div className="rounded-xl border border-white/6 bg-white/3 p-5">
-                  <h3 className="mb-3 font-black text-white text-sm">مواضيع ذات صلة</h3>
+                <div className="rounded-[6px] border p-5" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                  <h3 className="mb-3 font-bold text-sm" style={{ color: "var(--text-primary)" }}>مواضيع ذات صلة</h3>
                   <div className="flex flex-wrap gap-2">
                     {tool.relatedTopics.map((t) => (
-                      <span key={t} className="rounded-full border border-white/8 bg-white/4 px-2.5 py-1 text-xs text-slate-400">{t}</span>
+                      <span key={t} className="rounded-[3px] border px-2.5 py-1 text-xs"
+                        style={{ borderColor: "var(--border-medium)", color: "var(--text-muted)", backgroundColor: "var(--bg-subtle)" }}>{t}</span>
                     ))}
                   </div>
                 </div>
@@ -459,8 +489,8 @@ export default async function AIToolPage({
 
           {/* Related tools */}
           {relatedTools.length > 0 && (
-            <section className="mt-10 border-t border-white/8 pt-10">
-              <h2 className="mb-6 text-xl font-black text-white">أدوات مشابهة</h2>
+            <section className="mt-10 border-t pt-10" style={{ borderColor: "var(--border-subtle)" }}>
+              <h2 className="mb-6 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>أدوات مشابهة</h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {relatedTools.map((t) => <ToolCard key={t.id} tool={t} compact />)}
               </div>
@@ -468,10 +498,22 @@ export default async function AIToolPage({
           )}
 
           {/* Back links */}
-          <div className="mt-8 border-t border-white/8 pt-6 flex flex-wrap items-center gap-4">
-            <Link href="/ai-tools" className="text-sm text-violet-400 hover:text-violet-300 transition-colors">← جميع أدوات الذكاء الاصطناعي</Link>
-            <Link href={`/ai-tools/for/${tool.toolCategory}`} className="text-sm text-slate-500 hover:text-slate-300 transition-colors">أدوات {catMeta.labelAr}</Link>
-            <Link href={`/compare`} className="text-sm text-slate-500 hover:text-slate-300 transition-colors">مقارن الأدوات</Link>
+          <div className="mt-8 border-t pt-6 flex flex-wrap items-center gap-4" style={{ borderColor: "var(--border-subtle)" }}>
+            <Link href="/ai-tools" className="text-sm transition" style={{ color: "var(--accent)" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.7"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}>
+              ← جميع أدوات الذكاء الاصطناعي
+            </Link>
+            <Link href={`/ai-tools/for/${tool.toolCategory}`} className="text-sm transition" style={{ color: "var(--text-muted)" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}>
+              أدوات {catMeta.labelAr}
+            </Link>
+            <Link href="/compare" className="text-sm transition" style={{ color: "var(--text-muted)" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}>
+              مقارن الأدوات
+            </Link>
           </div>
         </div>
       </main>

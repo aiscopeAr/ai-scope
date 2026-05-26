@@ -21,7 +21,7 @@ export default function SearchBox({ defaultValue = "" }: Props) {
       } else {
         params.delete("q");
       }
-      params.delete("type"); // reset type filter on new search
+      params.delete("type");
       startTransition(() => router.push(`/search?${params.toString()}`));
     },
     [router, searchParams]
@@ -37,12 +37,22 @@ export default function SearchBox({ defaultValue = "" }: Props) {
           placeholder="ابحث عن أخبار الذكاء الاصطناعي، الأدوات، والأدلة..."
           autoFocus
           autoComplete="off"
-          className="w-full rounded-2xl border border-white/10 bg-white/4 py-4 pr-5 pl-14 text-base text-white placeholder:text-slate-500 focus:border-violet-500/50 focus:bg-white/6 focus:outline-none transition"
+          className="w-full rounded-[6px] border py-4 pr-5 pl-14 text-base transition focus:outline-none"
+          style={{
+            borderColor: "var(--border-medium)",
+            backgroundColor: "var(--bg-surface)",
+            color: "var(--text-primary)",
+          }}
+          onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
+          onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
         />
         <button
           type="submit"
           disabled={isPending}
-          className="absolute left-3 flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-white transition hover:bg-violet-500 disabled:opacity-60"
+          className="absolute left-3 flex h-9 w-9 items-center justify-center rounded-[6px] transition disabled:opacity-60"
+          style={{ backgroundColor: "var(--accent)", color: "var(--text-on-accent)" }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent-hover)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent)"; }}
           aria-label="بحث"
         >
           {isPending ? (

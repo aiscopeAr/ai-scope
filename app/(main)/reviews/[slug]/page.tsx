@@ -73,7 +73,6 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
     catch { return []; }
   })();
 
-  // Render Markdown as plain paragraphs (no extra dependency)
   const paragraphs = review.content
     .split(/\n\n+/)
     .map((p) => p.trim())
@@ -115,45 +114,59 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
       <article className="container mx-auto max-w-3xl px-4 py-8" dir="rtl">
 
         {/* Breadcrumb */}
-        <nav className="mb-6 flex items-center gap-2 text-sm text-slate-500">
-          <Link href="/" className="hover:text-violet-400 transition-colors">الرئيسية</Link>
+        <nav className="mb-6 flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
+          <Link href="/" className="transition-colors" style={{ color: "var(--text-muted)" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}>
+            الرئيسية
+          </Link>
           <span>/</span>
-          <Link href={`/category/${review.category.slug}`} className="hover:text-violet-400 transition-colors">{review.category.nameAr}</Link>
+          <Link href={`/category/${review.category.slug}`} className="transition-colors" style={{ color: "var(--text-muted)" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}>
+            {review.category.nameAr}
+          </Link>
           <span>/</span>
-          <span className="line-clamp-1 text-slate-400">{review.titleAr}</span>
+          <span className="line-clamp-1 font-medium" style={{ color: "var(--text-secondary)" }}>{review.titleAr}</span>
         </nav>
 
         <AdSlot position="article-top" className="mb-6" />
 
         {/* Category badge */}
-        <Link href={`/category/${review.category.slug}`} className="mb-4 inline-block rounded-full bg-violet-500/15 border border-violet-500/30 px-4 py-1 text-sm font-semibold text-violet-400 transition hover:bg-violet-500/25">
+        <Link
+          href={`/category/${review.category.slug}`}
+          className="mb-4 inline-block rounded-[3px] border px-4 py-1 text-sm font-semibold transition"
+          style={{ backgroundColor: "var(--accent-bg)", borderColor: "var(--accent)", color: "var(--accent)" }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent)"; (e.currentTarget as HTMLElement).style.color = "var(--text-on-accent)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent-bg)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
+        >
           {review.category.nameAr}
         </Link>
 
         {/* Title */}
-        <h1 className="mb-6 text-3xl font-black leading-tight text-white md:text-4xl">{review.titleAr}</h1>
+        <h1 className="mb-6 text-3xl font-bold leading-tight md:text-4xl" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{review.titleAr}</h1>
 
         {/* Summary lede */}
-        <p className="mb-8 text-lg leading-relaxed text-slate-300 border-r-4 border-violet-500/40 pr-4">{review.summary}</p>
+        <p className="mb-8 text-lg leading-relaxed border-r-4 pr-4" style={{ color: "var(--text-secondary)", borderColor: "var(--accent)" }}>{review.summary}</p>
 
         {/* Meta bar */}
-        <div className="mb-8 flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-white/8 pb-8 text-slate-400">
+        <div className="mb-8 flex flex-wrap items-center gap-x-4 gap-y-3 border-b pb-8" style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
           {author && (
             <Link href={`/author/${author.slug}`} className="flex items-center gap-2">
-              <div className="h-8 w-8 overflow-hidden rounded-full" style={{ outline: `2px solid ${author.accentColor}50` }}>
+              <div className="h-8 w-8 overflow-hidden rounded-[4px]" style={{ outline: `2px solid ${author.accentColor}50` }}>
                 <img src={author.avatarUrl} alt={author.nameAr} className="h-full w-full object-cover" />
               </div>
               <span className="text-sm font-semibold" style={{ color: author.accentColor }}>{author.nameAr}</span>
-              <span className="text-xs text-slate-600">· إنتاج آلي</span>
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>· إنتاج آلي</span>
             </Link>
           )}
-          <span className="text-slate-700">•</span>
+          <span style={{ color: "var(--border-medium)" }}>•</span>
           {review.publishedAt && (
             <time dateTime={review.publishedAt.toISOString()} className="text-sm">
               {formatDistanceToNow(new Date(review.publishedAt), { addSuffix: true, locale: ar })}
             </time>
           )}
-          <span className="text-slate-700">•</span>
+          <span style={{ color: "var(--border-medium)" }}>•</span>
           <span className="text-sm">{readingMinutes} دقيقة قراءة</span>
           <div className="mr-auto">
             <ShareButtons url={reviewUrl} title={review.titleAr} />
@@ -162,25 +175,24 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
 
         {/* Hero image */}
         {review.imageUrl && (
-          <div className="relative mb-8 h-72 overflow-hidden rounded-2xl sm:h-96">
+          <div className="relative mb-8 h-72 overflow-hidden rounded-[6px] sm:h-96">
             <Image src={review.imageUrl} alt={review.imageAlt ?? review.titleAr} fill className="object-cover" />
-            <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10" />
           </div>
         )}
 
         <AdSlot position="article-mid" className="mb-8" />
 
-        {/* Content — render Markdown headings + paragraphs */}
-        <div className="mb-12 space-y-4 text-lg leading-relaxed text-slate-300">
+        {/* Content */}
+        <div className="prose-ar mb-12 space-y-4">
           {paragraphs.map((p, i) => {
             if (p.startsWith("## ")) return (
-              <h2 key={i} className="mt-8 text-2xl font-black text-white">{p.slice(3)}</h2>
+              <h2 key={i} className="mt-8 text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{p.slice(3)}</h2>
             );
             if (p.startsWith("### ")) return (
-              <h3 key={i} className="mt-6 text-xl font-bold text-white">{p.slice(4)}</h3>
+              <h3 key={i} className="mt-6 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{p.slice(4)}</h3>
             );
             if (p.startsWith("- ") || p.startsWith("* ")) return (
-              <ul key={i} className="list-disc list-inside space-y-1 text-slate-300">
+              <ul key={i} className="list-disc list-inside space-y-1">
                 {p.split("\n").map((line, j) => (
                   <li key={j}>{line.replace(/^[-*]\s+/, "")}</li>
                 ))}
@@ -195,17 +207,17 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
         {/* FAQ */}
         {faq.length > 0 && (
           <section className="mb-10" aria-label="أسئلة شائعة">
-            <h2 className="mb-6 text-2xl font-black text-white">أسئلة شائعة</h2>
+            <h2 className="mb-6 text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>أسئلة شائعة</h2>
             <div className="space-y-3">
               {faq.map((item, i) => (
-                <details key={i} className="group rounded-xl border border-white/8 bg-white/3 open:bg-white/5 transition">
-                  <summary className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 font-semibold text-slate-200 marker:hidden list-none">
+                <details key={i} className="group rounded-[6px] border transition" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                  <summary className="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 font-semibold list-none marker:hidden" style={{ color: "var(--text-primary)" }}>
                     <span>{item.question}</span>
-                    <svg className="h-5 w-5 shrink-0 text-violet-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="h-5 w-5 shrink-0 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "var(--accent)" }}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                     </svg>
                   </summary>
-                  <p className="px-5 pb-4 text-slate-400 leading-relaxed">{item.answer}</p>
+                  <p className="px-5 pb-4 leading-relaxed" style={{ color: "var(--text-secondary)" }}>{item.answer}</p>
                 </details>
               ))}
             </div>
@@ -216,7 +228,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
         {review.tags.length > 0 && (
           <div className="mb-8 flex flex-wrap gap-2">
             {review.tags.map((tag) => (
-              <span key={tag} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-400">
+              <span key={tag} className="rounded-[3px] border px-3 py-1 text-sm" style={{ borderColor: "var(--border-medium)", color: "var(--text-muted)", backgroundColor: "var(--bg-subtle)" }}>
                 #{tag}
               </span>
             ))}
@@ -224,22 +236,22 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
         )}
 
         {/* Share bar */}
-        <div className="mb-8 flex items-center justify-between gap-4 rounded-2xl border border-white/8 bg-white/3 px-5 py-4">
-          <p className="text-sm font-semibold text-slate-400">أعجبك التقرير؟ شاركه مع أصدقائك</p>
+        <div className="mb-8 flex items-center justify-between gap-4 rounded-[6px] border px-5 py-4" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+          <p className="text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>أعجبك التقرير؟ شاركه مع أصدقائك</p>
           <ShareButtons url={reviewUrl} title={review.titleAr} />
         </div>
 
         {/* Sources */}
         {sources.length > 0 && (
-          <div className="mb-8 rounded-2xl border border-white/8 bg-white/3 p-5">
-            <p className="mb-3 text-sm font-bold text-slate-400">المصادر ({sources.length})</p>
+          <div className="mb-8 rounded-[6px] border p-5" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+            <p className="mb-3 text-sm font-bold" style={{ color: "var(--text-secondary)" }}>المصادر ({sources.length})</p>
             <ul className="space-y-2">
               {sources.map((s, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm">
-                  <span className="mt-0.5 h-4 w-4 shrink-0 text-slate-600">{i + 1}.</span>
+                  <span className="mt-0.5 h-4 w-4 shrink-0" style={{ color: "var(--text-muted)" }}>{i + 1}.</span>
                   <div>
-                    <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:underline">{s.title}</a>
-                    <span className="ml-2 text-slate-600">— {s.name}</span>
+                    <a href={s.url} target="_blank" rel="noopener noreferrer" className="transition hover:underline" style={{ color: "var(--accent)" }}>{s.title}</a>
+                    <span className="ml-2" style={{ color: "var(--text-muted)" }}>— {s.name}</span>
                   </div>
                 </li>
               ))}
@@ -249,22 +261,22 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
 
         {/* Author signature card */}
         {author && (
-          <div className="mb-12 overflow-hidden rounded-2xl border p-5" style={{ borderColor: `${author.accentColor}25`, backgroundColor: `${author.accentColor}08` }}>
+          <div className="mb-12 overflow-hidden rounded-[6px] border p-5" style={{ borderColor: `${author.accentColor}25`, backgroundColor: `${author.accentColor}08` }}>
             <div className="flex items-start gap-4">
               <Link href={`/author/${author.slug}`} className="shrink-0">
-                <div className="h-14 w-14 overflow-hidden rounded-full" style={{ outline: `2px solid ${author.accentColor}50`, outlineOffset: "2px" }}>
+                <div className="h-14 w-14 overflow-hidden rounded-[6px]" style={{ outline: `2px solid ${author.accentColor}50`, outlineOffset: "2px" }}>
                   <img src={author.avatarUrl} alt={author.nameAr} className="h-full w-full object-cover" />
                 </div>
               </Link>
               <div className="min-w-0 flex-1">
                 <div className="mb-0.5 flex flex-wrap items-center gap-2">
-                  <Link href={`/author/${author.slug}`} className="text-sm font-bold text-slate-200 hover:text-white">{author.nameAr}</Link>
-                  <span className="rounded-full border px-2 py-0.5 text-[10px] font-semibold" style={{ color: author.accentColor, borderColor: `${author.accentColor}40`, backgroundColor: `${author.accentColor}12` }}>
+                  <Link href={`/author/${author.slug}`} className="text-sm font-bold transition hover:opacity-75" style={{ color: "var(--text-primary)" }}>{author.nameAr}</Link>
+                  <span className="rounded-[3px] border px-2 py-0.5 text-[10px] font-semibold" style={{ color: author.accentColor, borderColor: `${author.accentColor}40`, backgroundColor: `${author.accentColor}12` }}>
                     إنتاج آلي
                   </span>
                 </div>
-                <p className="mb-1.5 text-xs text-slate-500">{author.titleAr}</p>
-                <p className="text-xs leading-relaxed text-slate-400">
+                <p className="mb-1.5 text-xs" style={{ color: "var(--text-muted)" }}>{author.titleAr}</p>
+                <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                   كُتب هذا التقرير بمساعدة {author.nameAr}، متخصص في {author.specialtyAr}، استناداً إلى {sources.length} مصدر موثوق مع مراجعة تحريرية.
                 </p>
                 <Link href={`/author/${author.slug}`} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold hover:underline" style={{ color: author.accentColor }}>

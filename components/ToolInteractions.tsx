@@ -31,14 +31,16 @@ export default function ToolInteractions({
     <button
       onClick={handleLike}
       disabled={liked || loading}
-      className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
-        liked
-          ? "border-rose-500/40 bg-rose-500/15 text-rose-400 cursor-default"
-          : "border-white/10 bg-white/5 text-slate-400 hover:border-rose-500/40 hover:text-rose-400"
-      }`}
+      className="flex items-center gap-2 rounded-[6px] border px-4 py-2.5 text-sm font-semibold transition"
+      style={liked
+        ? { borderColor: "#fecdd3", backgroundColor: "#fff1f2", color: "#be123c", cursor: "default" }
+        : { borderColor: "var(--border-medium)", backgroundColor: "var(--bg-surface)", color: "var(--text-muted)" }
+      }
+      onMouseEnter={e => { if (!liked) { (e.currentTarget as HTMLElement).style.borderColor = "#fecdd3"; (e.currentTarget as HTMLElement).style.color = "#be123c"; } }}
+      onMouseLeave={e => { if (!liked) { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; } }}
       aria-label="إعجاب"
     >
-      <Heart className={`h-4 w-4 ${liked ? "fill-rose-400" : ""}`} />
+      <Heart className={`h-4 w-4 ${liked ? "fill-rose-600" : ""}`} />
       <span>{likes.toLocaleString("ar-EG")}</span>
     </button>
   );

@@ -23,15 +23,8 @@ async function getCategoryPageData(slug: string) {
         orderBy: { publishedAt: "desc" },
         take: 24,
         select: {
-          id: true,
-          slug: true,
-          titleAr: true,
-          summary: true,
-          imageUrl: true,
-          publishedAt: true,
-          authorSlug: true,
-          tags: true,
-          viewCount: true,
+          id: true, slug: true, titleAr: true, summary: true, imageUrl: true,
+          publishedAt: true, authorSlug: true, tags: true, viewCount: true,
           category: { select: { nameAr: true, slug: true } },
         },
       }),
@@ -39,9 +32,7 @@ async function getCategoryPageData(slug: string) {
         where: { slug: { not: slug } },
         orderBy: { nameAr: "asc" },
         select: {
-          id: true,
-          slug: true,
-          nameAr: true,
+          id: true, slug: true, nameAr: true,
           _count: { select: { reviews: true } },
         },
       }),
@@ -69,13 +60,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `${data.category.nameAr} | ${SITE_NAME_AR}`,
     description,
     alternates: { canonical: url },
-    openGraph: {
-      title: `${data.category.nameAr} | ${SITE_NAME_AR}`,
-      description,
-      url,
-      type: "website",
-      locale: "ar_AR",
-    },
+    openGraph: { title: `${data.category.nameAr} | ${SITE_NAME_AR}`, description, url, type: "website", locale: "ar_AR" },
   };
 }
 
@@ -88,18 +73,22 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
   return (
     <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
-      <nav className="mb-6 flex items-center gap-2 text-sm text-slate-500">
-        <Link href="/" className="hover:text-violet-400 transition-colors">الرئيسية</Link>
+      <nav className="mb-6 flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
+        <Link href="/" className="transition-colors" style={{ color: "var(--text-muted)" }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}>الرئيسية</Link>
         <span>/</span>
-        <Link href="/reviews" className="hover:text-violet-400 transition-colors">التقارير</Link>
+        <Link href="/reviews" className="transition-colors" style={{ color: "var(--text-muted)" }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}>التقارير</Link>
         <span>/</span>
-        <span className="text-slate-300">{category.nameAr}</span>
+        <span className="font-medium" style={{ color: "var(--text-secondary)" }}>{category.nameAr}</span>
       </nav>
 
-      <section className="mb-10 rounded-3xl border border-white/8 bg-white/3 p-6 md:p-8">
-        <p className="mb-3 text-sm font-semibold text-violet-300">تصنيف تحريري</p>
-        <h1 className="mb-3 text-3xl font-black text-white md:text-5xl">{category.nameAr}</h1>
-        <p className="max-w-3xl text-sm leading-relaxed text-slate-400 md:text-base">
+      <section className="mb-10 rounded-[6px] border p-6 md:p-8" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+        <p className="mb-3 text-sm font-semibold" style={{ color: "var(--accent)" }}>تصنيف تحريري</p>
+        <h1 className="mb-3 text-3xl font-bold md:text-5xl" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{category.nameAr}</h1>
+        <p className="max-w-3xl text-sm leading-relaxed md:text-base" style={{ color: "var(--text-secondary)" }}>
           كل التقارير المنشورة في هذا التصنيف، مرتبة من الأحدث إلى الأقدم.
         </p>
       </section>
@@ -110,10 +99,13 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             <Link
               key={item.id}
               href={`/category/${item.slug}`}
-              className="rounded-full border border-white/10 bg-white/4 px-4 py-2 text-sm text-slate-300 transition hover:border-violet-500/30 hover:text-violet-300"
+              className="rounded-[6px] border px-4 py-2 text-sm transition"
+              style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
             >
               {item.nameAr}
-              <span className="mr-2 text-slate-500">({item._count.reviews})</span>
+              <span className="mr-2" style={{ color: "var(--text-muted)" }}>({item._count.reviews})</span>
             </Link>
           ))}
         </section>
@@ -122,10 +114,12 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       <AdSlot position="category-top" className="mb-8" />
 
       {reviews.length === 0 ? (
-        <section className="rounded-2xl border border-white/8 bg-white/3 p-8 text-center">
-          <h2 className="mb-2 text-xl font-bold text-white">لا توجد تقارير في هذا التصنيف بعد</h2>
-          <p className="mb-4 text-slate-500">يمكنك العودة إلى جميع التقارير أو متابعة تصنيف آخر.</p>
-          <Link href="/reviews" className="text-sm font-semibold text-violet-400 hover:text-violet-300">
+        <section className="rounded-[6px] border p-8 text-center" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+          <h2 className="mb-2 text-xl font-bold" style={{ color: "var(--text-primary)" }}>لا توجد تقارير في هذا التصنيف بعد</h2>
+          <p className="mb-4" style={{ color: "var(--text-muted)" }}>يمكنك العودة إلى جميع التقارير أو متابعة تصنيف آخر.</p>
+          <Link href="/reviews" className="text-sm font-semibold transition" style={{ color: "var(--accent)" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.7"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}>
             عرض جميع التقارير
           </Link>
         </section>

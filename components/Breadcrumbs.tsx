@@ -28,17 +28,24 @@ export default function Breadcrumbs({ items, className = "" }: BreadcrumbsProps)
   return (
     <nav
       aria-label="مسار التنقل"
-      className={`flex flex-wrap items-center gap-1.5 text-sm text-slate-500 ${className}`}
+      className={`flex flex-wrap items-center gap-1.5 text-sm ${className}`}
+      style={{ color: "var(--text-muted)" }}
     >
       {items.map((item, i) => (
         <span key={i} className="flex items-center gap-1.5">
-          {i > 0 && <span aria-hidden className="text-slate-700">/</span>}
+          {i > 0 && <span aria-hidden style={{ color: "var(--border-medium)" }}>/</span>}
           {item.href ? (
-            <Link href={item.href} className="hover:text-violet-400 transition-colors">
+            <Link
+              href={item.href}
+              className="transition-colors"
+              style={{ color: "var(--text-muted)" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "var(--text-muted)"; }}
+            >
               {item.name}
             </Link>
           ) : (
-            <span className="text-slate-400 font-medium line-clamp-1">{item.name}</span>
+            <span className="font-medium line-clamp-1" style={{ color: "var(--text-secondary)" }}>{item.name}</span>
           )}
         </span>
       ))}

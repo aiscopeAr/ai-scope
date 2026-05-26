@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { Amiri, Cairo } from "next/font/google";
 import "./globals.css";
 
 import {
@@ -8,6 +9,20 @@ import {
   SITE_NAME_AR,
   SITE_DESCRIPTION_AR,
 } from "@/lib/seo";
+
+const amiri = Amiri({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "700"],
+  variable: "--font-serif",
+  display: "swap",
+});
+
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -53,15 +68,15 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: SITE_URL,
-    languages: { "ar": SITE_URL },
+    languages: { ar: SITE_URL },
     types: { "application/rss+xml": `${SITE_URL}/rss.xml` },
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ar" dir="rtl">
-      <body>{children}</body>
+    <html lang="ar" dir="rtl" className={`${amiri.variable} ${cairo.variable}`}>
+      <body className="font-sans">{children}</body>
       <GoogleAnalytics gaId="G-0TS7VKFC1K" />
     </html>
   );

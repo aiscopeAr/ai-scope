@@ -14,7 +14,6 @@ export async function generateStaticParams() {
   return TOOL_CATEGORIES.map((c) => ({ usecase: c.value }));
 }
 
-// Unique intro copy per category (ASCII-safe for file write)
 const CATEGORY_INTROS: Record<string, { headline: string; intro: string }> = {
   writing:            { headline: "Best AI Writing Tools 2025", intro: "AI has transformed digital writing. These tools help you produce professional content at record speed." },
   coding:             { headline: "Best AI Tools for Developers", intro: "From auto-complete to bug detection — these tools multiply developer productivity by up to 10x." },
@@ -79,10 +78,8 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
   ];
 
   const itemListJsonLd = tools.length > 0 ? {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    name: intro.headline,
-    url: absoluteUrl(`/ai-tools/for/${usecase}`),
+    "@context": "https://schema.org", "@type": "ItemList",
+    name: intro.headline, url: absoluteUrl(`/ai-tools/for/${usecase}`),
     numberOfItems: tools.length,
     itemListElement: tools.slice(0, 10).map((t, i) => ({
       "@type": "ListItem", position: i + 1, url: `${SITE_URL}/ai-tools/${t.slug}`, name: t.name,
@@ -99,26 +96,29 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
 
       <main className="min-h-screen" dir="rtl">
         {/* Hero */}
-        <section className="relative overflow-hidden border-b border-white/5 py-14">
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -top-16 right-1/4 h-80 w-80 rounded-full bg-violet-600/10 blur-3xl" />
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent" />
-          </div>
-          <div className="container mx-auto px-4 relative">
+        <section className="border-b py-14" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }}>
+          <div className="container mx-auto px-4">
             <Breadcrumbs items={breadcrumbItems} className="mb-6" />
             <div className="flex items-center gap-4 mb-4">
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-3xl">{catMeta.icon}</span>
+              <span className="flex h-14 w-14 items-center justify-center rounded-[6px] text-3xl" style={{ backgroundColor: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>{catMeta.icon}</span>
               <div>
-                <h1 className="text-3xl font-black text-white md:text-4xl">{intro.headline}</h1>
-                <p className="text-sm text-violet-400 mt-1">{tools.length} tools</p>
+                <h1 className="text-3xl font-bold md:text-4xl" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{intro.headline}</h1>
+                <p className="text-sm mt-1" style={{ color: "var(--accent)" }}>{tools.length} tools</p>
               </div>
             </div>
-            <p className="max-w-2xl text-slate-400 leading-relaxed">{intro.intro}</p>
+            <p className="max-w-2xl leading-relaxed" style={{ color: "var(--text-secondary)" }}>{intro.intro}</p>
             {tools.length > 0 && (
               <div className="mt-5 flex flex-wrap gap-2">
-                {freePricing > 0 && <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-400">{freePricing} free</span>}
-                {withArabic > 0 && <span className="rounded-full border border-teal-500/30 bg-teal-500/10 px-3 py-1.5 text-xs text-teal-400">{withArabic} Arabic support</span>}
-                <span className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-slate-400">{tools.length} tools total</span>
+                {freePricing > 0 && (
+                  <span className="rounded-[3px] border px-3 py-1.5 text-xs"
+                    style={{ borderColor: "#bbf7d0", backgroundColor: "#f0fdf4", color: "#16a34a" }}>{freePricing} free</span>
+                )}
+                {withArabic > 0 && (
+                  <span className="rounded-[3px] border px-3 py-1.5 text-xs"
+                    style={{ borderColor: "#99f6e4", backgroundColor: "#f0fdfa", color: "#0d9488" }}>{withArabic} Arabic support</span>
+                )}
+                <span className="rounded-[3px] border px-3 py-1.5 text-xs"
+                  style={{ borderColor: "var(--border-medium)", color: "var(--text-muted)", backgroundColor: "var(--bg-surface)" }}>{tools.length} tools total</span>
               </div>
             )}
           </div>
@@ -127,13 +127,12 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
         <div className="container mx-auto px-4 py-10">
           <AdSlot position="ai-tools-top" className="mb-8" />
           <div className="grid gap-10 lg:grid-cols-[1fr_260px]">
-            {/* Main content */}
             <div>
               {tools.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-white/5 bg-white/2 py-24 text-center">
+                <div className="flex flex-col items-center justify-center rounded-[6px] border py-24 text-center" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
                   <div className="mb-3 text-5xl">{catMeta.icon}</div>
-                  <p className="text-lg font-semibold text-slate-400">No tools in this category yet</p>
-                  <Link href="/ai-tools" className="mt-4 text-sm text-violet-400 hover:text-violet-300">All tools</Link>
+                  <p className="text-lg font-semibold" style={{ color: "var(--text-muted)" }}>No tools in this category yet</p>
+                  <Link href="/ai-tools" className="mt-4 text-sm transition" style={{ color: "var(--accent)" }}>All tools</Link>
                 </div>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -142,10 +141,15 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
               )}
 
               {/* Compare CTA */}
-              <div className="mt-10 rounded-2xl border border-violet-500/20 bg-violet-500/8 p-6 text-center">
-                <h3 className="mb-2 font-black text-white">Not sure which to pick?</h3>
-                <p className="mb-4 text-sm text-slate-400">Use the comparison tool to make the right decision</p>
-                <Link href="/compare" className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-violet-500 transition">
+              <div className="mt-10 rounded-[6px] border p-6 text-center" style={{ borderColor: "var(--accent)", backgroundColor: "var(--accent-bg)" }}>
+                <h3 className="mb-2 font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>Not sure which to pick?</h3>
+                <p className="mb-4 text-sm" style={{ color: "var(--text-secondary)" }}>Use the comparison tool to make the right decision</p>
+                <Link href="/compare"
+                  className="inline-flex items-center gap-2 rounded-[6px] px-5 py-2.5 text-sm font-bold transition"
+                  style={{ backgroundColor: "var(--accent)", color: "var(--text-on-accent)" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent-hover)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent)"; }}
+                >
                   Compare tools
                 </Link>
               </div>
@@ -153,8 +157,8 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
 
             {/* Sidebar */}
             <aside className="space-y-5">
-              <div className="rounded-xl border border-white/6 bg-white/3 p-5">
-                <h3 className="mb-4 font-black text-white text-sm">Other categories</h3>
+              <div className="rounded-[6px] border p-5" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                <h3 className="mb-4 font-bold text-sm" style={{ color: "var(--text-primary)" }}>Other categories</h3>
                 <div className="space-y-1">
                   {TOOL_CATEGORIES.filter((c) => c.value !== usecase && c.value !== "other").map((cat) => {
                     const cnt = otherCats.find((o) => o.toolCategory === cat.value)?._count?.id ?? 0;
@@ -162,26 +166,33 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
                       <Link
                         key={cat.value}
                         href={`/ai-tools/for/${cat.value}`}
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-400 transition hover:bg-white/5 hover:text-white"
+                        className="flex items-center gap-2 rounded-[6px] px-3 py-2 text-sm transition"
+                        style={{ color: "var(--text-secondary)" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--bg-subtle)"; (e.currentTarget as HTMLElement).style.color = "var(--text-primary)"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
                       >
                         <span>{cat.icon}</span>
                         <span className="flex-1">{cat.labelAr}</span>
-                        {cnt > 0 && <span className="text-xs text-slate-600">{cnt}</span>}
+                        {cnt > 0 && <span className="text-xs" style={{ color: "var(--text-muted)" }}>{cnt}</span>}
                       </Link>
                     );
                   })}
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/6 bg-white/3 p-5">
-                <h3 className="mb-3 font-black text-white text-sm">Useful links</h3>
+              <div className="rounded-[6px] border p-5" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                <h3 className="mb-3 font-bold text-sm" style={{ color: "var(--text-primary)" }}>Useful links</h3>
                 <div className="space-y-1.5">
                   {[
                     { href: "/ai-tools", label: "All tools" },
                     { href: "/compare", label: "Compare tools" },
-                    { href: "/guides", label: "Guides" },
                   ].map((item) => (
-                    <Link key={item.href} href={item.href} className="block rounded-lg px-3 py-2 text-sm text-slate-400 transition hover:bg-white/5 hover:text-white">
+                    <Link key={item.href} href={item.href}
+                      className="block rounded-[6px] px-3 py-2 text-sm transition"
+                      style={{ color: "var(--text-secondary)" }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "var(--bg-subtle)"; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
+                    >
                       {item.label}
                     </Link>
                   ))}
