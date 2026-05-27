@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
   // Experimental optimizations
   experimental: {
     optimizePackageImports: ["lucide-react", "date-fns", "@prisma/client"],
+    // Skip polyfills for modern browsers
+    webVitalsAttribution: ["CLS", "LCP"],
   },
   images: {
     formats: ["image/avif", "image/webp"],
