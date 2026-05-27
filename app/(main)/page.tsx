@@ -6,7 +6,7 @@ import AdSlot from "@/components/AdSlot";
 import { prisma } from "@/lib/db";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300; // ISR — revalidate every 5 minutes
 
 export const metadata: Metadata = {
   title: `${SITE_NAME} — ${SITE_NAME_AR}`,
@@ -57,7 +57,7 @@ export default async function HomePage() {
       {/* Featured review */}
       {featuredReview && (
         <section className="mb-12">
-          <ReviewCard review={featuredReview} featured />
+          <ReviewCard review={featuredReview} featured priority />
         </section>
       )}
 

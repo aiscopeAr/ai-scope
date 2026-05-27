@@ -43,7 +43,7 @@ export default function ToolCard({ tool, compact = false }: { tool: ToolCardData
         <div className="relative shrink-0">
           {tool.logoUrl ? (
             <div className="relative h-12 w-12 overflow-hidden rounded-[6px] border" style={{ borderColor: "var(--border-subtle)" }}>
-              <Image src={tool.logoUrl} alt={tool.name} fill className="object-cover" unoptimized />
+              <Image src={tool.logoUrl} alt={tool.name} fill sizes="48px" loading="lazy" className="object-cover" />
             </div>
           ) : (
             <div className="flex h-12 w-12 items-center justify-center rounded-[6px] text-lg font-black"

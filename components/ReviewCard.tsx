@@ -17,9 +17,10 @@ interface ReviewCardProps {
     category: { nameAr: string; slug: string };
   };
   featured?: boolean;
+  priority?: boolean;
 }
 
-export default function ReviewCard({ review, featured = false }: ReviewCardProps) {
+export default function ReviewCard({ review, featured = false, priority = false }: ReviewCardProps) {
   const timeAgo = review.publishedAt
     ? formatDistanceToNow(new Date(review.publishedAt), { addSuffix: true, locale: ar })
     : null;
@@ -35,7 +36,7 @@ export default function ReviewCard({ review, featured = false }: ReviewCardProps
           <div className="grid md:grid-cols-2">
             <div className="relative h-64 md:h-96 overflow-hidden">
               {review.imageUrl ? (
-                <Image src={review.imageUrl} alt={review.titleAr} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
+                <Image src={review.imageUrl} alt={review.titleAr} fill priority={priority || featured} sizes="(max-width: 768px) 100vw, 50vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center" style={{ backgroundColor: "var(--bg-subtle)" }}>
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" strokeWidth="1.2" style={{ stroke: "var(--border-medium)" }}>
@@ -79,7 +80,7 @@ export default function ReviewCard({ review, featured = false }: ReviewCardProps
       <div className="h-full overflow-hidden rounded-[6px] border transition" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
         <div className="relative h-48 overflow-hidden">
           {review.imageUrl ? (
-            <Image src={review.imageUrl} alt={review.titleAr} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
+            <Image src={review.imageUrl} alt={review.titleAr} fill loading="lazy" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" className="object-cover transition-transform duration-700 group-hover:scale-110" />
           ) : (
             <div className="flex h-full w-full items-center justify-center" style={{ backgroundColor: "var(--bg-subtle)" }}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" strokeWidth="1.5" style={{ stroke: "var(--border-medium)" }}>
