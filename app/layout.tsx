@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { GoogleAnalytics } from "@next/third-parties/google";
 import { Amiri, Cairo } from "next/font/google";
 import "./globals.css";
 
@@ -98,8 +97,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl" className={`${amiri.variable} ${cairo.variable}`}>
+      <head>
+        {/* Preconnect to image CDNs for faster LCP */}
+        <link rel="preconnect" href="https://replicate.delivery" />
+        <link rel="preconnect" href="https://pbxt.replicate.delivery" />
+        <link rel="preconnect" href="https://res.cloudinary.com" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+      </head>
       <body className="font-sans">{children}</body>
-      <GoogleAnalytics gaId="G-0TS7VKFC1K" />
     </html>
   );
 }

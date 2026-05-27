@@ -2,7 +2,7 @@
 
 import Script from "next/script";
 
-const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-0TS7VKFC1K";
 
 export default function AnalyticsProvider() {
   if (!GA_ID) return null;
