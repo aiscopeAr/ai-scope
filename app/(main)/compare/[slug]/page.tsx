@@ -103,7 +103,7 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
                 <dt className="mb-1" style={{ color: "var(--text-muted)" }}>التسعير</dt>
                 <dd className="font-semibold" style={{ color: "var(--text-primary)" }}>
                   {side.tool.pricing}
-                  {side.tool.monthlyPrice ? ` • $${side.tool.monthlyPrice}/mo` : ""}
+                  {side.tool.monthlyPrice ? ` • $${side.tool.monthlyPrice}/شهر` : ""}
                 </dd>
               </div>
               <div className="rounded-[6px] border p-3" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }}>
