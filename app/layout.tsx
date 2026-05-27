@@ -27,7 +27,7 @@ const cairo = Cairo({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — ${SITE_NAME_AR}`,
+    default: `${SITE_NAME} | أخبار الذكاء الاصطناعي بالعربية`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION_AR,
