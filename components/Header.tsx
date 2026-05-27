@@ -35,12 +35,23 @@ export default function Header() {
         <div className="flex h-14 items-center justify-between">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-[6px]" style={{ backgroundColor: "var(--accent)" }}>
-              <span className="font-serif text-lg font-bold leading-none" style={{ color: "var(--text-on-accent)" }}>ن</span>
-            </div>
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#6366f1"/>
+                  <stop offset="100%" stopColor="#8b5cf6"/>
+                </linearGradient>
+              </defs>
+              <rect width="32" height="32" rx="8" fill="url(#logo-grad)"/>
+              {/* L shape */}
+              <rect x="9" y="8" width="3.5" height="16" rx="1.5" fill="white"/>
+              <rect x="9" y="20.5" width="10" height="3.5" rx="1.5" fill="white"/>
+              {/* dot accent */}
+              <circle cx="23" cy="10" r="2.5" fill="white" opacity="0.9"/>
+            </svg>
             <div>
-              <span className="font-sans text-base font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Lumiq</span>
+              <span className="font-sans text-base font-semibold tracking-tight transition-colors group-hover:text-indigo-500" style={{ color: "var(--text-primary)" }}>Lumiq</span>
               <p className="mt-px text-[10px] leading-none" style={{ color: "var(--text-muted)" }}>لوميك</p>
             </div>
           </Link>

@@ -42,9 +42,18 @@ export default function AdminSidebar() {
     <aside className="flex h-full w-60 flex-col bg-slate-900" dir="rtl">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-slate-800 px-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500 text-sm font-black text-white">
-          AI
-        </div>
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="sidebar-logo-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#6366f1"/>
+              <stop offset="100%" stopColor="#8b5cf6"/>
+            </linearGradient>
+          </defs>
+          <rect width="32" height="32" rx="8" fill="url(#sidebar-logo-grad)"/>
+          <rect x="9" y="8" width="3.5" height="16" rx="1.5" fill="white"/>
+          <rect x="9" y="20.5" width="10" height="3.5" rx="1.5" fill="white"/>
+          <circle cx="23" cy="10" r="2.5" fill="white" opacity="0.9"/>
+        </svg>
         <div>
           <p className="text-sm font-bold text-white leading-tight">Lumiq</p>
           <p className="text-[10px] text-slate-500 leading-tight">لوحة الإدارة</p>

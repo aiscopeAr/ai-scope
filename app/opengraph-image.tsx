@@ -57,12 +57,16 @@ export default function OgImage() {
             width: "72px",
             height: "72px",
             borderRadius: "18px",
-            background: "#4f46e5",
+            background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
             marginBottom: "24px",
             boxShadow: "0 0 40px rgba(99,102,241,0.5)",
           }}
         >
-          <span style={{ color: "white", fontSize: "28px", fontWeight: "900" }}>AI</span>
+          <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
+            <rect x="9" y="8" width="3.5" height="16" rx="1.5" fill="white"/>
+            <rect x="9" y="20.5" width="10" height="3.5" rx="1.5" fill="white"/>
+            <circle cx="23" cy="10" r="2.5" fill="white" opacity="0.9"/>
+          </svg>
         </div>
 
         {/* Site name */}
