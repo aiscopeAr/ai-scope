@@ -16,25 +16,25 @@ export async function generateStaticParams() {
 }
 
 const CATEGORY_INTROS: Record<string, { headline: string; intro: string }> = {
-  writing:            { headline: "Best AI Writing Tools 2025", intro: "AI has transformed digital writing. These tools help you produce professional content at record speed." },
-  coding:             { headline: "Best AI Tools for Developers", intro: "From auto-complete to bug detection — these tools multiply developer productivity by up to 10x." },
-  image:              { headline: "Best AI Image Generation Tools", intro: "From Midjourney to DALL-E — AI image tools opened unlimited creative possibilities for designers." },
-  video:              { headline: "Best AI Video Production Tools", intro: "Professional video production has never been easier — turn text into visual clips in clicks." },
-  voice:              { headline: "Best AI Voice and Music Tools", intro: "Convert text to natural speech or create original music using cutting-edge AI technology." },
-  marketing:          { headline: "Best AI Marketing Tools", intro: "From ad copy to audience analysis — AI marketing tools give you a real competitive edge." },
-  education:          { headline: "Best AI Education Tools", intro: "AI personalizes the learning experience for every individual with interactive explanations and instant evaluation." },
-  startups:           { headline: "Best AI Tools for Startups", intro: "From business plans to product design — these tools let startups move with the speed of large companies." },
-  ecommerce:          { headline: "Best AI Tools for E-commerce", intro: "Double your sales and improve customer experience with AI tools specialized for online commerce." },
-  automation:         { headline: "Best AI Automation Tools", intro: "Automate repetitive tasks and focus on what matters — automation tools save hours of manual work weekly." },
-  "customer-support": { headline: "Best AI Customer Support Tools", intro: "Smart chatbots and automated support systems raise customer satisfaction while reducing support costs." },
-  productivity:       { headline: "Best AI Productivity Tools", intro: "From meeting summaries to task management — AI productivity tools transform chaos into effective systems." },
-  legal:              { headline: "Best AI Legal Tools", intro: "Contract review, legal research, and document drafting at unprecedented speed and efficiency." },
-  finance:            { headline: "Best AI Financial Analysis Tools", intro: "From data analysis to investment planning — deep, fast insights powered by artificial intelligence." },
-  healthcare:         { headline: "Best AI Healthcare Tools", intro: "AI is revolutionizing healthcare from diagnosis to patient data management." },
-  students:           { headline: "Best AI Tools for Students", intro: "Tools that help students understand deeper, research faster, and write academic reports efficiently." },
-  "no-code":          { headline: "Best No-Code AI Tools", intro: "Build apps, websites, and automation without writing code — technology accessible to everyone." },
-  presentations:      { headline: "Best AI Presentation Tools", intro: "Turn your ideas into professional presentations in minutes with ready designs and AI-suggested content." },
-  other:              { headline: "Miscellaneous AI Tools", intro: "A diverse collection of AI tools serving various different needs." },
+  writing:            { headline: "أفضل أدوات الكتابة بالذكاء الاصطناعي 2025", intro: "الذكاء الاصطناعي غيّر الكتابة الرقمية للأبد. هذه الأدوات تساعدك على إنتاج محتوى احترافي بسرعة قياسية." },
+  coding:             { headline: "أفضل أدوات الذكاء الاصطناعي للمطورين", intro: "من الإكمال التلقائي إلى اكتشاف الأخطاء — هذه الأدوات تضاعف إنتاجية المطور حتى 10 أضعاف." },
+  image:              { headline: "أفضل أدوات توليد الصور بالذكاء الاصطناعي", intro: "من Midjourney إلى DALL-E — فتحت أدوات الصور الذكية آفاقًا إبداعية لا محدودة للمصممين." },
+  video:              { headline: "أفضل أدوات إنتاج الفيديو بالذكاء الاصطناعي", intro: "إنتاج فيديو احترافي لم يكن أسهل من أي وقت مضى — حوّل النص إلى مقاطع بصرية بنقرات." },
+  voice:              { headline: "أفضل أدوات الصوت والموسيقى بالذكاء الاصطناعي", intro: "حوّل النص إلى كلام طبيعي أو أنشئ موسيقى أصيلة باستخدام أحدث تقنيات الذكاء الاصطناعي." },
+  marketing:          { headline: "أفضل أدوات التسويق بالذكاء الاصطناعي", intro: "من نسخ الإعلانات إلى تحليل الجمهور — أدوات التسويق الذكية تمنحك ميزة تنافسية حقيقية." },
+  education:          { headline: "أفضل أدوات التعليم بالذكاء الاصطناعي", intro: "الذكاء الاصطناعي يُخصّص تجربة التعلم لكل فرد بشروحات تفاعلية وتقييم فوري." },
+  startups:           { headline: "أفضل أدوات الذكاء الاصطناعي للشركات الناشئة", intro: "من خطط العمل إلى تصميم المنتج — هذه الأدوات تجعل الشركات الناشئة تتحرك بسرعة الشركات الكبرى." },
+  ecommerce:          { headline: "أفضل أدوات الذكاء الاصطناعي للتجارة الإلكترونية", intro: "ضاعف مبيعاتك وحسّن تجربة العملاء بأدوات ذكية متخصصة في التجارة الرقمية." },
+  automation:         { headline: "أفضل أدوات الأتمتة بالذكاء الاصطناعي", intro: "أتمت المهام المتكررة وركّز على ما يهم — أدوات الأتمتة توفّر ساعات من العمل اليدوي أسبوعيًا." },
+  "customer-support": { headline: "أفضل أدوات دعم العملاء بالذكاء الاصطناعي", intro: "الشات بوت الذكي وأنظمة الدعم الآلية ترفع رضا العملاء وتخفض تكاليف الدعم." },
+  productivity:       { headline: "أفضل أدوات الإنتاجية بالذكاء الاصطناعي", intro: "من ملخصات الاجتماعات إلى إدارة المهام — أدوات الإنتاجية الذكية تحوّل الفوضى إلى أنظمة فعّالة." },
+  legal:              { headline: "أفضل أدوات الذكاء الاصطناعي للمجال القانوني", intro: "مراجعة العقود والبحث القانوني وصياغة الوثائق بسرعة وكفاءة غير مسبوقة." },
+  finance:            { headline: "أفضل أدوات التحليل المالي بالذكاء الاصطناعي", intro: "من تحليل البيانات إلى التخطيط الاستثماري — رؤى عميقة وسريعة مدعومة بالذكاء الاصطناعي." },
+  healthcare:         { headline: "أفضل أدوات الذكاء الاصطناعي في الرعاية الصحية", intro: "الذكاء الاصطناعي يُحدث ثورة في الرعاية الصحية من التشخيص إلى إدارة بيانات المرضى." },
+  students:           { headline: "أفضل أدوات الذكاء الاصطناعي للطلاب", intro: "أدوات تساعد الطلاب على الفهم الأعمق والبحث الأسرع وكتابة التقارير الأكاديمية بكفاءة." },
+  "no-code":          { headline: "أفضل أدوات الذكاء الاصطناعي بدون كود", intro: "ابنِ تطبيقات ومواقع وأتمتة دون كتابة سطر برمجي — التكنولوجيا في متناول الجميع." },
+  presentations:      { headline: "أفضل أدوات العروض التقديمية بالذكاء الاصطناعي", intro: "حوّل أفكارك إلى عروض احترافية في دقائق مع تصاميم جاهزة ومحتوى مقترح بالذكاء الاصطناعي." },
+  other:              { headline: "أدوات ذكاء اصطناعي متنوعة", intro: "مجموعة متنوعة من أدوات الذكاء الاصطناعي التي تخدم احتياجات مختلفة." },
 };
 
 export async function generateMetadata({ params }: { params: Promise<{ usecase: string }> }): Promise<Metadata> {
@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<{ usecase: 
   const cat = getCategoryMeta(usecase);
   const intro = CATEGORY_INTROS[usecase] ?? CATEGORY_INTROS.other;
   const title = `${intro.headline} | ${SITE_NAME_AR}`;
-  const description = `Discover the best AI tools for ${cat.labelAr} — detailed Arabic reviews with pros, cons, and pricing.`;
+  const description = `اكتشف أفضل أدوات الذكاء الاصطناعي لـ ${cat.labelAr} — مراجعات عربية مفصّلة مع المميزات والعيوب والأسعار.`;
   const url = absoluteUrl(`/ai-tools/for/${usecase}`);
   return { title, description, alternates: { canonical: url }, openGraph: { title, description, url, locale: "ar_AR", type: "website" } };
 }
@@ -73,8 +73,8 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
   ]);
 
   const breadcrumbItems = [
-    { name: "Home", href: "/" },
-    { name: "AI Tools", href: "/ai-tools" },
+    { name: "الرئيسية", href: "/" },
+    { name: "أدوات AI", href: "/ai-tools" },
     { name: catMeta.labelAr },
   ];
 
@@ -104,7 +104,7 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
               <span className="flex h-14 w-14 items-center justify-center rounded-[6px] text-3xl" style={{ backgroundColor: "var(--bg-surface)", border: "1px solid var(--border-subtle)" }}>{catMeta.icon}</span>
               <div>
                 <h1 className="text-3xl font-bold md:text-4xl" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{intro.headline}</h1>
-                <p className="text-sm mt-1" style={{ color: "var(--accent)" }}>{tools.length} tools</p>
+                <p className="text-sm mt-1" style={{ color: "var(--accent)" }}>{tools.length} أداة</p>
               </div>
             </div>
             <p className="max-w-2xl leading-relaxed" style={{ color: "var(--text-secondary)" }}>{intro.intro}</p>
@@ -112,14 +112,14 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
               <div className="mt-5 flex flex-wrap gap-2">
                 {freePricing > 0 && (
                   <span className="rounded-[3px] border px-3 py-1.5 text-xs"
-                    style={{ borderColor: "#bbf7d0", backgroundColor: "#f0fdf4", color: "#16a34a" }}>{freePricing} free</span>
+                    style={{ borderColor: "#bbf7d0", backgroundColor: "#f0fdf4", color: "#16a34a" }}>{freePricing} مجاني</span>
                 )}
                 {withArabic > 0 && (
                   <span className="rounded-[3px] border px-3 py-1.5 text-xs"
-                    style={{ borderColor: "#99f6e4", backgroundColor: "#f0fdfa", color: "#0d9488" }}>{withArabic} Arabic support</span>
+                    style={{ borderColor: "#99f6e4", backgroundColor: "#f0fdfa", color: "#0d9488" }}>{withArabic} يدعم العربية</span>
                 )}
                 <span className="rounded-[3px] border px-3 py-1.5 text-xs"
-                  style={{ borderColor: "var(--border-medium)", color: "var(--text-muted)", backgroundColor: "var(--bg-surface)" }}>{tools.length} tools total</span>
+                  style={{ borderColor: "var(--border-medium)", color: "var(--text-muted)", backgroundColor: "var(--bg-surface)" }}>{tools.length} أداة إجمالاً</span>
               </div>
             )}
           </div>
@@ -132,8 +132,8 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
               {tools.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-[6px] border py-24 text-center" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
                   <div className="mb-3 text-5xl">{catMeta.icon}</div>
-                  <p className="text-lg font-semibold" style={{ color: "var(--text-muted)" }}>No tools in this category yet</p>
-                  <Link href="/ai-tools" className="mt-4 text-sm transition" style={{ color: "var(--accent)" }}>All tools</Link>
+                  <p className="text-lg font-semibold" style={{ color: "var(--text-muted)" }}>لا توجد أدوات في هذه الفئة بعد</p>
+                  <Link href="/ai-tools" className="mt-4 text-sm transition" style={{ color: "var(--accent)" }}>جميع الأدوات</Link>
                 </div>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -143,10 +143,10 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
 
               {/* Compare CTA */}
               <div className="mt-10 rounded-[6px] border p-6 text-center" style={{ borderColor: "var(--accent)", backgroundColor: "var(--accent-bg)" }}>
-                <h3 className="mb-2 font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>Not sure which to pick?</h3>
-                <p className="mb-4 text-sm" style={{ color: "var(--text-secondary)" }}>Use the comparison tool to make the right decision</p>
+                <h3 className="mb-2 font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>لا تعرف أيها تختار؟</h3>
+                <p className="mb-4 text-sm" style={{ color: "var(--text-secondary)" }}>استخدم أداة المقارنة لاتخاذ القرار الصحيح</p>
                 <Link href="/compare" className="btn-primary inline-flex items-center gap-2">
-                  Compare tools
+                  قارن الأدوات
                 </Link>
               </div>
             </div>
@@ -154,7 +154,7 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
             {/* Sidebar */}
             <aside className="space-y-5">
               <div className="rounded-[6px] border p-5" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
-                <h3 className="mb-4 font-bold text-sm" style={{ color: "var(--text-primary)" }}>Other categories</h3>
+                <h3 className="mb-4 font-bold text-sm" style={{ color: "var(--text-primary)" }}>فئات أخرى</h3>
                 <div className="space-y-1">
                   {TOOL_CATEGORIES.filter((c) => c.value !== usecase && c.value !== "other").map((cat) => {
                     const cnt = otherCats.find((o) => o.toolCategory === cat.value)?._count?.id ?? 0;
@@ -175,11 +175,11 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
               </div>
 
               <div className="rounded-[6px] border p-5" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
-                <h3 className="mb-3 font-bold text-sm" style={{ color: "var(--text-primary)" }}>Useful links</h3>
+                <h3 className="mb-3 font-bold text-sm" style={{ color: "var(--text-primary)" }}>روابط مفيدة</h3>
                 <div className="space-y-1.5">
                   {[
-                    { href: "/ai-tools", label: "All tools" },
-                    { href: "/compare", label: "Compare tools" },
+                    { href: "/ai-tools", label: "جميع الأدوات" },
+                    { href: "/compare", label: "مقارنة الأدوات" },
                   ].map((item) => (
                     <Link key={item.href} href={item.href}
                       className="hover-bg-subtle "
