@@ -45,7 +45,11 @@
       "Bash(read f *)",
       "WebSearch",
       "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\AIScope\\\\app\\\\admin\\\\comparisons\")",
-      "PowerShell(New-Item -ItemType File -Force \"d:\\\\AIScope\\\\app\\\\admin\\\\comparisons\\\\page.tsx\")"
+      "PowerShell(New-Item -ItemType File -Force \"d:\\\\AIScope\\\\app\\\\admin\\\\comparisons\\\\page.tsx\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\AIScope\\\\app\\\\admin\\\\comparisons\\\\new\")",
+      "PowerShell(New-Item -ItemType File -Force \"d:\\\\AIScope\\\\app\\\\admin\\\\comparisons\\\\new\\\\page.tsx\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\AIScope\\\\app\\\\api\\\\admin\\\\comparisons\\\\create\")",
+      "PowerShell(New-Item -ItemType File -Force \"d:\\\\AIScope\\\\app\\\\api\\\\admin\\\\comparisons\\\\create\\\\route.ts\")"
     ],
     "additionalDirectories": [
       "d:\\AIScope\\app\\api\\admin\\ai-tools\\[id]",
