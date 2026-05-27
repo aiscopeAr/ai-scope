@@ -12,6 +12,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@google-analytics/data": "^6.0.0",
     "@hookform/resolvers": "^5.2.2",
     "@next/third-parties": "^16.2.6",
     "@prisma/client": "^6.16.2",
