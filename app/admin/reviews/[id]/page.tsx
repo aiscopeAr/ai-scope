@@ -530,7 +530,7 @@ export default function ReviewEditorPage() {
                       <p className="text-[13px] font-medium text-[#1a0dab] hover:underline" dir="rtl">
                         {review.seoTitle || review.titleAr}
                       </p>
-                      <p className="text-[11px] text-[#006621]">ai-news-ar.vercel.app › reviews › {review.slug}</p>
+                      <p className="text-[11px] text-[#006621]">lumiq.news › reviews › {review.slug}</p>
                       <p className="mt-0.5 text-[12px] leading-snug text-[#545454]" dir="rtl">
                         {review.seoDescription || review.summary || "لا يوجد وصف…"}
                       </p>

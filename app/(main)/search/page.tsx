@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: `البحث | ${SITE_NAME_AR}`,
-  description: "ابحث في التقارير وأدوات الذكاء الاصطناعي داخل AI Scope.",
+  description: "ابحث في التقارير وأدوات الذكاء الاصطناعي داخل Lumiq.",
   alternates: { canonical: absoluteUrl("/search") },
   robots: { index: false, follow: true },
 };

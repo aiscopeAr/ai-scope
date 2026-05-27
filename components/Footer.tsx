@@ -14,7 +14,7 @@ export default function Footer() {
               <div className="flex h-8 w-8 items-center justify-center rounded-[6px]" style={{ backgroundColor: "var(--accent)" }}>
                 <span className="font-serif text-lg font-bold leading-none" style={{ color: "var(--text-on-accent)" }}>ن</span>
               </div>
-              <span className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>AI Scope</span>
+              <span className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>Lumiq</span>
             </div>
             <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
               منصة عربية متخصصة في أخبار وتحليلات الذكاء الاصطناعي، مع دليل أدوات ومقارنات تحريرية تساعد القارئ العربي على الفهم والاختيار.
@@ -108,7 +108,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t pt-6 md:flex-row" style={{ borderColor: "var(--border-subtle)" }}>
-          <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>© 2026 AI Scope. جميع الحقوق محفوظة.</p>
+          <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>© 2026 Lumiq. جميع الحقوق محفوظة.</p>
           <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>مبني على Next.js · محتوى آلي مع مراجعة تحريرية</p>
         </div>
       </div>

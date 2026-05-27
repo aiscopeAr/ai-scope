@@ -1,11 +1,11 @@
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://ai-news-ar.vercel.app";
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://lumiq.news";
 
-export const SITE_NAME = "AI Scope";
-export const SITE_NAME_AR = "نطاق الذكاء الاصطناعي";
+export const SITE_NAME = "Lumiq";
+export const SITE_NAME_AR = "لوميك";
 export const SITE_DESCRIPTION_AR =
   "أحدث أخبار وتطورات الذكاء الاصطناعي باللغة العربية — نماذج AI، الأبحاث، الشركات التقنية";
-export const SITE_TWITTER_HANDLE = "@AIScope_ar";
+export const SITE_TWITTER_HANDLE = "@lumiq_news";
 
 export function buildTitle(pageTitle: string): string {
   return `${pageTitle} | ${SITE_NAME}`;

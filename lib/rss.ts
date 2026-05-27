@@ -45,7 +45,7 @@ export async function fetchRssFeed(rssUrl: string): Promise<RssItem[]> {
   try {
     const res = await fetch(rssUrl, {
       signal: controller.signal,
-      headers: { "User-Agent": "AIScope/1.0 RSS Reader" },
+      headers: { "User-Agent": "Lumiq/1.0 RSS Reader" },
     });
     if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${rssUrl}`);
     xml = await res.text();

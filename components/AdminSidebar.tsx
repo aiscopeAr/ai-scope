@@ -46,7 +46,7 @@ export default function AdminSidebar() {
           AI
         </div>
         <div>
-          <p className="text-sm font-bold text-white leading-tight">AIScope</p>
+          <p className="text-sm font-bold text-white leading-tight">Lumiq</p>
           <p className="text-[10px] text-slate-500 leading-tight">لوحة الإدارة</p>
         </div>
       </div>

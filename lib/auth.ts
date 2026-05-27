@@ -57,7 +57,7 @@ export const authOptions: NextAuthOptions = {
 
         return {
           id: "admin-user",
-          name: "AI Scope Admin",
+          name: "Lumiq Admin",
           email: getAdminEmail(),
           role: "admin",
         };

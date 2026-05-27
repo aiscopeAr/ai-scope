@@ -68,8 +68,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    site: "@AIScope_ar",
-    creator: "@AIScope_ar",
+    site: "@lumiq_news",
+    creator: "@lumiq_news",
     images: [`${SITE_URL}/opengraph-image`],
   },
   verification: {

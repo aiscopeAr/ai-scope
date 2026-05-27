@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     categories: body.categories ?? ["ai-models"],
     avatarUrl: body.avatarUrl || `/images/authors/${slug}.svg`,
     accentColor: body.accentColor || "#6366f1",
-    systemPrompt: body.systemPrompt || `أنت ${body.nameAr}، كاتب ذكاء اصطناعي متخصص في ${body.specialtyAr || "الذكاء الاصطناعي"} لموقع AIScope.\n\nأعد المحتوى بتنسيق JSON فقط، بدون أي نص خارج JSON.`,
+    systemPrompt: body.systemPrompt || `أنت ${body.nameAr}، كاتب ذكاء اصطناعي متخصص في ${body.specialtyAr || "الذكاء الاصطناعي"} لموقع Lumiq.\n\nأعد المحتوى بتنسيق JSON فقط، بدون أي نص خارج JSON.`,
     voiceTraits: body.voiceTraits ?? ["يكتب بوضوح وعمق", "يستند إلى المصادر", "يقدم تحليلاً أصيلاً"],
     socialTwitter: body.socialTwitter,
   };

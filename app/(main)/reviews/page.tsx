@@ -59,7 +59,7 @@ export default async function ReviewsIndexPage() {
         </div>
         <h1 className="mb-3 text-3xl font-bold md:text-5xl" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>أحدث التقارير</h1>
         <p className="max-w-3xl text-sm leading-relaxed md:text-base" style={{ color: "var(--text-secondary)" }}>
-          أرشيف تحليلات AI Scope: مراجعات عربية عميقة لأهم أخبار النماذج والأبحاث والشركات والسياسات في عالم الذكاء الاصطناعي.
+          أرشيف تحليلات Lumiq: مراجعات عربية عميقة لأهم أخبار النماذج والأبحاث والشركات والسياسات في عالم الذكاء الاصطناعي.
         </p>
       </section>
 

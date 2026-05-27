@@ -38,8 +38,8 @@ export async function GET(request: Request) {
     });
 
     const articleUrl = review
-      ? `https://ai-news-ar.vercel.app/reviews/${review.slug}`
-      : "https://ai-news-ar.vercel.app";
+      ? `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumiq.news"}/reviews/${review.slug}`
+      : (process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumiq.news");
 
     try {
       const credentials = JSON.parse(post.account.credentials) as Record<string, string>;

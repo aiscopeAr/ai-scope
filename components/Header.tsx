@@ -40,8 +40,8 @@ export default function Header() {
               <span className="font-serif text-lg font-bold leading-none" style={{ color: "var(--text-on-accent)" }}>ن</span>
             </div>
             <div>
-              <span className="font-sans text-base font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>AI Scope</span>
-              <p className="mt-px text-[10px] leading-none" style={{ color: "var(--text-muted)" }}>نطاق الذكاء</p>
+              <span className="font-sans text-base font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Lumiq</span>
+              <p className="mt-px text-[10px] leading-none" style={{ color: "var(--text-muted)" }}>لوميك</p>
             </div>
           </Link>
 
