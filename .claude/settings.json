@@ -43,14 +43,17 @@
       "Bash(Start-Sleep -Seconds 15)",
       "Bash(Get-Content \"C:\\\\Users\\\\MOMENT~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--AIScope\\\\3fc3a761-5615-4974-8642-732fd1c7ccde\\\\tasks\\\\bq2ky30lf.output\" -Tail 30)",
       "Bash(read f *)",
-      "WebSearch"
+      "WebSearch",
+      "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\AIScope\\\\app\\\\admin\\\\comparisons\")",
+      "PowerShell(New-Item -ItemType File -Force \"d:\\\\AIScope\\\\app\\\\admin\\\\comparisons\\\\page.tsx\")"
     ],
     "additionalDirectories": [
       "d:\\AIScope\\app\\api\\admin\\ai-tools\\[id]",
       "d:\\AIScope\\app\\(main)\\author",
       "d:\\AIScope\\app\\api\\admin\\reviews",
       "d:\\AIScope\\app\\(main)\\reviews",
-      "d:\\AIScope\\app\\api\\admin\\reviews\\[id]"
+      "d:\\AIScope\\app\\api\\admin\\reviews\\[id]",
+      "d:\\AIScope\\app\\api\\admin\\comparisons"
     ]
   }
 }

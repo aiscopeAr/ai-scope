@@ -16,18 +16,20 @@ import {
   LogOut,
   ExternalLink,
   ChevronRight,
+  GitCompare,
 } from "lucide-react";
 
 const NAV = [
-  { href: "/admin",           icon: LayoutDashboard, label: "لوحة التحكم",   end: true },
-  { href: "/admin/queue",     icon: ClipboardList,   label: "طابور التقارير" },
-  { href: "/admin/reviews",   icon: BookOpen,        label: "التقارير"       },
-  { href: "/admin/ai-tools",  icon: Wrench,          label: "أدوات AI"       },
-  { href: "/admin/sources",   icon: Rss,             label: "المصادر"        },
-  { href: "/admin/social",    icon: Share2,          label: "السوشيال ميديا" },
-  { href: "/admin/authors",   icon: Users,           label: "الكتّاب"        },
-  { href: "/admin/ads",       icon: Megaphone,       label: "الإعلانات"      },
-  { href: "/status",          icon: Activity,        label: "حالة النظام",   external: true },
+  { href: "/admin",              icon: LayoutDashboard, label: "لوحة التحكم",   end: true },
+  { href: "/admin/queue",        icon: ClipboardList,   label: "طابور التقارير" },
+  { href: "/admin/reviews",      icon: BookOpen,        label: "التقارير"       },
+  { href: "/admin/ai-tools",     icon: Wrench,          label: "أدوات AI"       },
+  { href: "/admin/comparisons",  icon: GitCompare,      label: "المقارنات"      },
+  { href: "/admin/sources",      icon: Rss,             label: "المصادر"        },
+  { href: "/admin/social",       icon: Share2,          label: "السوشيال ميديا" },
+  { href: "/admin/authors",      icon: Users,           label: "الكتّاب"        },
+  { href: "/admin/ads",          icon: Megaphone,       label: "الإعلانات"      },
+  { href: "/status",             icon: Activity,        label: "حالة النظام",   external: true },
 ];
 
 export default function AdminSidebar() {
