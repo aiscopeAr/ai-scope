@@ -93,11 +93,12 @@ export default function PipelinePage() {
     setRunning(key);
     setResults((p) => ({ ...p, [key]: { ok: false, message: "جارٍ التشغيل..." } }));
     try {
-      const secret = process.env.NEXT_PUBLIC_CRON_SECRET;
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (secret) headers["authorization"] = `Bearer ${secret}`;
-
-      const res = await fetch(`/api/cron/${key}`, { headers });
+      // proxy דרך admin API — ה-secret נשמר בצד השרת
+      const res = await fetch("/api/admin/pipeline/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cronKey: key }),
+      });
       const data: CronResult = await res.json();
       setResults((p) => ({ ...p, [key]: data }));
     } catch (err) {
