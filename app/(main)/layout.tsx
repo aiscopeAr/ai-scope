@@ -1,6 +1,7 @@
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import AnalyticsProvider from "@/components/AnalyticsProvider";
+import NewsletterPopup from "@/components/NewsletterPopup";
 
 export default function MainLayout({
   children,
@@ -13,6 +14,7 @@ export default function MainLayout({
       <Header />
       <main className="min-h-screen">{children}</main>
       <Footer />
+      <NewsletterPopup />
     </>
   );
 }

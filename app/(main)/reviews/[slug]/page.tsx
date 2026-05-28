@@ -12,6 +12,7 @@ import ViewTracker from "@/components/ViewTracker";
 import ReadingProgress from "@/components/ReadingProgress";
 import ShareButtons from "@/components/ShareButtons";
 import AdSlot from "@/components/AdSlot";
+import RelatedArticles from "@/components/RelatedArticles";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_TWITTER_HANDLE, truncate, absoluteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -57,6 +58,25 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
   const { slug } = await params;
   const review = await getReview(slug);
   if (!review?.published) notFound();
+
+  // Fetch related articles from same category
+  const relatedArticles = await prisma.review.findMany({
+    where: {
+      published: true,
+      categoryId: review.categoryId,
+      slug: { not: slug },
+    },
+    orderBy: { publishedAt: "desc" },
+    take: 3,
+    select: {
+      slug: true,
+      titleAr: true,
+      summary: true,
+      imageUrl: true,
+      publishedAt: true,
+      category: { select: { nameAr: true, slug: true } },
+    },
+  });
 
   const author = AUTHORS[review.authorSlug as AuthorSlug];
   const reviewUrl = absoluteUrl(`/reviews/${slug}`);
@@ -247,6 +267,9 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
             </ul>
           </div>
         )}
+
+        {/* Related Articles */}
+        <RelatedArticles articles={relatedArticles} />
 
         {/* Author signature card */}
         {author && (

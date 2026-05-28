@@ -98,6 +98,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ar" dir="rtl" className={`${amiri.variable} ${cairo.variable}`}>
       <head>
+        {/* Prevent dark-mode flash on load */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t===null&&d))document.documentElement.classList.add('dark')})()` }} />
         {/* Preconnect to image CDNs for faster LCP */}
         <link rel="preconnect" href="https://replicate.delivery" />
         <link rel="preconnect" href="https://pbxt.replicate.delivery" />

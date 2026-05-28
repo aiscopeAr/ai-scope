@@ -32,6 +32,31 @@
   --text-muted-old: #8B857C;
 }
 
+/* ── Dark Mode tokens ────────────────────────────────────────────── */
+html.dark {
+  --bg-page:        #0E0E10;
+  --bg-surface:     #18181C;
+  --bg-subtle:      #222228;
+  --bg-accent-soft: #2A1A18;
+
+  --text-primary:   #F0EDE8;
+  --text-secondary: #A09A93;
+  --text-muted:     #6B6560;
+  --text-on-accent: #F0EDE8;
+
+  --border-subtle:  rgba(255,255,255,0.07);
+  --border-medium:  rgba(255,255,255,0.13);
+
+  --accent:         #D4512E;
+  --accent-hover:   #B8431F;
+  --accent-bg:      #2A1A18;
+
+  --primary:        #D4512E;
+  --bg:             #0E0E10;
+  --text:           #F0EDE8;
+  --text-muted-old: #6B6560;
+}
+
 /* ── Reset ───────────────────────────────────────────────────────── */
 * { box-sizing: border-box; }
 

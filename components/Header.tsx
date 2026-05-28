@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const primaryNav = [
   { href: "/", label: "الرئيسية" },
@@ -109,11 +110,13 @@ export default function Header() {
               )}
             </div>
 
+            <ThemeToggle />
+
             {/* Search */}
             <Link
               href="/search"
               aria-label="بحث"
-              className="ms-2 flex items-center gap-1.5 rounded-[6px] border px-3 py-1.5 text-[13px] transition-colors"
+              className="ms-1 flex items-center gap-1.5 rounded-[6px] border px-3 py-1.5 text-[13px] transition-colors"
               style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)" }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}

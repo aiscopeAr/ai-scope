@@ -49,7 +49,8 @@
       "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\AIScope\\\\app\\\\admin\\\\comparisons\\\\new\")",
       "PowerShell(New-Item -ItemType File -Force \"d:\\\\AIScope\\\\app\\\\admin\\\\comparisons\\\\new\\\\page.tsx\")",
       "PowerShell(New-Item -ItemType Directory -Force \"d:\\\\AIScope\\\\app\\\\api\\\\admin\\\\comparisons\\\\create\")",
-      "PowerShell(New-Item -ItemType File -Force \"d:\\\\AIScope\\\\app\\\\api\\\\admin\\\\comparisons\\\\create\\\\route.ts\")"
+      "PowerShell(New-Item -ItemType File -Force \"d:\\\\AIScope\\\\app\\\\api\\\\admin\\\\comparisons\\\\create\\\\route.ts\")",
+      "WebFetch(domain:www.lumiq.news)"
     ],
     "additionalDirectories": [
       "d:\\AIScope\\app\\api\\admin\\ai-tools\\[id]",

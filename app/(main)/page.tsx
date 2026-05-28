@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import ReviewCard from "@/components/ReviewCard";
 import ToolCard from "@/components/ToolCard";
+import ToolOfTheWeek from "@/components/ToolOfTheWeek";
+import NewsletterInline from "@/components/NewsletterInline";
 import AdSlot from "@/components/AdSlot";
 import { prisma } from "@/lib/db";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
@@ -22,7 +24,7 @@ export const metadata: Metadata = {
 
 async function getData() {
   try {
-    const [featuredReview, latestReviews, featuredTools] = await Promise.all([
+    const [featuredReview, latestReviews, featuredTools, toolOfWeek] = await Promise.all([
       prisma.review.findFirst({
         where: { published: true },
         orderBy: { publishedAt: "desc" },
@@ -40,15 +42,19 @@ async function getData() {
         orderBy: [{ featured: "desc" }, { viewCount: "desc" }],
         take: 6,
       }),
+      prisma.aITool.findFirst({
+        where: { published: true, editorPick: true },
+        orderBy: { updatedAt: "desc" },
+      }),
     ]);
-    return { featuredReview, latestReviews, featuredTools };
+    return { featuredReview, latestReviews, featuredTools, toolOfWeek };
   } catch {
-    return { featuredReview: null, latestReviews: [], featuredTools: [] };
+    return { featuredReview: null, latestReviews: [], featuredTools: [], toolOfWeek: null };
   }
 }
 
 export default async function HomePage() {
-  const { featuredReview, latestReviews, featuredTools } = await getData();
+  const { featuredReview, latestReviews, featuredTools, toolOfWeek } = await getData();
 
   return (
     <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
@@ -97,6 +103,9 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* Tool of the Week */}
+      {toolOfWeek && <ToolOfTheWeek tool={toolOfWeek} />}
+
       {/* Authors intro */}
       <section className="mb-12 rounded-[6px] border p-6" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
         <h2 className="mb-6 text-center text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>فريق التقارير</h2>
@@ -123,6 +132,9 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* Newsletter */}
+      <NewsletterInline />
 
       <AdSlot position="home-bottom" className="mb-4" />
     </main>
