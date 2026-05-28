@@ -44,7 +44,6 @@ export default function ReviewCard({ review, featured = false, priority = false 
                   </svg>
                 </div>
               )}
-              <div className="absolute inset-0 hidden md:block" style={{ background: "linear-gradient(to left, var(--bg-surface) 0%, transparent 60%)" }} />
             </div>
             <div className="flex flex-col justify-center p-8" dir="rtl">
               <span className="mb-3 inline-flex w-fit items-center rounded-[3px] px-2.5 py-1 text-[11px] font-semibold"
@@ -88,7 +87,6 @@ export default function ReviewCard({ review, featured = false, priority = false 
               </svg>
             </div>
           )}
-          <div className="absolute bottom-0 inset-x-0 h-16" style={{ background: "linear-gradient(to top, var(--bg-surface), transparent)" }} />
           <div className="absolute bottom-3 end-3">
             <span className="rounded-[3px] px-2 py-0.5 text-[11px] font-medium"
               style={{ backgroundColor: "var(--bg-surface)", color: "var(--accent)", border: "1px solid var(--border-subtle)" }}>
