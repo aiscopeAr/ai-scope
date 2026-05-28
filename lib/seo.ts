@@ -1,5 +1,5 @@
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://lumiq.news";
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "https://www.lumiq.news";
 
 export const SITE_NAME = "Lumiq";
 export const SITE_NAME_AR = "لوميك";

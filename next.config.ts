@@ -47,6 +47,16 @@ const nextConfig: NextConfig = {
   },
 };
 
+// Redirect non-www → www (canonical domain)
+nextConfig.redirects = async () => [
+  {
+    source: "/:path*",
+    has: [{ type: "host", value: "lumiq.news" }],
+    destination: "https://www.lumiq.news/:path*",
+    permanent: true, // 308 (replaces 301 in Next.js)
+  },
+];
+
 // Security + performance headers
 nextConfig.headers = async () => [
   {
