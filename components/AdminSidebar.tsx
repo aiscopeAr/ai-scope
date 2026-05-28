@@ -19,10 +19,12 @@ import {
   ChevronRight,
   GitCompare,
   Mail,
+  Zap,
 } from "lucide-react";
 
 const NAV = [
   { href: "/admin",              icon: LayoutDashboard, label: "لوحة التحكم",   end: true },
+  { href: "/admin/pipeline",     icon: Zap,             label: "Pipeline"       },
   { href: "/admin/queue",        icon: ClipboardList,   label: "طابور التقارير" },
   { href: "/admin/reviews",      icon: BookOpen,        label: "التقارير"       },
   { href: "/admin/ai-tools",     icon: Wrench,          label: "أدوات AI"       },
