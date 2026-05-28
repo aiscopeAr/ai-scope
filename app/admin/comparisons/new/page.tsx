@@ -60,9 +60,15 @@ export default function NewComparisonPage() {
   // load tools
   useEffect(() => {
     fetch("/api/admin/ai-tools?limit=500")
-      .then((r) => r.json())
-      .then((d) => setAllTools(d.tools ?? []))
-      .catch(() => {});
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((d) => {
+        const list = d.tools ?? (Array.isArray(d) ? d : []);
+        setAllTools(list);
+      })
+      .catch((e) => console.error("Failed to load tools:", e));
   }, []);
 
   const filteredTools = useCallback((idx: number) => {

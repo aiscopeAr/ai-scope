@@ -89,7 +89,7 @@ export default function AdminAIToolsPage() {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/ai-tools");
-      if (res.ok) setTools(await res.json());
+      if (res.ok) { const d = await res.json(); setTools(d.tools ?? d); }
     } catch { toast("Load failed", "error"); }
     finally { setLoading(false); }
   }, [toast]);

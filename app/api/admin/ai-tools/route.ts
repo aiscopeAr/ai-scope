@@ -10,10 +10,15 @@ async function requireAdmin() {
   return session;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!(await requireAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const tools = await prisma.aITool.findMany({ orderBy: { createdAt: "desc" } });
-  return NextResponse.json(tools);
+  const { searchParams } = new URL(request.url);
+  const limit = parseInt(searchParams.get("limit") ?? "200", 10);
+  const tools = await prisma.aITool.findMany({
+    orderBy: { createdAt: "desc" },
+    take: isNaN(limit) ? 200 : limit,
+  });
+  return NextResponse.json({ tools });
 }
 
 export async function POST(request: Request) {
