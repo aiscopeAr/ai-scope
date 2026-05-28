@@ -18,6 +18,7 @@ import {
   ExternalLink,
   ChevronRight,
   GitCompare,
+  Mail,
 } from "lucide-react";
 
 const NAV = [
@@ -26,7 +27,8 @@ const NAV = [
   { href: "/admin/reviews",      icon: BookOpen,        label: "التقارير"       },
   { href: "/admin/ai-tools",     icon: Wrench,          label: "أدوات AI"       },
   { href: "/admin/comparisons",  icon: GitCompare,      label: "المقارنات"      },
-  { href: "/admin/analytics",   icon: BarChart2,       label: "الإحصاءات"      },
+  { href: "/admin/analytics",    icon: BarChart2,       label: "الإحصاءات"      },
+  { href: "/admin/newsletter",   icon: Mail,            label: "النشرة البريدية"},
   { href: "/admin/sources",      icon: Rss,             label: "المصادر"        },
   { href: "/admin/social",       icon: Share2,          label: "السوشيال ميديا" },
   { href: "/admin/authors",      icon: Users,           label: "الكتّاب"        },

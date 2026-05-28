@@ -279,3 +279,17 @@ model TrendingKeyword {
   @@unique([keyword, type])
   @@index([type, count])
 }
+
+// ─── Newsletter ───────────────────────────────────────────────────────────────
+
+model NewsletterSubscriber {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  status      String    @default("active") // "active" | "unsubscribed"
+  source      String    @default("website") // "website" | "popup" | "admin"
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import {
   ClipboardList, BookOpen, Rss, Share2, Wrench,
   Users, Megaphone, TrendingUp, Eye, FileText,
-  AlertTriangle, CheckCircle2, Clock, ArrowUpRight,
+  AlertTriangle, CheckCircle2, Clock, ArrowUpRight, Mail,
 } from "lucide-react";
 
 import { auth } from "@/lib/auth";
@@ -20,7 +20,7 @@ async function getDashboardData() {
     recentReviews, topReviews,
     pendingQueue, processedQueue, failedQueue, pendingNewsItems,
     totalViews, activeAds, activeSocialAccounts, pendingSocialPosts,
-    toolCount, trendingKeywords,
+    toolCount, trendingKeywords, newsletterCount,
   ] = await Promise.all([
     prisma.review.count(),
     prisma.review.count({ where: { published: true } }),
@@ -43,6 +43,7 @@ async function getDashboardData() {
     prisma.socialPost.count({ where: { status: "pending" } }),
     prisma.aITool.count({ where: { published: true } }),
     prisma.trendingKeyword.findMany({ orderBy: { count: "desc" }, take: 10 }),
+    prisma.newsletterSubscriber.count({ where: { status: "active" } }),
   ]);
 
   return {
@@ -51,7 +52,7 @@ async function getDashboardData() {
     pendingQueue, processedQueue, failedQueue, pendingNewsItems,
     totalViews: totalViews._sum.viewCount ?? 0,
     activeAds, activeSocialAccounts, pendingSocialPosts,
-    toolCount, trendingKeywords,
+    toolCount, trendingKeywords, newsletterCount,
   };
 }
 
@@ -104,7 +105,8 @@ export default async function AdminDashboardPage() {
     { href: "/admin/sources",  icon: Rss,           label: "المصادر",          badge: d.pendingNewsItems > 0 ? `${d.pendingNewsItems} جديد` : null,  badgeColor: "bg-sky-100 text-sky-700"       },
     { href: "/admin/social",   icon: Share2,        label: "السوشيال ميديا",   badge: d.pendingSocialPosts > 0 ? `${d.pendingSocialPosts} معلّق` : null, badgeColor: "bg-pink-100 text-pink-700", alert: d.pendingSocialPosts > 0 },
     { href: "/admin/authors",  icon: Users,         label: "الكتّاب",          badge: "2",                                                          badgeColor: "bg-slate-100 text-slate-600"   },
-    { href: "/admin/ads",      icon: Megaphone,     label: "الإعلانات",        badge: `${d.activeAds} مفعّل`,                                       badgeColor: "bg-emerald-100 text-emerald-700"},
+    { href: "/admin/ads",        icon: Megaphone,     label: "الإعلانات",        badge: `${d.activeAds} مفعّل`,   badgeColor: "bg-emerald-100 text-emerald-700"},
+    { href: "/admin/newsletter", icon: Mail,          label: "النشرة البريدية",  badge: `${d.newsletterCount} مشترك`, badgeColor: "bg-indigo-100 text-indigo-700" },
   ];
 
   return (

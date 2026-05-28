@@ -5,13 +5,12 @@ import { useEffect, useState } from "react";
 export default function NewsletterPopup() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    // Show popup after 30 seconds, only if not already dismissed/subscribed
     const dismissed = localStorage.getItem("newsletter_dismissed");
     if (dismissed) return;
-
     const timer = setTimeout(() => setOpen(true), 30_000);
     return () => clearTimeout(timer);
   }, []);
@@ -21,12 +20,24 @@ export default function NewsletterPopup() {
     localStorage.setItem("newsletter_dismissed", "1");
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email) return;
-    // TODO: wire to real email service (Mailchimp / Resend / ConvertKit)
-    setSubmitted(true);
-    localStorage.setItem("newsletter_dismissed", "1");
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/newsletter/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source: "popup" }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErrorMsg(data.error ?? "حدث خطأ"); setStatus("error"); return; }
+      setStatus("success");
+      localStorage.setItem("newsletter_dismissed", "1");
+    } catch {
+      setErrorMsg("حدث خطأ، حاول مرة أخرى");
+      setStatus("error");
+    }
   }
 
   if (!open) return null;
@@ -42,7 +53,6 @@ export default function NewsletterPopup() {
         style={{ backgroundColor: "var(--bg-surface)", borderColor: "var(--border-subtle)" }}
         dir="rtl"
       >
-        {/* Close button */}
         <button
           onClick={dismiss}
           className="absolute top-3 left-3 flex h-7 w-7 items-center justify-center rounded-[4px] transition-colors"
@@ -54,19 +64,16 @@ export default function NewsletterPopup() {
           </svg>
         </button>
 
-        {/* Top accent bar */}
         <div className="h-1 w-full" style={{ background: "linear-gradient(to left, var(--accent), #8b5cf6)" }} />
 
         <div className="p-6">
-          {submitted ? (
+          {status === "success" ? (
             <div className="py-4 text-center">
               <div className="mb-3 text-4xl">🎉</div>
               <h3 className="mb-2 text-lg font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
                 شكراً على اشتراكك!
               </h3>
-              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                ستصلك نشرتنا الأسبوعية كل يوم أحد.
-              </p>
+              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>ستصلك نشرتنا الأسبوعية كل يوم أحد.</p>
             </div>
           ) : (
             <>
@@ -82,19 +89,22 @@ export default function NewsletterPopup() {
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { setEmail(e.target.value); setStatus("idle"); }}
                   placeholder="بريدك الإلكتروني"
                   className="w-full rounded-[6px] border px-4 py-2.5 text-sm outline-none transition-colors"
-                  style={{
-                    borderColor: "var(--border-medium)",
-                    backgroundColor: "var(--bg-subtle)",
-                    color: "var(--text-primary)",
-                  }}
+                  style={{ borderColor: "var(--border-medium)", backgroundColor: "var(--bg-subtle)", color: "var(--text-primary)" }}
                 />
-                <button type="submit" className="btn-primary w-full justify-center py-2.5 text-sm">
-                  اشترك مجاناً ←
+                <button
+                  type="submit"
+                  disabled={status === "loading"}
+                  className="btn-primary w-full justify-center py-2.5 text-sm disabled:opacity-60"
+                >
+                  {status === "loading" ? "..." : "اشترك مجاناً ←"}
                 </button>
               </form>
+              {status === "error" && (
+                <p className="mt-2 text-sm" style={{ color: "var(--accent)" }}>{errorMsg}</p>
+              )}
               <p className="mt-3 text-center text-[11px]" style={{ color: "var(--text-muted)" }}>
                 لا رسائل مزعجة · يمكن إلغاء الاشتراك في أي وقت
               </p>
