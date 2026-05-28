@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import type { ReviewDraft } from "@/lib/review-openai";
 import type { AuthorSlug } from "@/lib/authors";
 import { embedReview } from "@/lib/embeddings";
+import { extractMemoryFromReview } from "@/lib/author-memory";
 
 // ─── NewsItem queue ────────────────────────────────────────────────────────
 
@@ -165,10 +166,15 @@ export async function approveReview(
     data: { status: "approved", approvedAt: new Date() },
   });
 
-  // Generate embedding in background (non-blocking)
+  // Generate embedding + extract memory in background (non-blocking)
   if (overrides.published) {
     embedReview(review.id).catch(() => {
       // embedding is best-effort; doesn't block publish
+    });
+
+    // חלץ זיכרון מהכתבה החדשה — ישפר את הכתיבה הבאה
+    extractMemoryFromReview(review.id).catch(() => {
+      // memory extraction is best-effort
     });
 
     // Auto-draft social posts

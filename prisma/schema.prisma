@@ -109,6 +109,7 @@ model Review {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   socialPosts   SocialPost[]
+  metrics       ReviewMetrics?
 
   @@index([published, publishedAt])
   @@index([authorSlug])
@@ -278,6 +279,41 @@ model TrendingKeyword {
 
   @@unique([keyword, type])
   @@index([type, count])
+}
+
+// ─── Agent Learning ───────────────────────────────────────────────────────────
+
+// זיכרון מצטבר לכל כותב — נבנה אוטומטית מהכתבות המתפרסמות
+model AuthorMemory {
+  id         String   @id @default(cuid())
+  authorSlug String
+  type       String   // "style_note" | "topic_expertise" | "past_stance" | "source_preference"
+  content    String   @db.Text
+  weight     Float    @default(1.0) // עולה עם אישור אנושי / views גבוהים
+  sourceId   String?  // Review שממנו נלמד
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([authorSlug, type])
+  @@index([authorSlug, weight])
+}
+
+// מדדי ביצוע לכל כתבה — חומר גלם לאימון עתידי
+model ReviewMetrics {
+  id           String   @id @default(cuid())
+  reviewId     String   @unique
+  review       Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  avgReadTime  Int?     // שניות ממוצע
+  bounceRate   Float?   // 0-1
+  scrollDepth  Float?   // 0-1 — עד כמה קרא הגולש
+  shareCount   Int      @default(0)
+  qualityScore Float?   // 0-1 — חישוב אוטומטי מהמדדים
+  trainingUsed Boolean  @default(false) // האם שימש כבר לאימון
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([qualityScore])
+  @@index([trainingUsed])
 }
 
 // ─── Newsletter ───────────────────────────────────────────────────────────────

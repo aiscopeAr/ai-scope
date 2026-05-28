@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { AUTHORS, pickAuthor, type AuthorSlug } from "@/lib/authors";
 import { findSimilarReviews, type SimilarReview } from "@/lib/embeddings";
+import { getAuthorMemoryBlock } from "@/lib/author-memory";
 
 let _client: OpenAI | null = null;
 function getClient(): OpenAI {
@@ -113,7 +114,15 @@ export async function writeReview(
     // pgvector not yet available or no embeddings — proceed without memory
   }
 
-  const memoryBlock = buildMemoryBlock(pastReviews);
+  // שלוף גם את הזיכרון המצטבר של הכותב (נושאי מומחיות, עמדות, סגנון)
+  let accumulatedMemory = "";
+  try {
+    accumulatedMemory = await getAuthorMemoryBlock(authorSlug, topic);
+  } catch {
+    // memory block is best-effort
+  }
+
+  const memoryBlock = buildMemoryBlock(pastReviews) + accumulatedMemory;
   const userPrompt = buildUserPrompt(sources, memoryBlock);
 
   const response = await client.chat.completions.create({
