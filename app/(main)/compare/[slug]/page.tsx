@@ -66,7 +66,6 @@ function ToolLogo({ name, logoUrl, size = 14 }: { name: string; logoUrl: string 
         src={logoUrl}
         alt={name}
         style={{ width: size * 4, height: size * 4, objectFit: "contain", borderRadius: 10, background: "#f8fafc", border: "1px solid #e2e8f0", padding: 6 }}
-        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
       />
     );
   }

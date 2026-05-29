@@ -52,7 +52,6 @@ function ToolAvatar({ name, logoUrl }: { name: string; logoUrl: string | null })
         alt={name}
         className="h-9 w-9 rounded-lg object-contain"
         style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "4px" }}
-        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
       />
     );
   }
