@@ -37,9 +37,13 @@ export async function GET(request: Request) {
       select: { slug: true, imageUrl: true },
     });
 
+    const platform = post.platform as SocialPlatform;
+    const utmSource = platform === "telegram" ? "telegram" : platform === "twitter" ? "twitter" : platform;
+    const utmParams = `utm_source=${utmSource}&utm_medium=social&utm_campaign=daily_post`;
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumiq.news";
     const articleUrl = review
-      ? `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumiq.news"}/reviews/${review.slug}`
-      : (process.env.NEXT_PUBLIC_SITE_URL ?? "https://lumiq.news");
+      ? `${baseUrl}/reviews/${review.slug}?${utmParams}`
+      : `${baseUrl}?${utmParams}`;
 
     try {
       const credentials = JSON.parse(post.account.credentials) as Record<string, string>;
