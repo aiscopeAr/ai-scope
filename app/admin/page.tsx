@@ -107,6 +107,7 @@ export default async function AdminDashboardPage() {
     { href: "/admin/authors",  icon: Users,         label: "الكتّاب",          badge: "2",                                                          badgeColor: "bg-slate-100 text-slate-600"   },
     { href: "/admin/ads",        icon: Megaphone,     label: "الإعلانات",        badge: `${d.activeAds} مفعّل`,   badgeColor: "bg-emerald-100 text-emerald-700"},
     { href: "/admin/newsletter", icon: Mail,          label: "النشرة البريدية",  badge: `${d.newsletterCount} مشترك`, badgeColor: "bg-indigo-100 text-indigo-700" },
+    { href: "/admin/newsletter-compose", icon: Mail, label: "إنشاء نشرة أسبوعية", badge: "جديد", badgeColor: "bg-emerald-100 text-emerald-700" },
   ];
 
   return (
