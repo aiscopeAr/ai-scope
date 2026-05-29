@@ -10,7 +10,9 @@ export const telegramProvider: SocialProvider = {
       throw new Error("Telegram: missing botToken or chatId");
     }
 
-    const text = `${payload.caption}\n\n${payload.articleUrl}`;
+    // Strip any URLs the AI may have embedded in the caption — we append the tracked URL ourselves
+    const cleanCaption = payload.caption.replace(/https?:\/\/\S+/g, "").replace(/\n{3,}/g, "\n\n").trim();
+    const text = `${cleanCaption}\n\n${payload.articleUrl}`;
 
     const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",
