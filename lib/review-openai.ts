@@ -47,8 +47,15 @@ function buildUserPrompt(
   sources: Array<{ title: string; content: string; url: string; name: string }>,
   memoryBlock: string,
 ): string {
+  // Limit each source to 2000 chars to stay well under the 30k TPM limit
+  const MAX_SOURCE_CHARS = 2000;
   const sourcesText = sources
-    .map((s, i) => `## مصدر ${i + 1}: ${s.name}\nالعنوان: ${s.title}\nURL: ${s.url}\n\n${s.content}`)
+    .map((s, i) => {
+      const body = s.content.length > MAX_SOURCE_CHARS
+        ? s.content.slice(0, MAX_SOURCE_CHARS) + "…"
+        : s.content;
+      return `## مصدر ${i + 1}: ${s.name}\nالعنوان: ${s.title}\nURL: ${s.url}\n\n${body}`;
+    })
     .join("\n\n---\n\n");
 
   return `إليك ${sources.length} مصدر حول نفس الموضوع. مهمتك: اكتب تقريراً عربياً أصيلاً ومعمّقاً — لا تلخيصاً، بل تحليلاً حقيقياً بصوت الكاتب.${memoryBlock}
