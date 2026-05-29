@@ -15,10 +15,10 @@ import { generateReviewImage } from "@/lib/images";
 import type { AuthorSlug } from "@/lib/authors";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300; // 5 min — up to 3 reviews × ~60s each
+export const maxDuration = 300; // 5 min — processes in parallel batches
 
 const MAX_RETRIES = 3;
-const MAX_PER_RUN = 3; // process up to 3 items per cron run to clear backlog
+const MAX_PER_RUN = 10; // process up to 10 items per cron run
 
 function verifyCronSecret(request: Request): boolean {
   const secret = process.env.CRON_SECRET;

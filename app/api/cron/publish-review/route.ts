@@ -8,9 +8,9 @@ import { approveReview } from "@/lib/review-queue";
 import { generateReviewImage } from "@/lib/images";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300; // image generation fallback can take ~40s × 3 items
+export const maxDuration = 300; // image generation fallback can take ~40s × 10 items
 
-const DAILY_PUBLISH_LIMIT = 3;
+const DAILY_PUBLISH_LIMIT = 10;
 
 function verifyCronSecret(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
