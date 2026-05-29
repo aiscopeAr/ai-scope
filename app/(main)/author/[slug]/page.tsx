@@ -74,7 +74,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
                 <h1 className="text-3xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{author.nameAr}</h1>
                 <span className="rounded-[3px] border px-3 py-0.5 text-xs font-semibold"
                   style={{ color: author.accentColor, borderColor: `${author.accentColor}40`, backgroundColor: `${author.accentColor}12` }}>
-                  إنتاج آلي
+                  كاتب بالذكاء الاصطناعي
                 </span>
               </div>
               <p className="mb-4 text-sm font-medium" style={{ color: "var(--text-secondary)" }}>{author.titleAr}</p>

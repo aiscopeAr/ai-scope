@@ -171,7 +171,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
                 <img src={author.avatarUrl} alt={author.nameAr} className="h-full w-full object-cover" />
               </div>
               <span className="text-sm font-semibold" style={{ color: author.accentColor }}>{author.nameAr}</span>
-              <span className="text-xs" style={{ color: "var(--text-muted)" }}>· إنتاج آلي</span>
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>· كاتب بالذكاء الاصطناعي</span>
             </Link>
           )}
           <span style={{ color: "var(--border-medium)" }}>•</span>
@@ -309,7 +309,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
                 <div className="mb-0.5 flex flex-wrap items-center gap-2">
                   <Link href={`/author/${author.slug}`} className="text-sm font-bold transition hover:opacity-75" style={{ color: "var(--text-primary)" }}>{author.nameAr}</Link>
                   <span className="rounded-[3px] border px-2 py-0.5 text-[10px] font-semibold" style={{ color: author.accentColor, borderColor: `${author.accentColor}40`, backgroundColor: `${author.accentColor}12` }}>
-                    إنتاج آلي
+                    كاتب بالذكاء الاصطناعي
                   </span>
                 </div>
                 <p className="mb-1.5 text-xs" style={{ color: "var(--text-muted)" }}>{author.titleAr}</p>
