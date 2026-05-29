@@ -10,7 +10,7 @@ export const telegramProvider: SocialProvider = {
       throw new Error("Telegram: missing botToken or chatId");
     }
 
-    const text = `${payload.caption}\n\n🔗 ${payload.articleUrl}`;
+    const text = `${payload.caption}\n\n${payload.articleUrl}`;
 
     const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",
