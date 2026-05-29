@@ -329,3 +329,11 @@ model NewsletterSubscriber {
   @@index([status])
   @@index([createdAt])
 }
+
+// ─── System Settings ─────────────────────────────────────────────────────────
+
+model SystemSetting {
+  key       String   @id   // e.g. "pipeline.dailyPublishLimit"
+  value     String         // stored as string, parsed by consumer
+  updatedAt DateTime @updatedAt
+}

@@ -13,12 +13,12 @@ import {
 } from "@/lib/review-queue";
 import { generateReviewImage } from "@/lib/images";
 import type { AuthorSlug } from "@/lib/authors";
+import { getSetting, SETTING_KEYS } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300; // 5 min — processes in parallel batches
+export const maxDuration = 300;
 
 const MAX_RETRIES = 3;
-const MAX_PER_RUN = 10; // process up to 10 items per cron run
 
 function verifyCronSecret(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -38,6 +38,8 @@ export async function GET(request: Request) {
     data: { status: "pending", failureReason: "Reset from stale processing" },
   });
 
+  const maxPerRun = await getSetting(SETTING_KEYS.MAX_PER_RUN);
+
   const items = await prisma.reviewQueue.findMany({
     where: {
       OR: [
@@ -46,7 +48,7 @@ export async function GET(request: Request) {
       ],
     },
     orderBy: { createdAt: "asc" },
-    take: MAX_PER_RUN,
+    take: maxPerRun,
     include: {
       newsItems: {
         select: { title: true, content: true, sourceUrl: true, sourceName: true },

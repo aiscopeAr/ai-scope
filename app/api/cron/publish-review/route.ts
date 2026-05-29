@@ -6,11 +6,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { approveReview } from "@/lib/review-queue";
 import { generateReviewImage } from "@/lib/images";
+import { getSetting, SETTING_KEYS } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300; // image generation fallback can take ~40s × 10 items
-
-const DAILY_PUBLISH_LIMIT = 10;
+export const maxDuration = 300;
 
 function verifyCronSecret(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -23,6 +22,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const dailyPublishLimit = await getSetting(SETTING_KEYS.DAILY_PUBLISH_LIMIT);
+
   // Count how many reviews published today
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -30,14 +31,14 @@ export async function GET(request: Request) {
     where: { published: true, publishedAt: { gte: todayStart } },
   });
 
-  if (publishedToday >= DAILY_PUBLISH_LIMIT) {
+  if (publishedToday >= dailyPublishLimit) {
     return NextResponse.json({
       ok: true,
-      message: `Daily limit reached (${publishedToday}/${DAILY_PUBLISH_LIMIT})`,
+      message: `Daily limit reached (${publishedToday}/${dailyPublishLimit})`,
     });
   }
 
-  const remaining = DAILY_PUBLISH_LIMIT - publishedToday;
+  const remaining = dailyPublishLimit - publishedToday;
 
   // Pick processed items that have a slug (required for auto-publish)
   // "processed" = written by AI, awaiting auto-publish

@@ -3,13 +3,18 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   RefreshCw, Play, Loader2, CheckCircle2, XCircle,
-  AlertTriangle, Trash2, ChevronDown, ChevronUp, Zap,
+  AlertTriangle, Trash2, ChevronDown, ChevronUp, Zap, Settings2, Save,
 } from "lucide-react";
 
 interface PipelineStats {
   newsItems: { pending: number; skipped: number; clustered: number; total: number };
   queue: { pending: number; processing: number; processed: number; failed: number; rejected: number; approved: number };
   reviews: { published: number; todayPublished: number; dailyLimit: number };
+}
+
+interface PipelineSettings {
+  dailyPublishLimit: number;
+  maxPerRun: number;
 }
 
 interface SkippedItem {
@@ -53,7 +58,7 @@ const CRON_STEPS = [
   {
     key: "process-review",
     label: "كتابة التقارير (AI)",
-    desc: "يكتب تقارير عميقة باستخدام AI (حتى 3 في المرة)",
+    desc: "يكتب تقارير عميقة باستخدام AI",
     icon: "✍️",
     color: "bg-amber-50 border-amber-200 text-amber-700",
     btnColor: "bg-amber-600 hover:bg-amber-700",
@@ -61,7 +66,7 @@ const CRON_STEPS = [
   {
     key: "publish-review",
     label: "نشر التقارير",
-    desc: "ينشر التقارير الجاهزة تلقائياً (حد 3/يوم)",
+    desc: "ينشر التقارير الجاهزة تلقائياً",
     icon: "🚀",
     color: "bg-emerald-50 border-emerald-200 text-emerald-700",
     btnColor: "bg-emerald-600 hover:bg-emerald-700",
@@ -78,14 +83,33 @@ export default function PipelinePage() {
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [deleteAllLoading, setDeleteAllLoading] = useState(false);
 
+  // Settings state
+  const [settings, setSettings] = useState<PipelineSettings>({ dailyPublishLimit: 10, maxPerRun: 10 });
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsSaved, setSettingsSaved] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     const res = await fetch("/api/admin/pipeline");
     const data = await res.json();
     setStats(data.stats);
     setSkipped(data.skipped ?? []);
+    if (data.settings) setSettings(data.settings);
     setLoading(false);
   }, []);
+
+  async function saveSettings() {
+    setSettingsSaving(true);
+    await fetch("/api/admin/pipeline", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(settings),
+    });
+    setSettingsSaving(false);
+    setSettingsSaved(true);
+    setTimeout(() => setSettingsSaved(false), 2000);
+    await load();
+  }
 
   useEffect(() => { load(); }, [load]);
 
@@ -261,6 +285,88 @@ export default function PipelinePage() {
           </div>
         </div>
       )}
+
+      {/* Pipeline Settings */}
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <Settings2 className="h-4 w-4 text-indigo-600" />
+            <h2 className="text-sm font-bold text-slate-900">إعدادات النشر</h2>
+          </div>
+          <button
+            onClick={saveSettings}
+            disabled={settingsSaving}
+            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {settingsSaving
+              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              : settingsSaved
+              ? <CheckCircle2 className="h-3.5 w-3.5" />
+              : <Save className="h-3.5 w-3.5" />
+            }
+            {settingsSaved ? "تم الحفظ!" : "حفظ"}
+          </button>
+        </div>
+
+        <div className="grid gap-6 sm:grid-cols-2">
+          {/* Daily publish limit */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold text-slate-700">
+                الحد اليومي للنشر
+              </label>
+              <span className="rounded-lg bg-indigo-50 px-3 py-1 text-lg font-black text-indigo-600">
+                {settings.dailyPublishLimit}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={1} max={50} step={1}
+              value={settings.dailyPublishLimit}
+              onChange={(e) => setSettings((s) => ({ ...s, dailyPublishLimit: Number(e.target.value) }))}
+              className="w-full accent-indigo-600"
+            />
+            <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+              <span>1</span>
+              <span className="text-slate-500">مقالة/يوم كحد أقصى</span>
+              <span>50</span>
+            </div>
+          </div>
+
+          {/* Max per run */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold text-slate-700">
+                مقالات لكل تشغيل
+              </label>
+              <span className="rounded-lg bg-violet-50 px-3 py-1 text-lg font-black text-violet-600">
+                {settings.maxPerRun}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={1} max={20} step={1}
+              value={settings.maxPerRun}
+              onChange={(e) => setSettings((s) => ({ ...s, maxPerRun: Number(e.target.value) }))}
+              className="w-full accent-violet-600"
+            />
+            <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+              <span>1</span>
+              <span className="text-slate-500">تُكتب/تُنشر في كل ريّة</span>
+              <span>20</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Summary */}
+        <div className="mt-4 rounded-lg bg-slate-50 p-3 text-xs text-slate-500 border border-slate-100">
+          📊 كل يوم: حتى <strong className="text-slate-700">{settings.maxPerRun}</strong> مقالة تُكتب بالـ AI،
+          وحتى <strong className="text-slate-700">{settings.dailyPublishLimit}</strong> مقالة تُنشر على الموقع
+          {settings.dailyPublishLimit > settings.maxPerRun && (
+            <span className="text-amber-600"> — الحد اليومي أعلى من كل تشغيل، سيُستخدم الحد الأقل</span>
+          )}
+        </div>
+      </div>
 
       {/* Skipped / Junk news items */}
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
