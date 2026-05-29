@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { RefreshCw, Check, X, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
+import { RefreshCw, Check, X, RotateCcw, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 
 type NewsItemSnippet = { id: string; title: string; sourceName: string; sourceUrl: string };
 
@@ -84,6 +84,14 @@ export default function AdminQueuePage() {
       body: JSON.stringify({ action, ...extra }),
     });
     await load();
+    setApproving(null);
+  }
+
+  async function deleteItem(id: string) {
+    if (!confirm("حذف هذا العنصر نهائياً؟")) return;
+    setApproving(id);
+    await fetch(`/api/admin/queue/${id}`, { method: "DELETE" });
+    setItems((p) => p.filter((i) => i.id !== id));
     setApproving(null);
   }
 
@@ -224,14 +232,26 @@ export default function AdminQueuePage() {
                       </div>
                     )}
 
-                    {/* Retry for failed */}
-                    {item.status === "failed" && (
-                      <button
-                        onClick={() => doAction(item.id, "retry")}
-                        className="flex items-center gap-1.5 rounded-xl bg-amber-100 px-4 py-2 text-sm font-bold text-amber-700 hover:bg-amber-200"
-                      >
-                        <RotateCcw className="h-4 w-4" /> إعادة المحاولة
-                      </button>
+                    {/* Retry / Delete for failed or rejected */}
+                    {(item.status === "failed" || item.status === "rejected") && (
+                      <div className="flex gap-2">
+                        {item.status === "failed" && (
+                          <button
+                            onClick={() => doAction(item.id, "retry")}
+                            disabled={approving === item.id}
+                            className="flex items-center gap-1.5 rounded-xl bg-amber-100 px-4 py-2 text-sm font-bold text-amber-700 hover:bg-amber-200 disabled:opacity-50"
+                          >
+                            <RotateCcw className="h-4 w-4" /> إعادة المحاولة
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteItem(item.id)}
+                          disabled={approving === item.id}
+                          className="flex items-center gap-1.5 rounded-xl bg-red-50 px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-100 disabled:opacity-50"
+                        >
+                          <Trash2 className="h-4 w-4" /> حذف
+                        </button>
+                      </div>
                     )}
                   </div>
                 )}
