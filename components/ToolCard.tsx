@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 
 export interface ToolCardData {
@@ -42,8 +41,12 @@ export default function ToolCard({ tool, compact = false }: { tool: ToolCardData
       <div className="mb-3 flex items-start gap-3">
         <div className="relative shrink-0">
           {tool.logoUrl ? (
-            <div className="relative h-12 w-12 overflow-hidden rounded-[6px] border" style={{ borderColor: "var(--border-subtle)" }}>
-              <Image src={tool.logoUrl} alt={tool.name} fill sizes="48px" loading="lazy" className="object-cover" />
+            <div className="h-12 w-12 overflow-hidden rounded-[6px] border flex items-center justify-center" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={tool.logoUrl} alt={tool.name} width={48} height={48} loading="lazy"
+                className="h-10 w-10 object-contain"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget.parentElement!).innerHTML = `<span style="font-size:1.125rem;font-weight:900;color:var(--accent)">${tool.name[0]}</span>`; }}
+              />
             </div>
           ) : (
             <div className="flex h-12 w-12 items-center justify-center rounded-[6px] text-lg font-black"
