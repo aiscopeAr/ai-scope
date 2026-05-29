@@ -28,6 +28,19 @@ async function getComparison(slug: string) {
   } catch { return null; }
 }
 
+async function getOtherComparisons(currentSlug: string) {
+  try {
+    return await prisma.comparison.findMany({
+      where: { published: true, NOT: { slug: currentSlug } },
+      orderBy: { updatedAt: "desc" },
+      take: 3,
+      include: {
+        sides: { include: { tool: { select: { name: true, logoUrl: true } } } },
+      },
+    });
+  } catch { return []; }
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const comparison = await getComparison(slug);
@@ -110,7 +123,10 @@ function ScoreRing({ score, winner }: { score: number; winner: boolean }) {
 
 export default async function ComparisonPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const comparison = await getComparison(slug);
+  const [comparison, otherComparisons] = await Promise.all([
+    getComparison(slug),
+    getOtherComparisons(slug),
+  ]);
   if (!comparison?.published) notFound();
 
   const criteria = normalizeCriteria(comparison.criteria);
@@ -318,6 +334,51 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
           <p className="text-base leading-relaxed" style={{ color: "var(--text-secondary)" }}>
             {comparison.verdict}
           </p>
+        </section>
+      )}
+
+      {/* Other comparisons */}
+      {otherComparisons.length > 0 && (
+        <section className="mt-14">
+          <h2 className="mb-5 text-lg font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+            مقارنات أخرى قد تهمك
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {otherComparisons.map((comp) => (
+              <Link key={comp.id} href={`/compare/${comp.slug}`}
+                className="group flex flex-col gap-3 rounded-2xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-md"
+                style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface)" }}>
+                <div className="flex flex-wrap items-center gap-2">
+                  {comp.sides.map((side, i) => (
+                    <div key={side.id} className="flex items-center gap-1.5">
+                      {i > 0 && (
+                        <span className="rounded px-1 py-0.5 text-[10px] font-black"
+                          style={{ background: "var(--accent-bg)", color: "var(--accent)" }}>VS</span>
+                      )}
+                      {side.tool.logoUrl ? (
+                        <img src={side.tool.logoUrl} alt={side.tool.name}
+                          className="h-6 w-6 rounded-md object-contain"
+                          style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: 2 }} />
+                      ) : (
+                        <div className="flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold text-white"
+                          style={{ background: "var(--accent)" }}>
+                          {side.tool.name[0]}
+                        </div>
+                      )}
+                      <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+                        {side.tool.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm font-bold leading-snug group-hover:opacity-75 transition-opacity"
+                  style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                  {comp.title}
+                </p>
+                <span className="text-xs font-semibold" style={{ color: "var(--accent)" }}>قرأ المقارنة ←</span>
+              </Link>
+            ))}
+          </div>
         </section>
       )}
 
