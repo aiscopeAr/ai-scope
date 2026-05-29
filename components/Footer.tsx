@@ -116,7 +116,26 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t pt-6 md:flex-row" style={{ borderColor: "var(--border-subtle)" }}>
+        {/* Telegram banner */}
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-[8px] px-6 py-4" style={{ background: "linear-gradient(135deg, #0088cc12, #0088cc06)", border: "1px solid #0088cc25" }}>
+          <div className="flex items-center gap-3">
+            <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0" fill="#0088cc"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.32 14.617l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.828.942z"/></svg>
+            <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              تابع آخر أخبار الذكاء الاصطناعي على قناة لوميك في تيليغرام
+            </p>
+          </div>
+          <a
+            href="https://t.me/lumiq_news"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 rounded-[6px] px-4 py-2 text-sm font-bold text-white transition hover:opacity-90"
+            style={{ backgroundColor: "#0088cc" }}
+          >
+            انضم الآن
+          </a>
+        </div>
+
+        <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t pt-6 md:flex-row" style={{ borderColor: "var(--border-subtle)" }}>
           <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>© 2026 Lumiq. جميع الحقوق محفوظة.</p>
           <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>مبني على Next.js · محتوى آلي مع مراجعة تحريرية</p>
         </div>
