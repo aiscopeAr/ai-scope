@@ -54,7 +54,9 @@ export async function GET() {
       const pubDate = (r.publishedAt as Date).toUTCString();
       const description = escapeXml(r.summary.slice(0, 300));
       const image = r.imageUrl
-        ? `<enclosure url="${escapeXml(r.imageUrl)}" type="image/jpeg" length="0"/>`
+        ? `<enclosure url="${escapeXml(r.imageUrl)}" type="image/jpeg" length="0"/>
+      <media:content url="${escapeXml(r.imageUrl)}" medium="image" width="1200" height="630"/>
+      <media:thumbnail url="${escapeXml(r.imageUrl)}" width="1200" height="630"/>`
         : "";
       const categories = r.tags
         .slice(0, 5)
@@ -78,7 +80,8 @@ ${categories}
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"
   xmlns:atom="http://www.w3.org/2005/Atom"
-  xmlns:dc="http://purl.org/dc/elements/1.1/">
+  xmlns:dc="http://purl.org/dc/elements/1.1/"
+  xmlns:media="http://search.yahoo.com/mrss/">
   <channel>
     <title>${escapeXml(SITE_NAME)} — ${escapeXml(SITE_NAME_AR)}</title>
     <link>${SITE_URL}</link>

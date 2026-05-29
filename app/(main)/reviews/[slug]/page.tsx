@@ -34,6 +34,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `${review.titleAr} | ${SITE_NAME_AR}`,
     description,
     alternates: { canonical: url },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+    },
     openGraph: {
       type: "article",
       url,
@@ -42,7 +47,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       locale: "ar_AR",
       siteName: SITE_NAME,
       publishedTime: review.publishedAt?.toISOString(),
-      ...(review.imageUrl ? { images: [{ url: review.imageUrl, alt: review.imageAlt ?? review.titleAr }] } : {}),
+      ...(review.imageUrl ? { images: [{ url: review.imageUrl, width: 1200, height: 630, alt: review.imageAlt ?? review.titleAr }] } : {}),
     },
     twitter: {
       card: "summary_large_image",

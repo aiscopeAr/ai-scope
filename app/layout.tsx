@@ -92,6 +92,7 @@ export const metadata: Metadata = {
       "application/xml": `${SITE_URL}/sitemap.xml`,
     },
   },
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
