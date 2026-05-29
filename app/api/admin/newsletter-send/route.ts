@@ -81,7 +81,7 @@ export async function POST(req: Request) {
   const resend = new Resend(apiKey);
 
   const { data, error } = await resend.emails.send({
-    from: process.env.RESEND_FROM ?? "Lumiq <newsletter@lumiq.news>",
+    from: process.env.RESEND_FROM ?? "onboarding@resend.dev",
     to,
     subject: subject ?? `نشرة لوميك الأسبوعية — أبرز أخبار الذكاء الاصطناعي`,
     html,
