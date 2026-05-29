@@ -160,15 +160,15 @@ export default async function CompareIndexPage() {
                             style={{ color: "var(--text-muted)" }}>
                             {side.tool.name}
                           </span>
-                          <div className="flex-1 h-1.5 rounded-full" style={{ background: accent.border }}>
-                            <div className="h-1.5 rounded-full transition-all"
+                          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: accent.border }}>
+                            <div className="h-1.5 rounded-full"
                               style={{
-                                width: `${side.score * 10}%`,
+                                width: `${side.score}%`,
                                 background: accent.badge,
                               }} />
                           </div>
                           <span className="text-xs font-bold" style={{ color: accent.badge }}>
-                            {side.score}/10
+                            {side.score}
                           </span>
                         </div>
                       ) : null)}

@@ -80,9 +80,9 @@ function ToolLogo({ name, logoUrl, size = 14 }: { name: string; logoUrl: string 
   );
 }
 
-// ScoreRing — دائرة درجة دائرية
+// ScoreRing — دائرة درجة دائرية (score من 0 إلى 100)
 function ScoreRing({ score, winner }: { score: number; winner: boolean }) {
-  const pct = score / 10;
+  const pct = score / 100;
   const r = 28;
   const circ = 2 * Math.PI * r;
   const dash = circ * pct;
@@ -102,7 +102,7 @@ function ScoreRing({ score, winner }: { score: number; winner: boolean }) {
       </svg>
       <div className="absolute flex flex-col items-center leading-none">
         <span className="text-lg font-black" style={{ color: winner ? "#16a34a" : "var(--accent)" }}>{score}</span>
-        <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>/10</span>
+        <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>/100</span>
       </div>
     </div>
   );
