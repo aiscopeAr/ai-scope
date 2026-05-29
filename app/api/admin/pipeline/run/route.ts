@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-const ALLOWED = ["fetch-news", "cluster-news", "process-review", "publish-review"];
+const ALLOWED = ["fetch-news", "cluster-news", "process-review", "publish-review", "social-queue"];
 
 export async function POST(req: NextRequest) {
   // רק admin מחובר יכול להפעיל

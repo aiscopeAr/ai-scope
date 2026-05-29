@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/toast";
+import { Send, Loader2 } from "lucide-react";
 
 type Platform = "twitter" | "instagram" | "telegram" | "facebook" | "tiktok";
 type PostStatus = "pending" | "approved" | "sent" | "failed" | "skipped";
@@ -85,6 +86,7 @@ export default function SocialPage() {
   const [newCredentials, setNewCredentials] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [postFilter, setPostFilter] = useState<PostStatus | "all">("all");
+  const [sending, setSending] = useState(false);
 
   async function loadAccounts() {
     setLoadingAccounts(true);
@@ -154,6 +156,30 @@ export default function SocialPage() {
     }
   }
 
+  async function sendNow() {
+    setSending(true);
+    try {
+      const res = await fetch("/api/admin/pipeline/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cronKey: "social-queue" }),
+      });
+      const data = await res.json();
+      if (data.sent > 0) {
+        toast(`✅ أُرسل ${data.sent} منشور بنجاح!`);
+      } else if (data.failed > 0) {
+        toast(`❌ فشل إرسال ${data.failed} منشور`, "error");
+      } else {
+        toast("لا توجد منشورات معتمدة للإرسال");
+      }
+      await loadPosts();
+    } catch {
+      toast("خطأ في الإرسال", "error");
+    } finally {
+      setSending(false);
+    }
+  }
+
   async function approvePost(id: string) {
     await fetch(`/api/admin/social/posts/${id}`, {
       method: "PATCH",
@@ -180,12 +206,25 @@ export default function SocialPage() {
     <div className="p-6 space-y-6" dir="rtl">
       <div className="flex items-center justify-between">
         <p className="text-xs text-slate-400">إدارة الحسابات والمنشورات التلقائية</p>
-        <button
-          onClick={() => setShowAddAccount(true)}
-          className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
-        >
-          + إضافة حساب
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={sendNow}
+            disabled={sending}
+            className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition disabled:opacity-50"
+          >
+            {sending
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <Send className="h-4 w-4" />
+            }
+            {sending ? "جارٍ الإرسال..." : "إرسال الآن"}
+          </button>
+          <button
+            onClick={() => setShowAddAccount(true)}
+            className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition"
+          >
+            + إضافة حساب
+          </button>
+        </div>
       </div>
 
       {/* Stats strip */}
