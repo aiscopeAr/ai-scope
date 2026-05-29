@@ -1,0 +1,60 @@
+name: Evening Pipeline
+
+on:
+  schedule:
+    # 14:00 UTC = 17:00 Israel / 16:00 KSA / 18:00 UAE
+    - cron: "0 14 * * *"
+  workflow_dispatch: # allow manual trigger from GitHub UI
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Fetch News
+        run: |
+          curl -s -f \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/cron/fetch-news"
+          echo "✅ fetch-news done"
+
+      - name: Wait 30s
+        run: sleep 30
+
+      - name: Cluster News
+        run: |
+          curl -s -f \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/cron/cluster-news"
+          echo "✅ cluster-news done"
+
+      - name: Wait 30s
+        run: sleep 30
+
+      - name: Process Reviews (Write Articles)
+        run: |
+          curl -s -f \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/cron/process-review"
+          echo "✅ process-review done"
+
+      - name: Wait 2 min (image generation)
+        run: sleep 120
+
+      - name: Publish Reviews
+        run: |
+          curl -s -f \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/cron/publish-review"
+          echo "✅ publish-review done"
+
+      - name: Wait 30s
+        run: sleep 30
+
+      - name: Social Queue
+        run: |
+          curl -s -f \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/cron/social-queue"
+          echo "✅ social-queue done"
