@@ -1,10 +1,11 @@
 import { ImageResponse } from "next/og";
 import { prisma } from "@/lib/db";
-import { SITE_NAME } from "@/lib/seo";
+import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+export const revalidate = 3600;
 
 export default async function OgImage({
   params,
@@ -13,20 +14,33 @@ export default async function OgImage({
 }) {
   const { slug } = await params;
 
-  const review = await prisma.review.findUnique({
-    where: { slug },
-    select: {
-      titleAr: true,
-      summary: true,
-      imageUrl: true,
-      category: { select: { nameAr: true } },
-    },
-  });
+  let title = SITE_NAME;
+  let category = "ذكاء اصطناعي";
+  let summary = "";
+  let imageUrl: string | null = null;
 
-  const title = review?.titleAr ?? SITE_NAME;
-  const category = review?.category?.nameAr ?? "ذكاء اصطناعي";
-  const summary = review?.summary?.slice(0, 120) ?? "";
-  const imageUrl = review?.imageUrl ?? null;
+  try {
+    const review = await prisma.review.findUnique({
+      where: { slug },
+      select: {
+        titleAr: true,
+        summary: true,
+        imageUrl: true,
+        category: { select: { nameAr: true } },
+      },
+    });
+
+    if (review) {
+      title = review.titleAr;
+      category = review.category?.nameAr ?? "ذكاء اصطناعي";
+      summary = review.summary?.slice(0, 120) ?? "";
+      imageUrl = review.imageUrl ?? null;
+    }
+  } catch {
+    // fallback to defaults
+  }
+
+  const titleSize = title.length > 60 ? "38px" : "46px";
 
   return new ImageResponse(
     (
@@ -41,44 +55,74 @@ export default async function OgImage({
           background: "#0f172a",
         }}
       >
-        {/* Background image with overlay */}
+        {/* Background image */}
         {imageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={imageUrl}
             style={{
               position: "absolute",
-              inset: 0,
+              inset: "0",
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              opacity: 0.25,
+              opacity: 0.2,
             }}
+            alt=""
           />
         )}
 
-        {/* Dark gradient overlay */}
+        {/* Dark overlay */}
         <div
           style={{
             position: "absolute",
-            inset: 0,
-            background: imageUrl
-              ? "linear-gradient(135deg, rgba(15,23,42,0.97) 0%, rgba(15,23,42,0.85) 50%, rgba(15,23,42,0.75) 100%)"
-              : "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)",
+            inset: "0",
+            background: "linear-gradient(135deg, rgba(15,23,42,0.97) 0%, rgba(30,27,75,0.88) 60%, rgba(15,23,42,0.80) 100%)",
             display: "flex",
           }}
         />
 
-        {/* Grid pattern */}
+        {/* Grid */}
         <div
           style={{
             position: "absolute",
-            inset: 0,
+            inset: "0",
             backgroundImage:
-              "linear-gradient(rgba(99,102,241,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.06) 1px, transparent 1px)",
+              "linear-gradient(rgba(99,102,241,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.07) 1px, transparent 1px)",
             backgroundSize: "60px 60px",
             display: "flex",
           }}
         />
+
+        {/* Right image strip */}
+        {imageUrl && (
+          <div
+            style={{
+              position: "absolute",
+              right: "0",
+              top: "0",
+              width: "340px",
+              height: "630px",
+              display: "flex",
+              overflow: "hidden",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imageUrl}
+              style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.55 }}
+              alt=""
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: "0",
+                background: "linear-gradient(to left, transparent 30%, #0f172a 100%)",
+                display: "flex",
+              }}
+            />
+          </div>
+        )}
 
         {/* Content */}
         <div
@@ -88,13 +132,12 @@ export default async function OgImage({
             flexDirection: "column",
             justifyContent: "space-between",
             padding: "48px 56px",
-            width: "100%",
+            width: imageUrl ? "860px" : "100%",
             direction: "rtl",
           }}
         >
-          {/* Top — Logo + Site name */}
+          {/* Top — logo + site name + category */}
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-            {/* Logo */}
             <div
               style={{
                 display: "flex",
@@ -116,7 +159,6 @@ export default async function OgImage({
             <span style={{ color: "white", fontSize: "26px", fontWeight: "800" }}>
               {SITE_NAME}
             </span>
-            {/* Category badge */}
             <div
               style={{
                 display: "flex",
@@ -134,7 +176,7 @@ export default async function OgImage({
             </div>
           </div>
 
-          {/* Middle — Title */}
+          {/* Title + summary */}
           <div
             style={{
               display: "flex",
@@ -142,17 +184,15 @@ export default async function OgImage({
               gap: "16px",
               flex: 1,
               justifyContent: "center",
-              paddingTop: "24px",
-              paddingBottom: "24px",
+              padding: "24px 0",
             }}
           >
             <div
               style={{
                 color: "white",
-                fontSize: title.length > 60 ? "38px" : "46px",
+                fontSize: titleSize,
                 fontWeight: "900",
                 lineHeight: 1.3,
-                maxWidth: "900px",
                 textShadow: "0 2px 20px rgba(0,0,0,0.5)",
               }}
             >
@@ -163,73 +203,38 @@ export default async function OgImage({
                 style={{
                   color: "#94a3b8",
                   fontSize: "20px",
-                  lineHeight: 1.5,
-                  maxWidth: "800px",
+                  lineHeight: 1.55,
                 }}
               >
-                {summary.length > 100 ? summary.slice(0, 100) + "…" : summary}
+                {summary.length > 110 ? summary.slice(0, 110) + "…" : summary}
               </div>
             )}
           </div>
 
-          {/* Bottom bar */}
+          {/* Bottom */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#6366f1" }} />
-              <span style={{ color: "#64748b", fontSize: "15px" }}>لوميك — أخبار الذكاء الاصطناعي</span>
+              <span style={{ color: "#64748b", fontSize: "15px" }}>لوميك — أخبار الذكاء الاصطناعي بالعربية</span>
             </div>
             <span style={{ color: "#475569", fontSize: "14px" }}>lumiq.news</span>
           </div>
         </div>
 
-        {/* Right side image preview (if available) */}
-        {imageUrl && (
-          <div
-            style={{
-              position: "absolute",
-              left: "0",
-              top: "0",
-              width: "380px",
-              height: "630px",
-              display: "flex",
-              overflow: "hidden",
-            }}
-          >
-            <img
-              src={imageUrl}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                opacity: 0.6,
-              }}
-            />
-            {/* Fade to right */}
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "linear-gradient(to right, transparent 40%, #0f172a 100%)",
-                display: "flex",
-              }}
-            />
-          </div>
-        )}
-
         {/* Bottom accent line */}
         <div
           style={{
             position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
+            bottom: "0",
+            left: "0",
+            right: "0",
             height: "4px",
-            background: "linear-gradient(90deg, #4f46e5, #7c3aed, #4f46e5)",
+            background: "linear-gradient(90deg, #4f46e5, #7c3aed, #ec4899, #7c3aed, #4f46e5)",
             display: "flex",
           }}
         />
       </div>
     ),
-    { ...size }
+    { width: 1200, height: 630 }
   );
 }
