@@ -2,11 +2,22 @@
  * Dynamic OG Image API — no internal fetch, data passed as query params
  * GET /api/og?title=...&category=...&summary=...&imageUrl=...
  * GET /api/og?title=...&format=square  → 1080×1080 (Instagram)
+ *
+ * Uses nodejs runtime (not edge) so ImageResponse works without font loading issues.
  */
 import { ImageResponse } from "next/og";
-import { SITE_NAME } from "@/lib/seo";
+import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+// Load Cairo font (supports Arabic) — fetched once per cold start
+async function loadFont(): Promise<ArrayBuffer> {
+  // Cairo Bold for Arabic titles
+  const url = "https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpcWmhzfH5lWWgcQyyEwGgrp1FFhIJ2YA.woff2";
+  const res = await fetch(url);
+  return res.arrayBuffer();
+}
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -25,6 +36,14 @@ export async function GET(req: Request) {
     ? title.length > 50 ? "42px" : "52px"
     : title.length > 60 ? "36px" : "44px";
 
+  // Load font — fallback gracefully if fetch fails
+  let fontData: ArrayBuffer | undefined;
+  try {
+    fontData = await loadFont();
+  } catch {
+    // will render with system sans-serif
+  }
+
   return new ImageResponse(
     (
       <div
@@ -32,7 +51,7 @@ export async function GET(req: Request) {
           width: `${W}px`,
           height: `${H}px`,
           display: "flex",
-          fontFamily: "sans-serif",
+          fontFamily: "Cairo, sans-serif",
           position: "relative",
           overflow: "hidden",
           background: "#0f172a",
@@ -125,6 +144,17 @@ export async function GET(req: Request) {
         <div style={{ position: "absolute", bottom: "0", left: "0", right: "0", height: isSquare ? "6px" : "4px", background: "linear-gradient(90deg, #4f46e5, #7c3aed, #ec4899, #7c3aed, #4f46e5)", display: "flex" }} />
       </div>
     ),
-    { width: W, height: H }
+    {
+      width: W,
+      height: H,
+      ...(fontData ? {
+        fonts: [{
+          name: "Cairo",
+          data: fontData,
+          weight: 700 as const,
+          style: "normal" as const,
+        }],
+      } : {}),
+    }
   );
 }
