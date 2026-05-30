@@ -1,15 +1,13 @@
 /**
  * Dynamic OG Image API
- * GET /api/og?slug=article-slug&format=square
- *
- * format=wide   → 1200×630 (Twitter/X, Facebook, LinkedIn)
- * format=square → 1080×1080 (Instagram)
+ * GET /api/og?slug=article-slug          → 1200×630 (Twitter/X, Facebook)
+ * GET /api/og?slug=article-slug&format=square → 1080×1080 (Instagram)
  */
 import { ImageResponse } from "next/og";
 import { prisma } from "@/lib/db";
 import { SITE_NAME } from "@/lib/seo";
 
-export const runtime = "edge";
+export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -20,8 +18,14 @@ export async function GET(req: Request) {
   const W = isSquare ? 1080 : 1200;
   const H = isSquare ? 1080 : 630;
 
-  const review = slug
-    ? await prisma.review.findUnique({
+  let title = SITE_NAME;
+  let category = "ذكاء اصطناعي";
+  let summary = "";
+  let imageUrl: string | null = null;
+
+  try {
+    if (slug) {
+      const review = await prisma.review.findUnique({
         where: { slug },
         select: {
           titleAr: true,
@@ -29,17 +33,21 @@ export async function GET(req: Request) {
           imageUrl: true,
           category: { select: { nameAr: true } },
         },
-      })
-    : null;
-
-  const title = review?.titleAr ?? SITE_NAME;
-  const category = review?.category?.nameAr ?? "ذكاء اصطناعي";
-  const summary = review?.summary?.slice(0, 130) ?? "";
-  const imageUrl = review?.imageUrl ?? null;
+      });
+      if (review) {
+        title = review.titleAr;
+        category = review.category?.nameAr ?? "ذكاء اصطناعي";
+        summary = review.summary?.slice(0, 130) ?? "";
+        imageUrl = review.imageUrl ?? null;
+      }
+    }
+  } catch {
+    // fallback
+  }
 
   const titleSize = isSquare
     ? title.length > 50 ? "42px" : "52px"
-    : title.length > 60 ? "38px" : "46px";
+    : title.length > 60 ? "36px" : "44px";
 
   return new ImageResponse(
     (
@@ -54,44 +62,52 @@ export async function GET(req: Request) {
           background: "#0f172a",
         }}
       >
-        {/* BG image dim */}
+        {/* BG image faded */}
         {imageUrl && (
           <img
             src={imageUrl}
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.2 }}
+            style={{ position: "absolute", inset: "0", width: "100%", height: "100%", objectFit: "cover", opacity: 0.2 }}
+            alt=""
           />
         )}
+
         {/* Overlay */}
-        <div
-          style={{
-            position: "absolute", inset: 0, display: "flex",
-            background: "linear-gradient(135deg, rgba(15,23,42,0.98) 0%, rgba(30,27,75,0.90) 60%, rgba(15,23,42,0.85) 100%)",
-          }}
-        />
-        {/* Grid */}
-        <div
-          style={{
-            position: "absolute", inset: 0, display: "flex",
-            backgroundImage: "linear-gradient(rgba(99,102,241,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.07) 1px, transparent 1px)",
-            backgroundSize: "60px 60px",
-          }}
-        />
+        <div style={{
+          position: "absolute", inset: "0", display: "flex",
+          background: "linear-gradient(135deg, rgba(15,23,42,0.97) 0%, rgba(30,27,75,0.90) 60%, rgba(15,23,42,0.85) 100%)",
+        }} />
+
+        {/* Grid pattern */}
+        <div style={{
+          position: "absolute", inset: "0", display: "flex",
+          backgroundImage: "linear-gradient(rgba(99,102,241,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.07) 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
+        }} />
+
+        {/* Right image strip (wide only) */}
+        {imageUrl && !isSquare && (
+          <div style={{ position: "absolute", right: "0", top: "0", width: "340px", height: "630px", display: "flex", overflow: "hidden" }}>
+            <img src={imageUrl} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.55 }} alt="" />
+            <div style={{ position: "absolute", inset: "0", background: "linear-gradient(to left, transparent 30%, #0f172a 100%)", display: "flex" }} />
+          </div>
+        )}
 
         {/* Content */}
-        <div
-          style={{
-            position: "relative", display: "flex", flexDirection: "column",
-            justifyContent: "space-between", padding: isSquare ? "60px" : "48px 56px",
-            width: "100%", direction: "rtl",
-          }}
-        >
-          {/* Top */}
+        <div style={{
+          position: "relative", display: "flex", flexDirection: "column",
+          justifyContent: "space-between",
+          padding: isSquare ? "60px" : "48px 56px",
+          width: imageUrl && !isSquare ? "860px" : "100%",
+          direction: "rtl",
+        }}>
+
+          {/* Top — logo + name + category */}
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "center",
               width: isSquare ? "60px" : "48px", height: isSquare ? "60px" : "48px",
-              borderRadius: "14px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-              boxShadow: "0 0 24px rgba(99,102,241,0.5)",
+              borderRadius: "12px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              boxShadow: "0 0 20px rgba(99,102,241,0.5)",
             }}>
               <svg width={isSquare ? "34" : "28"} height={isSquare ? "34" : "28"} viewBox="0 0 32 32" fill="none">
                 <rect x="9" y="8" width="3.5" height="16" rx="1.5" fill="white" />
@@ -103,27 +119,23 @@ export async function GET(req: Request) {
             <div style={{
               display: "flex", marginRight: "auto",
               background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.4)",
-              borderRadius: "20px", padding: "5px 18px",
+              borderRadius: "20px", padding: isSquare ? "6px 20px" : "4px 16px",
               color: "#a5b4fc", fontSize: isSquare ? "18px" : "15px", fontWeight: "600",
             }}>
               {category}
             </div>
           </div>
 
-          {/* Title */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px", flex: 1, justifyContent: "center", padding: "32px 0" }}>
+          {/* Title + summary */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "18px", flex: 1, justifyContent: "center", padding: "28px 0" }}>
             <div style={{
               color: "white", fontSize: titleSize, fontWeight: "900",
-              lineHeight: 1.35, maxWidth: isSquare ? "960px" : "900px",
-              textShadow: "0 2px 20px rgba(0,0,0,0.6)",
+              lineHeight: 1.3, textShadow: "0 2px 20px rgba(0,0,0,0.6)",
             }}>
               {title.length > (isSquare ? 90 : 80) ? title.slice(0, isSquare ? 90 : 80) + "…" : title}
             </div>
             {summary && (
-              <div style={{
-                color: "#94a3b8", fontSize: isSquare ? "22px" : "20px",
-                lineHeight: 1.6, maxWidth: isSquare ? "880px" : "800px",
-              }}>
+              <div style={{ color: "#94a3b8", fontSize: isSquare ? "22px" : "19px", lineHeight: 1.6 }}>
                 {summary.length > (isSquare ? 130 : 100) ? summary.slice(0, isSquare ? 130 : 100) + "…" : summary}
               </div>
             )}
@@ -139,9 +151,9 @@ export async function GET(req: Request) {
           </div>
         </div>
 
-        {/* Bottom accent */}
+        {/* Bottom accent line */}
         <div style={{
-          position: "absolute", bottom: 0, left: 0, right: 0,
+          position: "absolute", bottom: "0", left: "0", right: "0",
           height: isSquare ? "6px" : "4px",
           background: "linear-gradient(90deg, #4f46e5, #7c3aed, #ec4899, #7c3aed, #4f46e5)",
           display: "flex",

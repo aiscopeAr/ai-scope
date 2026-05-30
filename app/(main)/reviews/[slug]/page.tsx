@@ -48,9 +48,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       siteName: SITE_NAME,
       publishedTime: review.publishedAt?.toISOString(),
       images: [
-        review.imageUrl
-          ? { url: review.imageUrl, width: 1200, height: 630, alt: review.imageAlt ?? review.titleAr }
-          : { url: absoluteUrl(`/reviews/${slug}/opengraph-image`), width: 1200, height: 630, alt: review.titleAr },
+        { url: absoluteUrl(`/api/og?slug=${slug}`), width: 1200, height: 630, alt: review.titleAr },
       ],
     },
     twitter: {
@@ -58,7 +56,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       site: SITE_TWITTER_HANDLE,
       title: review.titleAr,
       description,
-      images: [review.imageUrl ?? absoluteUrl(`/reviews/${slug}/opengraph-image`)],
+      images: [absoluteUrl(`/api/og?slug=${slug}`)],
     },
   };
 }
