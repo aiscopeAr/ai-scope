@@ -47,14 +47,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       locale: "ar_AR",
       siteName: SITE_NAME,
       publishedTime: review.publishedAt?.toISOString(),
-      ...(review.imageUrl ? { images: [{ url: review.imageUrl, width: 1200, height: 630, alt: review.imageAlt ?? review.titleAr }] } : {}),
+      images: [
+        review.imageUrl
+          ? { url: review.imageUrl, width: 1200, height: 630, alt: review.imageAlt ?? review.titleAr }
+          : { url: absoluteUrl(`/reviews/${slug}/opengraph-image`), width: 1200, height: 630, alt: review.titleAr },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       site: SITE_TWITTER_HANDLE,
       title: review.titleAr,
       description,
-      ...(review.imageUrl ? { images: [review.imageUrl] } : {}),
+      images: [review.imageUrl ?? absoluteUrl(`/reviews/${slug}/opengraph-image`)],
     },
   };
 }
