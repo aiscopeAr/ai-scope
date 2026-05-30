@@ -17,6 +17,22 @@ import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_TWITTER_HANDLE, truncate, absol
 
 export const dynamic = "force-dynamic";
 
+/** Build /api/og URL with article data embedded — avoids internal fetch from edge runtime */
+function buildOgUrl(review: {
+  titleAr: string;
+  summary: string | null;
+  imageUrl: string | null;
+  category: { nameAr: string };
+}): string {
+  const params = new URLSearchParams({
+    title: review.titleAr,
+    category: review.category.nameAr,
+    summary: (review.summary ?? "").slice(0, 120),
+    ...(review.imageUrl ? { imageUrl: review.imageUrl } : {}),
+  });
+  return absoluteUrl(`/api/og?${params.toString()}`);
+}
+
 const getReview = cache(async (slug: string) => {
   return prisma.review.findUnique({
     where: { slug },
@@ -48,7 +64,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       siteName: SITE_NAME,
       publishedTime: review.publishedAt?.toISOString(),
       images: [
-        { url: absoluteUrl(`/api/og?slug=${slug}`), width: 1200, height: 630, alt: review.titleAr },
+        { url: buildOgUrl(review), width: 1200, height: 630, alt: review.titleAr },
       ],
     },
     twitter: {
@@ -56,7 +72,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       site: SITE_TWITTER_HANDLE,
       title: review.titleAr,
       description,
-      images: [absoluteUrl(`/api/og?slug=${slug}`)],
+      images: [buildOgUrl(review)],
     },
   };
 }
