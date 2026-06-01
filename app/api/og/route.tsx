@@ -3,20 +3,22 @@
  * GET /api/og?title=...&category=...&summary=...&imageUrl=...
  * GET /api/og?title=...&format=square  → 1080×1080 (Instagram)
  *
- * Uses nodejs runtime (not edge) so ImageResponse works without font loading issues.
+ * nodejs runtime — ImageResponse + local font file (no network fetch needed).
  */
 import { ImageResponse } from "next/og";
-import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { SITE_NAME } from "@/lib/seo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Load Cairo font (supports Arabic) — fetched once per cold start
-async function loadFont(): Promise<ArrayBuffer> {
-  // Cairo Bold for Arabic titles
-  const url = "https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpcWmhzfH5lWWgcQyyEwGgrp1FFhIJ2YA.woff2";
-  const res = await fetch(url);
-  return res.arrayBuffer();
+// Load Cairo Bold TTF from public/fonts — bundled with the deployment
+function loadFont(): ArrayBuffer {
+  const fontPath = join(process.cwd(), "public", "fonts", "cairo-bold.ttf");
+  const buffer = readFileSync(fontPath);
+  // Convert Node Buffer → ArrayBuffer
+  return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
 }
 
 export async function GET(req: Request) {
@@ -36,12 +38,11 @@ export async function GET(req: Request) {
     ? title.length > 50 ? "42px" : "52px"
     : title.length > 60 ? "36px" : "44px";
 
-  // Load font — fallback gracefully if fetch fails
   let fontData: ArrayBuffer | undefined;
   try {
-    fontData = await loadFont();
+    fontData = loadFont();
   } catch {
-    // will render with system sans-serif
+    // fallback to system sans-serif
   }
 
   return new ImageResponse(
