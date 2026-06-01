@@ -20,107 +20,170 @@ export interface ToolCardData {
   editorPick: boolean;
 }
 
-const PRICING_BADGE: Record<string, { label: string; bg: string; color: string; border: string }> = {
-  free:     { label: "مجاني",          bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
-  freemium: { label: "مجاني + مدفوع", bg: "#fffbeb", color: "#b45309", border: "#fde68a" },
-  paid:     { label: "مدفوع",          bg: "#fff1f2", color: "#be123c", border: "#fecdd3" },
+const PRICING_BADGE: Record<string, { label: string; color: string; bg: string }> = {
+  free:     { label: "مجاني",         color: "#16a34a", bg: "#f0fdf4" },
+  freemium: { label: "مجاني+",        color: "#b45309", bg: "#fffbeb" },
+  paid:     { label: "مدفوع",         color: "#be123c", bg: "#fff1f2" },
 };
 
-export default function ToolCard({ tool, compact = false }: { tool: ToolCardData; compact?: boolean }) {
-  const badge = PRICING_BADGE[tool.pricing] ?? PRICING_BADGE.freemium;
+const CAT_COLORS: Record<string, string> = {
+  writing:          "#6366f1",
+  coding:           "#0ea5e9",
+  image:            "#ec4899",
+  video:            "#f97316",
+  voice:            "#8b5cf6",
+  marketing:        "#10b981",
+  education:        "#f59e0b",
+  startups:         "#14b8a6",
+  ecommerce:        "#ef4444",
+  automation:       "#3b82f6",
+  "customer-support":"#64748b",
+  productivity:     "#7c3aed",
+  legal:            "#0f172a",
+  finance:          "#059669",
+  healthcare:       "#dc2626",
+  students:         "#f59e0b",
+  "no-code":        "#6366f1",
+  presentations:    "#e11d48",
+  other:            "#94a3b8",
+};
+
+export default function ToolCard({ tool }: { tool: ToolCardData }) {
+  const badge  = PRICING_BADGE[tool.pricing] ?? PRICING_BADGE.freemium;
+  const accent = CAT_COLORS[tool.toolCategory] ?? "#6366f1";
 
   return (
     <Link
       href={`/ai-tools/${tool.slug}`}
-      className="group flex flex-col rounded-[6px] border p-5 transition"
-      style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)"; }}
+      className="group relative flex items-start gap-4 rounded-[10px] border p-4 transition-all duration-200"
+      style={{
+        borderColor: "var(--border-subtle)",
+        backgroundColor: "var(--bg-surface)",
+      }}
+      onMouseEnter={e => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.borderColor = accent + "55";
+        el.style.boxShadow = `0 4px 20px ${accent}18`;
+        el.style.transform = "translateY(-1px)";
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget as HTMLElement;
+        el.style.borderColor = "var(--border-subtle)";
+        el.style.boxShadow = "none";
+        el.style.transform = "translateY(0)";
+      }}
     >
-      {/* Header */}
-      <div className="mb-3 flex items-start gap-3">
-        <div className="relative shrink-0">
-          {tool.logoUrl ? (
-            <div className="h-12 w-12 overflow-hidden rounded-[6px] border flex items-center justify-center" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={tool.logoUrl} alt={tool.name} width={48} height={48} loading="lazy"
-                className="h-10 w-10 object-contain"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget.parentElement!).innerHTML = `<span style="font-size:1.125rem;font-weight:900;color:var(--accent)">${tool.name[0]}</span>`; }}
-              />
-            </div>
-          ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-[6px] text-lg font-black"
-              style={{ backgroundColor: "var(--accent-bg)", color: "var(--accent)" }}>
-              {tool.name[0]}
-            </div>
-          )}
-          {tool.editorPick && (
-            <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-[3px] text-[9px]"
-              style={{ backgroundColor: "#f59e0b", color: "#fff" }}
-              title="اختيار المحرر">★</span>
-          )}
-        </div>
+      {/* Left accent bar */}
+      <div
+        className="absolute right-0 top-4 bottom-4 w-[3px] rounded-l-full opacity-0 group-hover:opacity-100 transition-opacity"
+        style={{ backgroundColor: accent }}
+      />
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <h3 className="font-bold truncate transition-colors" style={{ color: "var(--text-primary)" }}>
-              {tool.name}
-            </h3>
-            {tool.featured && (
-              <span className="shrink-0 rounded-[3px] border px-1.5 py-0.5 text-[10px] font-bold"
-                style={{ backgroundColor: "var(--accent-bg)", color: "var(--accent)", borderColor: "var(--accent)" }}>
-                مميز
-              </span>
-            )}
-          </div>
-          {tool.tagline && !compact && (
-            <p className="mt-0.5 text-xs line-clamp-1" style={{ color: "var(--text-muted)" }}>{tool.tagline}</p>
-          )}
-        </div>
+      {/* Logo */}
+      <div
+        className="shrink-0 flex h-14 w-14 items-center justify-center rounded-[10px] text-xl font-black overflow-hidden"
+        style={{ background: `linear-gradient(135deg, ${accent}18, ${accent}30)`, border: `1px solid ${accent}30` }}
+      >
+        {tool.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={tool.logoUrl}
+            alt={tool.name}
+            width={44}
+            height={44}
+            loading="lazy"
+            className="h-10 w-10 object-contain"
+            onError={e => {
+              const img = e.currentTarget as HTMLImageElement;
+              img.style.display = "none";
+              img.parentElement!.innerHTML = `<span style="font-size:1.3rem;font-weight:900;color:${accent}">${tool.name[0]}</span>`;
+            }}
+          />
+        ) : (
+          <span style={{ fontSize: "1.3rem", fontWeight: 900, color: accent }}>{tool.name[0]}</span>
+        )}
       </div>
 
-      {/* Description */}
-      {!compact && (
-        <p className="mb-3 flex-1 text-sm line-clamp-2 leading-relaxed" style={{ color: "var(--text-secondary)" }}>{tool.descriptionAr}</p>
-      )}
-
-      {/* Tags */}
-      {tool.tags.length > 0 && !compact && (
-        <div className="mb-3 flex flex-wrap gap-1.5">
-          {tool.tags.slice(0, 3).map((t) => (
-            <span key={t} className="rounded-[3px] border px-2 py-0.5 text-[11px]"
-              style={{ borderColor: "var(--border-medium)", color: "var(--text-muted)", backgroundColor: "var(--bg-subtle)" }}>
-              {t}
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        {/* Top row: name + badges */}
+        <div className="flex flex-wrap items-center gap-2 mb-1">
+          <span className="font-bold text-[15px] transition-colors group-hover:opacity-80" style={{ color: "var(--text-primary)" }}>
+            {tool.name}
+          </span>
+          {tool.editorPick && (
+            <span className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+              style={{ backgroundColor: "#fef3c7", color: "#b45309" }}>
+              ⭐ اختيار المحرر
             </span>
-          ))}
+          )}
+          {tool.featured && (
+            <span className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+              style={{ backgroundColor: `${accent}18`, color: accent }}>
+              مميز
+            </span>
+          )}
         </div>
-      )}
 
-      {/* Footer */}
-      <div className="mt-auto flex items-center justify-between gap-2 border-t pt-3" style={{ borderColor: "var(--border-subtle)" }}>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="rounded-[3px] border px-2 py-0.5 text-[11px] font-semibold"
-            style={{ backgroundColor: badge.bg, color: badge.color, borderColor: badge.border }}>
+        {/* Tagline / description */}
+        <p className="text-sm line-clamp-2 leading-relaxed mb-2.5" style={{ color: "var(--text-secondary)" }}>
+          {tool.tagline ?? tool.descriptionAr}
+        </p>
+
+        {/* Bottom row: pricing + badges + stats */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {/* Pricing */}
+          <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+            style={{ backgroundColor: badge.bg, color: badge.color }}>
             {badge.label}
             {tool.monthlyPrice && tool.pricing !== "free" ? ` · $${tool.monthlyPrice}` : ""}
           </span>
+
+          {/* Arabic support */}
           {tool.arabicSupport && (
-            <span className="rounded-[3px] border px-1.5 py-0.5 text-[10px] font-bold"
-              style={{ backgroundColor: "#f0fdfa", color: "#0d9488", borderColor: "#99f6e4" }}>
+            <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold"
+              style={{ backgroundColor: "#f0fdfa", color: "#0d9488" }}>
               عربي ✓
             </span>
           )}
+
+          {/* API */}
           {tool.hasApi && (
-            <span className="rounded-[3px] border px-1.5 py-0.5 text-[10px] font-bold"
-              style={{ backgroundColor: "#eff6ff", color: "#2563eb", borderColor: "#bfdbfe" }}>
+            <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold"
+              style={{ backgroundColor: "#eff6ff", color: "#2563eb" }}>
               API
             </span>
           )}
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Stats */}
+          <div className="flex items-center gap-2.5 text-[11px]" style={{ color: "var(--text-muted)" }}>
+            {tool.likes > 0 && (
+              <span className="flex items-center gap-0.5">
+                <span>▲</span>
+                <span>{tool.likes.toLocaleString("ar-EG")}</span>
+              </span>
+            )}
+            <span className="flex items-center gap-0.5">
+              <span>👁</span>
+              <span>{tool.viewCount.toLocaleString("ar-EG")}</span>
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-[11px] shrink-0" style={{ color: "var(--text-muted)" }}>
-          <span>👁 {tool.viewCount.toLocaleString("ar-EG")}</span>
-          {tool.likes > 0 && <span>♥ {tool.likes.toLocaleString("ar-EG")}</span>}
-        </div>
+
+        {/* Tags */}
+        {tool.tags.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {tool.tags.slice(0, 3).map(t => (
+              <span key={t} className="rounded-[4px] px-1.5 py-0.5 text-[10px]"
+                style={{ backgroundColor: "var(--bg-subtle)", color: "var(--text-muted)" }}>
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </Link>
   );

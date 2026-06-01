@@ -471,7 +471,7 @@ export default async function AIToolPage({
             <section className="mt-10 border-t pt-10" style={{ borderColor: "var(--border-subtle)" }}>
               <h2 className="mb-6 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>أدوات مشابهة</h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {relatedTools.map((t) => <ToolCard key={t.id} tool={t} compact />)}
+                {relatedTools.map((t) => <ToolCard key={t.id} tool={t} />)}
               </div>
             </section>
           )}
