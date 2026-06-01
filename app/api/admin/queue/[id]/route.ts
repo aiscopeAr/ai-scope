@@ -47,9 +47,14 @@ export async function PUT(
     if (!body.categoryId || !body.slug) {
       return NextResponse.json({ error: "categoryId and slug required" }, { status: 400 });
     }
+    // Validate slug: must be non-empty, lowercase, no spaces, no slashes
+    const slugClean = body.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-|-$/g, "");
+    if (!slugClean) {
+      return NextResponse.json({ error: "Invalid slug — must contain latin letters or numbers" }, { status: 400 });
+    }
     const reviewId = await approveReview(id, {
       categoryId: body.categoryId,
-      slug: body.slug,
+      slug: slugClean,
       published: body.published ?? false,
       imageUrl: body.imageUrl,
     });
