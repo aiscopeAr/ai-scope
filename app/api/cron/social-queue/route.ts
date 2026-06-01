@@ -68,7 +68,7 @@ export async function GET(request: Request) {
       const message = err instanceof Error ? err.message : "Unknown error";
       await prisma.socialPost.update({
         where: { id: post.id },
-        data: { status: "failed", errorMsg: message },
+        data: { status: "failed", errorMsg: message },  // errorMsg matches Prisma schema field
       });
       results.push({ id: post.id, status: "failed", error: message });
     }

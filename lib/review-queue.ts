@@ -193,7 +193,7 @@ export async function approveReview(
               (item.summaryAr ?? "").slice(0, 200),
               articleUrl,
             ),
-            status: "pending",
+            status: "approved",  // auto-approve so the cron sends them immediately
           })),
         });
       }
