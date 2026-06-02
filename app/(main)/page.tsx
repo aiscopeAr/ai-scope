@@ -8,6 +8,7 @@ import AdSlot from "@/components/AdSlot";
 import { prisma } from "@/lib/db";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
 import { Scale, ArrowLeft, Sparkles } from "lucide-react";
+import PromptCard from "@/components/PromptCard";
 
 export const revalidate = 60;
 
@@ -72,14 +73,6 @@ async function getData() {
   } catch {
     return { featuredReview: null, latestReviews: [], featuredTools: [], toolOfWeek: null, latestComparisons: [], featuredPrompts: [] };
   }
-}
-
-function categoryLabel(cat: string): string {
-  const map: Record<string, string> = {
-    image: "🎨 صور", writing: "✍️ كتابة", code: "💻 برمجة",
-    marketing: "📣 تسويق", general: "✨ عام",
-  };
-  return map[cat] ?? cat;
 }
 
 export default async function HomePage() {
@@ -152,36 +145,7 @@ export default async function HomePage() {
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {featuredPrompts.map((p) => (
-              <Link
-                key={p.id}
-                href={`/prompts/${p.slug}`}
-                className="card-hover group flex flex-col gap-3"
-                style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <span className="rounded-[3px] border px-2 py-0.5 text-[11px] font-semibold"
-                    style={{ backgroundColor: "var(--accent-bg)", color: "var(--accent)", borderColor: "var(--accent)" }}>
-                    {categoryLabel(p.category)}
-                  </span>
-                  {p.tool?.logoUrl && (
-                    <img src={p.tool.logoUrl} alt={p.tool.name}
-                      className="h-6 w-6 rounded-md object-contain"
-                      style={{ border: "1px solid var(--border-subtle)" }} />
-                  )}
-                </div>
-                <p className="font-semibold leading-snug line-clamp-2 transition-opacity group-hover:opacity-75"
-                  style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
-                  {p.titleAr}
-                </p>
-                {p.description && (
-                  <p className="text-xs leading-relaxed line-clamp-2" style={{ color: "var(--text-muted)" }}>
-                    {p.description}
-                  </p>
-                )}
-                <span className="mt-auto text-xs font-semibold" style={{ color: "var(--accent)" }}>
-                  نسخ واستخدام ←
-                </span>
-              </Link>
+              <PromptCard key={p.id} prompt={p} />
             ))}
           </div>
         </section>
