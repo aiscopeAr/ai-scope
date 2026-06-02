@@ -68,7 +68,7 @@ export default async function AIToolPage({
 }) {
   const { slug } = await params;
 
-  const [tool, relatedTools, relatedReviews] = await Promise.all([
+  const [tool, relatedTools, relatedReviews, toolPrompts] = await Promise.all([
     prisma.aITool.findUnique({
       where: { slug },
       include: {
@@ -93,6 +93,13 @@ export default async function AIToolPage({
       orderBy: { publishedAt: "desc" },
       take: 4,
       select: { id: true, slug: true, titleAr: true, summary: true, publishedAt: true, authorSlug: true },
+    }).catch(() => []),
+
+    prisma.prompt.findMany({
+      where: { published: true, tool: { slug } },
+      orderBy: [{ featured: "desc" }, { viewCount: "desc" }],
+      take: 6,
+      select: { id: true, slug: true, titleAr: true, description: true, category: true, viewCount: true },
     }).catch(() => []),
   ]);
 
@@ -465,6 +472,38 @@ export default async function AIToolPage({
               )}
             </aside>
           </div>
+
+          {/* Prompts for this tool */}
+          {toolPrompts.length > 0 && (
+            <section className="mt-10 border-t pt-10" style={{ borderColor: "var(--border-subtle)" }}>
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                  برومبتس جاهزة لـ {tool.name}
+                </h2>
+                <Link href={`/prompts?toolId=${tool.id}`} className="text-sm" style={{ color: "var(--accent)" }}>
+                  عرض الكل ←
+                </Link>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {toolPrompts.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/prompts/${p.slug}`}
+                    className="card-hover group"
+                    style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
+                  >
+                    <p className="font-semibold line-clamp-2 transition-opacity group-hover:opacity-75" style={{ color: "var(--text-primary)" }}>
+                      {p.titleAr}
+                    </p>
+                    {p.description && (
+                      <p className="mt-1 text-xs line-clamp-2" style={{ color: "var(--text-muted)" }}>{p.description}</p>
+                    )}
+                    <span className="mt-2 block text-xs" style={{ color: "var(--accent)" }}>نسخ البرومبت ←</span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Related tools */}
           {relatedTools.length > 0 && (

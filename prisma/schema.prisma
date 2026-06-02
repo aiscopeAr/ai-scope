@@ -217,6 +217,7 @@ model AITool {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   comparisons     ComparisonSide[]
+  prompts         Prompt[]
 
   @@index([toolCategory, published])
   @@index([slug])
@@ -328,6 +329,31 @@ model NewsletterSubscriber {
 
   @@index([status])
   @@index([createdAt])
+}
+
+// ─── Prompts Library ─────────────────────────────────────────────────────────
+
+model Prompt {
+  id          String   @id @default(cuid())
+  title       String
+  titleAr     String
+  body        String   @db.Text        // the prompt text itself
+  description String?  @db.Text        // short explanation of what it does
+  category    String                   // "image" | "writing" | "code" | "marketing" | "general"
+  toolId      String?                  // nullable FK → AITool
+  tool        AITool?  @relation(fields: [toolId], references: [id], onDelete: SetNull)
+  tags        String[]
+  slug        String   @unique
+  featured    Boolean  @default(false)
+  published   Boolean  @default(true)
+  viewCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, published])
+  @@index([toolId])
+  @@index([slug])
+  @@index([featured, published])
 }
 
 // ─── System Settings ─────────────────────────────────────────────────────────

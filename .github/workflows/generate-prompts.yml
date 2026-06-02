@@ -1,0 +1,16 @@
+name: Generate Prompts
+
+on:
+  schedule:
+    - cron: "0 3 * * *"   # 03:00 UTC every night
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate prompts
+        run: |
+          curl --max-time 290 -s -w "\nstatus:%{http_code}\n" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://ai-news-ar.vercel.app/api/cron/generate-prompts" || true

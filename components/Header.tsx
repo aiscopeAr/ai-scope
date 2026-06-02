@@ -9,6 +9,7 @@ const primaryNav = [
   { href: "/", label: "الرئيسية" },
   { href: "/reviews", label: "التقارير" },
   { href: "/ai-tools", label: "أدوات AI" },
+  { href: "/prompts", label: "البرومبتس" },
   { href: "/compare", label: "المقارنات" },
 ];
 
