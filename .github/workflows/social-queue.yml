@@ -1,4 +1,4 @@
-name: Social Queue
+﻿name: Social Queue
 
 on:
   schedule:
@@ -12,5 +12,5 @@ jobs:
       - name: Send approved social posts
         run: |
           curl -s -w "\nstatus:%{http_code}\n" -X GET \
-            "https://ai-news-ar.vercel.app/api/cron/social-queue" \
+            "https://www.lumiq.news/api/cron/social-queue" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" || true

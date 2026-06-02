@@ -1,4 +1,4 @@
-name: Regenerate Article Images
+﻿name: Regenerate Article Images
 
 on:
   workflow_dispatch:
@@ -13,46 +13,46 @@ jobs:
         run: |
           curl --max-time 58 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/admin/regenerate-images" || true
+            "https://www.lumiq.news/api/admin/regenerate-images" || true
       - run: sleep 45
       - name: Batch 2
         run: |
           curl --max-time 58 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/admin/regenerate-images" || true
+            "https://www.lumiq.news/api/admin/regenerate-images" || true
       - run: sleep 45
       - name: Batch 3
         run: |
           curl --max-time 58 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/admin/regenerate-images" || true
+            "https://www.lumiq.news/api/admin/regenerate-images" || true
       - run: sleep 45
       - name: Batch 4
         run: |
           curl --max-time 58 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/admin/regenerate-images" || true
+            "https://www.lumiq.news/api/admin/regenerate-images" || true
       - run: sleep 45
       - name: Batch 5
         run: |
           curl --max-time 58 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/admin/regenerate-images" || true
+            "https://www.lumiq.news/api/admin/regenerate-images" || true
       - run: sleep 45
       - name: Batch 6
         run: |
           curl --max-time 58 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/admin/regenerate-images" || true
+            "https://www.lumiq.news/api/admin/regenerate-images" || true
       - run: sleep 45
       - name: Batch 7
         run: |
           curl --max-time 58 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/admin/regenerate-images" || true
+            "https://www.lumiq.news/api/admin/regenerate-images" || true
       - run: sleep 45
       - name: Batch 8
         run: |
           curl --max-time 58 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/admin/regenerate-images" || true
+            "https://www.lumiq.news/api/admin/regenerate-images" || true

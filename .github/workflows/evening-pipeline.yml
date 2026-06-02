@@ -1,4 +1,4 @@
-name: Evening Pipeline
+﻿name: Evening Pipeline
 
 on:
   schedule:
@@ -17,7 +17,7 @@ jobs:
           curl -s -f \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "${{ secrets.SITE_URL }}/api/cron/fetch-news"
-          echo "✅ fetch-news done"
+          echo "âœ… fetch-news done"
 
       - name: Wait 30s
         run: sleep 30
@@ -27,7 +27,7 @@ jobs:
           curl -s -f \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "${{ secrets.SITE_URL }}/api/cron/cluster-news"
-          echo "✅ cluster-news done"
+          echo "âœ… cluster-news done"
 
       - name: Wait 30s
         run: sleep 30
@@ -37,7 +37,7 @@ jobs:
           curl -s -f \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "${{ secrets.SITE_URL }}/api/cron/process-review"
-          echo "✅ process-review done"
+          echo "âœ… process-review done"
 
       - name: Wait 2 min (image generation)
         run: sleep 120
@@ -47,7 +47,7 @@ jobs:
           curl -s -f \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "${{ secrets.SITE_URL }}/api/cron/publish-review"
-          echo "✅ publish-review done"
+          echo "âœ… publish-review done"
 
       - name: Wait 30s
         run: sleep 30
@@ -57,4 +57,4 @@ jobs:
           curl -s -f \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "${{ secrets.SITE_URL }}/api/cron/social-queue"
-          echo "✅ social-queue done"
+          echo "âœ… social-queue done"

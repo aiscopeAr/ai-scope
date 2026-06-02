@@ -1,4 +1,4 @@
-name: Generate Prompts
+﻿name: Generate Prompts
 
 on:
   schedule:
@@ -13,4 +13,4 @@ jobs:
         run: |
           curl --max-time 290 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/generate-prompts" || true
+            "https://www.lumiq.news/api/cron/generate-prompts" || true

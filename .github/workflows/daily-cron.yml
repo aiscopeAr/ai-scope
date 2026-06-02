@@ -1,11 +1,11 @@
-name: Daily News Pipeline
+﻿name: Daily News Pipeline
 
 on:
   schedule:
-    - cron: "0 6 * * *"    # 06:00 UTC — fetch news
-    - cron: "15 6 * * *"   # 06:15 UTC — process (text)
-    - cron: "30 6 * * *"   # 06:30 UTC — publish (image)
-    - cron: "0 7 * * *"    # 07:00 UTC — trending
+    - cron: "0 6 * * *"    # 06:00 UTC â€” fetch news
+    - cron: "15 6 * * *"   # 06:15 UTC â€” process (text)
+    - cron: "30 6 * * *"   # 06:30 UTC â€” publish (image)
+    - cron: "0 7 * * *"    # 07:00 UTC â€” trending
   workflow_dispatch:
     inputs:
       job:
@@ -25,7 +25,7 @@ jobs:
         run: |
           curl --max-time 55 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/fetch-news" || true
+            "https://www.lumiq.news/api/cron/fetch-news" || true
 
   process-queue:
     if: >-
@@ -38,19 +38,19 @@ jobs:
         run: |
           curl --max-time 55 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-queue" || true
+            "https://www.lumiq.news/api/cron/process-queue" || true
       - run: sleep 20
       - name: Process 2
         run: |
           curl --max-time 55 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-queue" || true
+            "https://www.lumiq.news/api/cron/process-queue" || true
       - run: sleep 20
       - name: Process 3
         run: |
           curl --max-time 55 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/process-queue" || true
+            "https://www.lumiq.news/api/cron/process-queue" || true
 
   publish-queue:
     if: >-
@@ -63,19 +63,19 @@ jobs:
         run: |
           curl --max-time 58 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/publish-queue" || true
+            "https://www.lumiq.news/api/cron/publish-queue" || true
       - run: sleep 35
       - name: Publish 2
         run: |
           curl --max-time 58 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/publish-queue" || true
+            "https://www.lumiq.news/api/cron/publish-queue" || true
       - run: sleep 35
       - name: Publish 3
         run: |
           curl --max-time 58 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/publish-queue" || true
+            "https://www.lumiq.news/api/cron/publish-queue" || true
 
   trending:
     if: >-
@@ -88,7 +88,7 @@ jobs:
         run: |
           curl --max-time 55 -s -w "\nstatus:%{http_code}\n" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "https://ai-news-ar.vercel.app/api/cron/trending" || true
+            "https://www.lumiq.news/api/cron/trending" || true
 
   noop:
     if: always()
