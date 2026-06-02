@@ -146,11 +146,10 @@ export default function AdminPromptsPage() {
 
   async function runGenerate() {
     try {
-      const res = await fetch("/api/cron/generate-prompts", {
-        headers: { authorization: `Bearer ${process.env.NEXT_PUBLIC_CRON_SECRET ?? "dev"}` },
-      });
+      const res = await fetch("/api/admin/prompts/generate", { method: "POST" });
       const data = await res.json();
-      toast(`✅ تم توليد ${data.generated ?? 0} برومبت`);
+      if (!res.ok) { toast(data.error ?? "فشل التوليد", "error"); return; }
+      toast(`✅ تم توليد ${data.generated ?? 0} برومبت${data.failed ? ` (${data.failed} فشل)` : ""}`);
       load();
     } catch { toast("فشل التوليد", "error"); }
   }
