@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Copy, Check } from "lucide-react";
 
 export default function CopyPromptButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -14,9 +15,15 @@ export default function CopyPromptButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-violet-500 active:scale-95"
+      className="flex items-center gap-1.5 rounded-[6px] border px-3 py-1.5 text-xs font-semibold transition-all"
+      style={{
+        borderColor: copied ? "#bbf7d0" : "var(--accent)",
+        backgroundColor: copied ? "#f0fdf4" : "var(--accent-bg)",
+        color: copied ? "#16a34a" : "var(--accent)",
+      }}
     >
-      {copied ? "✓ تم النسخ" : "نسخ البرومبت"}
+      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      {copied ? "تم النسخ" : "نسخ البرومبت"}
     </button>
   );
 }
