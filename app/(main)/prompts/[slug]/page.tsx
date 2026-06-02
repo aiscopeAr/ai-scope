@@ -159,24 +159,50 @@ export default async function PromptPage({ params }: Props) {
 
               {/* Related prompts */}
               {related.length > 0 && (
-                <section className="border-t pt-6" style={{ borderColor: "var(--border-subtle)" }}>
-                  <h2 className="mb-4 text-lg font-bold"
-                    style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
-                    برومبتس مشابهة
-                  </h2>
+                <section className="rounded-[6px] border p-6"
+                  style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                  <div className="mb-5 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-bold"
+                        style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                        برومبتس قد تعجبك
+                      </h2>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                        في نفس الفئة — جاهزة للاستخدام الآن
+                      </p>
+                    </div>
+                    <Link href="/prompts"
+                      className="text-xs font-semibold transition-opacity hover:opacity-70"
+                      style={{ color: "var(--accent)" }}>
+                      عرض الكل ←
+                    </Link>
+                  </div>
+
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {related.map(r => (
+                    {related.map((r, i) => (
                       <Link key={r.id} href={`/prompts/${r.slug}`}
-                        className="card-hover group rounded-[6px]"
-                        style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
-                        <p className="line-clamp-2 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                          {r.titleAr}
-                        </p>
-                        {r.description && (
-                          <p className="mt-1 line-clamp-1 text-xs" style={{ color: "var(--text-muted)" }}>
-                            {r.description}
-                          </p>
-                        )}
+                        className="card-hover group flex flex-col gap-2 rounded-[6px]">
+                        <div className="flex items-start gap-3">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] text-sm font-bold"
+                            style={{ backgroundColor: "var(--accent-bg)", color: "var(--accent)" }}>
+                            {i + 1}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="line-clamp-2 text-sm font-semibold leading-snug"
+                              style={{ color: "var(--text-primary)" }}>
+                              {r.titleAr}
+                            </p>
+                            {r.description && (
+                              <p className="mt-1 line-clamp-2 text-xs leading-relaxed"
+                                style={{ color: "var(--text-muted)" }}>
+                                {r.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-xs font-semibold" style={{ color: "var(--accent)" }}>
+                          نسخ واستخدام ←
+                        </span>
                       </Link>
                     ))}
                   </div>
