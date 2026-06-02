@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, truncate } from "@/lib/seo";
-import CopyPromptButton from "@/components/CopyPromptButton";
+import PromptBodyTabs from "@/components/PromptBodyTabs";
 
 export const revalidate = 600;
 
@@ -141,19 +141,8 @@ export default async function PromptPage({ params }: Props) {
                 )}
               </div>
 
-              {/* Prompt body */}
-              <div className="rounded-[6px] border p-6"
-                style={{ borderColor: "var(--accent)", backgroundColor: "var(--accent-bg)" }}>
-                <div className="mb-4 flex items-center justify-between">
-                  <span className="text-sm font-semibold" style={{ color: "var(--accent)" }}>نص البرومبت</span>
-                  <CopyPromptButton text={prompt.body} />
-                </div>
-                <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed overflow-x-auto"
-                  dir="ltr"
-                  style={{ color: "var(--text-primary)", textAlign: "left" }}>
-                  {prompt.body}
-                </pre>
-              </div>
+              {/* Prompt body with language tabs */}
+              <PromptBodyTabs body={prompt.body} bodyAr={prompt.bodyAr ?? null} />
 
               {/* Tags */}
               {prompt.tags.length > 0 && (

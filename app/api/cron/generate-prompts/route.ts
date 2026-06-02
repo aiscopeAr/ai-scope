@@ -34,12 +34,23 @@ function slugify(text: string): string {
     .slice(0, 80);
 }
 
+const SYSTEM_PROMPT = (context: string) => `أنت خبير في كتابة الـ prompts للذكاء الاصطناعي.
+${context}
+أعد JSON بهذا الشكل بالضبط:
+{
+  "title": "عنوان قصير بالإنجليزية (5-8 كلمات)",
+  "titleAr": "عنوان قصير بالعربية (5-8 كلمات)",
+  "body": "نص الـ prompt الكامل بالإنجليزية (50-200 كلمة)",
+  "bodyAr": "نفس الـ prompt مترجم ومكيّف للعربية (50-200 كلمة) — ليس ترجمة حرفية بل مكيّف لأسلوب الكتابة بالعربية",
+  "description": "شرح قصير بالعربية لماذا هذا الـ prompt مفيد (2-3 جمل)",
+  "tags": ["tag1", "tag2", "tag3"]
+}`;
+
 export async function GET(request: Request) {
   if (!verifyCronSecret(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Pick 3 random tools to attach prompts to + 2 general prompts
   const tools = await prisma.aITool.findMany({
     where: { published: true },
     select: { id: true, name: true, tagline: true, toolCategory: true },
@@ -47,13 +58,11 @@ export async function GET(request: Request) {
     take: 20,
   });
 
-  // Shuffle and pick 3
   const shuffled = tools.sort(() => Math.random() - 0.5).slice(0, 3);
 
   const generated: string[] = [];
   const failed: string[] = [];
 
-  // Generate tool-specific prompts
   for (const tool of shuffled) {
     try {
       const result = await generatePromptForTool(tool);
@@ -64,7 +73,6 @@ export async function GET(request: Request) {
     }
   }
 
-  // Generate 2 general prompts
   for (let i = 0; i < 2; i++) {
     try {
       const category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
@@ -88,21 +96,11 @@ async function generatePromptForTool(tool: { id: string; name: string; tagline: 
     messages: [
       {
         role: "system",
-        content: `أنت خبير في كتابة الـ prompts للذكاء الاصطناعي.
-مهمتك: اكتب prompt احترافي يمكن استخدامه مع أداة "${tool.name}".
-أعد JSON بهذا الشكل:
-{
-  "title": "عنوان قصير بالإنجليزية (5-8 كلمات)",
-  "titleAr": "عنوان قصير بالعربية (5-8 كلمات)",
-  "body": "نص الـ prompt الكامل بالإنجليزية (50-200 كلمة)",
-  "description": "شرح قصير بالعربية لماذا هذا الـ prompt مفيد (2-3 جمل)",
-  "tags": ["tag1", "tag2", "tag3"]
-}`,
+        content: SYSTEM_PROMPT(`مهمتك: اكتب prompt احترافي يمكن استخدامه مع أداة "${tool.name}".`),
       },
       {
         role: "user",
-        content: `اكتب prompt احترافي ومفيد لاستخدام أداة "${tool.name}"${tool.tagline ? ` (${tool.tagline})` : ""}.
-يجب أن يكون الـ prompt عملي ومحدد وقابل للتطبيق مباشرة.`,
+        content: `اكتب prompt احترافي ومفيد لاستخدام أداة "${tool.name}"${tool.tagline ? ` (${tool.tagline})` : ""}. يجب أن يكون عملي ومحدد وقابل للتطبيق مباشرة.`,
       },
     ],
   });
@@ -121,6 +119,7 @@ async function generatePromptForTool(tool: { id: string; name: string; tagline: 
       title: data.title,
       titleAr: data.titleAr,
       body: data.body,
+      bodyAr: data.bodyAr ?? null,
       description: data.description ?? null,
       category,
       toolId: tool.id,
@@ -140,16 +139,7 @@ async function generateGeneralPrompt(category: Category) {
     messages: [
       {
         role: "system",
-        content: `أنت خبير في كتابة الـ prompts للذكاء الاصطناعي.
-مهمتك: اكتب prompt احترافي في مجال "${CATEGORY_LABELS[category]}" يعمل مع أي أداة ذكاء اصطناعي.
-أعد JSON بهذا الشكل:
-{
-  "title": "عنوان قصير بالإنجليزية (5-8 كلمات)",
-  "titleAr": "عنوان قصير بالعربية (5-8 كلمات)",
-  "body": "نص الـ prompt الكامل بالإنجليزية (50-200 كلمة)",
-  "description": "شرح قصير بالعربية لماذا هذا الـ prompt مفيد (2-3 جمل)",
-  "tags": ["tag1", "tag2", "tag3"]
-}`,
+        content: SYSTEM_PROMPT(`مهمتك: اكتب prompt احترافي في مجال "${CATEGORY_LABELS[category]}" يعمل مع أي أداة ذكاء اصطناعي.`),
       },
       {
         role: "user",
@@ -172,6 +162,7 @@ async function generateGeneralPrompt(category: Category) {
       title: data.title,
       titleAr: data.titleAr,
       body: data.body,
+      bodyAr: data.bodyAr ?? null,
       description: data.description ?? null,
       category,
       toolId: null,

@@ -20,6 +20,7 @@ type Prompt = {
   title: string;
   titleAr: string;
   body: string;
+  bodyAr: string | null;
   description: string | null;
   category: string;
   tags: string[];
@@ -32,13 +33,13 @@ type Prompt = {
 };
 
 type FormState = {
-  title: string; titleAr: string; body: string; description: string;
+  title: string; titleAr: string; body: string; bodyAr: string; description: string;
   category: string; toolId: string; tags: string; slug: string;
   featured: boolean; published: boolean;
 };
 
 const empty: FormState = {
-  title: "", titleAr: "", body: "", description: "",
+  title: "", titleAr: "", body: "", bodyAr: "", description: "",
   category: "general", toolId: "", tags: "", slug: "",
   featured: false, published: true,
 };
@@ -81,9 +82,10 @@ export default function AdminPromptsPage() {
   function openEdit(p: Prompt) {
     setForm({
       title: p.title, titleAr: p.titleAr, body: p.body,
-      description: p.description ?? "", category: p.category,
-      toolId: p.tool?.id ?? "", tags: p.tags.join(", "),
-      slug: p.slug, featured: p.featured, published: p.published,
+      bodyAr: p.bodyAr ?? "", description: p.description ?? "",
+      category: p.category, toolId: p.tool?.id ?? "",
+      tags: p.tags.join(", "), slug: p.slug,
+      featured: p.featured, published: p.published,
     });
     setEditId(p.id);
     setShowForm(true);
@@ -103,6 +105,7 @@ export default function AdminPromptsPage() {
           ...form,
           tags: form.tags.split(",").map(t => t.trim()).filter(Boolean),
           toolId: form.toolId || null,
+          bodyAr: form.bodyAr || null,
         }),
       });
       if (!res.ok) { const e = await res.json(); toast(e.error ?? "فشل الحفظ", "error"); return; }
@@ -416,16 +419,33 @@ export default function AdminPromptsPage() {
                 <textarea className={inputCls} rows={2} value={form.description} onChange={e => set("description", e.target.value)} placeholder="شرح مختصر لما يفعله هذا البرومبت..." />
               </div>
 
-              {/* Body */}
+              {/* Body EN */}
               <div>
-                <label className={labelCls}>نص البرومبت * <span className="font-normal text-slate-400">(بالإنجليزية)</span></label>
+                <label className={labelCls}>نص البرومبت * <span className="font-normal text-slate-400">(English)</span></label>
                 <textarea
                   className={`${inputCls} font-mono`}
-                  rows={8}
+                  rows={7}
                   dir="ltr"
                   value={form.body}
                   onChange={e => set("body", e.target.value)}
                   placeholder="You are a professional... Write a..."
+                />
+              </div>
+
+              {/* Body AR */}
+              <div>
+                <label className={labelCls}>
+                  النسخة العربية
+                  <span className="mr-2 font-normal text-slate-400">(اختياري)</span>
+                  <span className="mr-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-600">عربي</span>
+                </label>
+                <textarea
+                  className={`${inputCls} font-mono`}
+                  rows={7}
+                  dir="rtl"
+                  value={form.bodyAr}
+                  onChange={e => set("bodyAr", e.target.value)}
+                  placeholder="أنت خبير في... اكتب لي..."
                 />
               </div>
 

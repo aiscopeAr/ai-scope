@@ -337,7 +337,8 @@ model Prompt {
   id          String   @id @default(cuid())
   title       String
   titleAr     String
-  body        String   @db.Text        // the prompt text itself
+  body        String   @db.Text        // the prompt text (English)
+  bodyAr      String?  @db.Text        // Arabic version (optional)
   description String?  @db.Text        // short explanation of what it does
   category    String                   // "image" | "writing" | "code" | "marketing" | "general"
   toolId      String?                  // nullable FK → AITool
