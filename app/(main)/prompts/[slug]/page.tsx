@@ -100,9 +100,9 @@ export default async function PromptPage({ params }: Props) {
 
           {/* Breadcrumb */}
           <nav className="mb-6 flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
-            <Link href="/" className="transition-colors hover:text-[var(--accent)]">الرئيسية</Link>
+            <Link href="/" className="transition-colors hover:text-[var(--text-primary)]">الرئيسية</Link>
             <span>/</span>
-            <Link href="/prompts" className="transition-colors hover:text-[var(--accent)]">مكتبة البرومبتس</Link>
+            <Link href="/prompts" className="transition-colors hover:text-[var(--text-primary)]">مكتبة البرومبتس</Link>
             <span>/</span>
             <span style={{ color: "var(--text-secondary)" }}>{prompt.titleAr}</span>
           </nav>
@@ -113,7 +113,8 @@ export default async function PromptPage({ params }: Props) {
             <div className="lg:col-span-2 space-y-5">
 
               {/* Header card */}
-              <div className="rounded-[6px] border p-6" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+              <div className="rounded-[6px] border p-6"
+                style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
                 <div className="mb-4 flex flex-wrap items-center gap-2">
                   <span className="rounded-[3px] border px-2.5 py-0.5 text-xs font-semibold"
                     style={{ backgroundColor: badge.bg, color: badge.color, borderColor: badge.border }}>
@@ -141,7 +142,8 @@ export default async function PromptPage({ params }: Props) {
               </div>
 
               {/* Prompt body */}
-              <div className="rounded-[6px] border p-6" style={{ borderColor: "var(--accent)", backgroundColor: "var(--accent-bg)" }}>
+              <div className="rounded-[6px] border p-6"
+                style={{ borderColor: "var(--accent)", backgroundColor: "var(--accent-bg)" }}>
                 <div className="mb-4 flex items-center justify-between">
                   <span className="text-sm font-semibold" style={{ color: "var(--accent)" }}>نص البرومبت</span>
                   <CopyPromptButton text={prompt.body} />
@@ -169,22 +171,22 @@ export default async function PromptPage({ params }: Props) {
               {/* Related prompts */}
               {related.length > 0 && (
                 <section className="border-t pt-6" style={{ borderColor: "var(--border-subtle)" }}>
-                  <h2 className="mb-4 text-lg font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                  <h2 className="mb-4 text-lg font-bold"
+                    style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
                     برومبتس مشابهة
                   </h2>
                   <div className="grid gap-3 sm:grid-cols-2">
                     {related.map(r => (
                       <Link key={r.id} href={`/prompts/${r.slug}`}
-                        className="group rounded-[6px] border p-4 transition-all"
-                        style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)"; }}
-                      >
+                        className="card-hover group rounded-[6px]"
+                        style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
                         <p className="line-clamp-2 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
                           {r.titleAr}
                         </p>
                         {r.description && (
-                          <p className="mt-1 line-clamp-1 text-xs" style={{ color: "var(--text-muted)" }}>{r.description}</p>
+                          <p className="mt-1 line-clamp-1 text-xs" style={{ color: "var(--text-muted)" }}>
+                            {r.description}
+                          </p>
                         )}
                       </Link>
                     ))}
@@ -198,16 +200,14 @@ export default async function PromptPage({ params }: Props) {
 
               {/* Tool card */}
               {prompt.tool ? (
-                <div className="rounded-[6px] border p-5" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                <div className="rounded-[6px] border p-5"
+                  style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
                   <p className="mb-3 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>الأداة المقترحة</p>
                   <Link href={`/ai-tools/${prompt.tool.slug}`}
-                    className="flex items-center gap-3 rounded-[6px] border p-3 transition-colors"
-                    style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)"; }}
-                  >
+                    className="card-hover flex items-center gap-3">
                     {prompt.tool.logoUrl ? (
-                      <Image src={prompt.tool.logoUrl} alt={prompt.tool.name} width={40} height={40} className="rounded-[6px]" />
+                      <Image src={prompt.tool.logoUrl} alt={prompt.tool.name} width={40} height={40}
+                        className="rounded-[6px] shrink-0" />
                     ) : (
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[6px] text-xl"
                         style={{ backgroundColor: "var(--accent-bg)", color: "var(--accent)" }}>🤖</div>
@@ -221,7 +221,8 @@ export default async function PromptPage({ params }: Props) {
                   </Link>
                 </div>
               ) : (
-                <div className="rounded-[6px] border p-5" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                <div className="rounded-[6px] border p-5"
+                  style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
                   <p className="mb-1 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>متوافق مع</p>
                   <p className="text-sm" style={{ color: "var(--text-muted)" }}>
                     ChatGPT، Claude، Gemini، وأي نموذج لغوي آخر
@@ -230,27 +231,29 @@ export default async function PromptPage({ params }: Props) {
               )}
 
               {/* Stats */}
-              <div className="rounded-[6px] border p-5" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+              <div className="rounded-[6px] border p-5"
+                style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
                 <p className="mb-3 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>إحصائيات</p>
                 <dl className="space-y-2 text-sm">
                   <div className="flex items-center justify-between">
                     <dt style={{ color: "var(--text-muted)" }}>المشاهدات</dt>
-                    <dd className="font-medium" style={{ color: "var(--text-primary)" }}>{prompt.viewCount.toLocaleString("ar-SA")}</dd>
+                    <dd className="font-medium" style={{ color: "var(--text-primary)" }}>
+                      {prompt.viewCount.toLocaleString("ar-SA")}
+                    </dd>
                   </div>
                   <div className="flex items-center justify-between">
                     <dt style={{ color: "var(--text-muted)" }}>الفئة</dt>
-                    <dd className="font-medium" style={{ color: "var(--text-primary)" }}>{CATEGORY_LABELS[prompt.category] ?? prompt.category}</dd>
+                    <dd className="font-medium" style={{ color: "var(--text-primary)" }}>
+                      {CATEGORY_LABELS[prompt.category] ?? prompt.category}
+                    </dd>
                   </div>
                 </dl>
               </div>
 
               {/* Back */}
               <Link href="/prompts"
-                className="flex items-center justify-center gap-2 rounded-[6px] border px-4 py-3 text-sm font-medium transition-colors"
-                style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
-              >
+                className="pill-hover flex items-center justify-center gap-2 w-full py-2.5 text-sm font-medium"
+                style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)" }}>
                 ← العودة إلى المكتبة
               </Link>
             </aside>
