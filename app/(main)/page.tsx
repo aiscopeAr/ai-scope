@@ -9,7 +9,7 @@ import { prisma } from "@/lib/db";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
 import { Scale, ArrowLeft } from "lucide-react";
 
-export const revalidate = 300; // ISR — revalidate every 5 minutes
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: `${SITE_NAME} — ${SITE_NAME_AR}`,
