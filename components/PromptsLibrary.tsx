@@ -20,20 +20,20 @@ type PromptItem = {
 
 type Category = { value: string; label: string };
 
-const CATEGORY_COLORS: Record<string, string> = {
-  image:     "bg-pink-500/20 text-pink-300",
-  writing:   "bg-indigo-500/20 text-indigo-300",
-  code:      "bg-emerald-500/20 text-emerald-300",
-  marketing: "bg-amber-500/20 text-amber-300",
-  general:   "bg-gray-500/20 text-gray-300",
-};
-
 const CATEGORY_ICONS: Record<string, string> = {
   image:     "🎨",
   writing:   "✍️",
   code:      "💻",
   marketing: "📣",
   general:   "✨",
+};
+
+const CATEGORY_COLORS: Record<string, { bg: string; color: string; border: string }> = {
+  image:     { bg: "#fdf4ff", color: "#9333ea", border: "#e9d5ff" },
+  writing:   { bg: "#eff6ff", color: "#2563eb", border: "#bfdbfe" },
+  code:      { bg: "#f0fdf4", color: "#16a34a", border: "#bbf7d0" },
+  marketing: { bg: "#fffbeb", color: "#b45309", border: "#fde68a" },
+  general:   { bg: "var(--bg-subtle)", color: "var(--text-muted)", border: "var(--border-medium)" },
 };
 
 interface Props {
@@ -89,17 +89,32 @@ export default function PromptsLibrary({ initialPrompts, initialTotal, featuredP
   const showFeatured = activeCategory === "all" && !search && page === 1 && featuredPrompts.length > 0;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10">
-      {/* Search */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center">
-        <input
-          type="search"
-          placeholder="ابحث عن برومبت..."
-          value={search}
-          onChange={e => handleSearch(e.target.value)}
-          className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 sm:max-w-sm"
-        />
-        <p className="text-sm text-gray-500">{total.toLocaleString("ar-SA")} نتيجة</p>
+    <div className="container mx-auto max-w-7xl px-4 py-10">
+      {/* Search + count */}
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center" dir="rtl">
+        <div className="relative flex-1 sm:max-w-sm">
+          <svg className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: "var(--text-muted)" }}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="search"
+            placeholder="ابحث عن برومبت..."
+            value={search}
+            onChange={e => handleSearch(e.target.value)}
+            className="w-full rounded-[6px] border py-2.5 pr-9 pl-4 text-sm outline-none transition-colors"
+            style={{
+              borderColor: "var(--border-medium)",
+              backgroundColor: "var(--bg-surface)",
+              color: "var(--text-primary)",
+            }}
+            onFocus={e => (e.currentTarget.style.borderColor = "var(--accent)")}
+            onBlur={e => (e.currentTarget.style.borderColor = "var(--border-medium)")}
+          />
+        </div>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+          {total.toLocaleString("ar-EG")} نتيجة
+        </p>
       </div>
 
       {/* Category tabs */}
@@ -108,14 +123,15 @@ export default function PromptsLibrary({ initialPrompts, initialTotal, featuredP
           <button
             key={cat.value}
             onClick={() => handleCategory(cat.value)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              activeCategory === cat.value
-                ? "bg-violet-600 text-white"
-                : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
-            }`}
+            className="rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
+            style={{
+              borderColor: activeCategory === cat.value ? "var(--accent)" : "var(--border-medium)",
+              backgroundColor: activeCategory === cat.value ? "var(--accent-bg)" : "var(--bg-subtle)",
+              color: activeCategory === cat.value ? "var(--accent)" : "var(--text-secondary)",
+            }}
           >
             {cat.value !== "all" && CATEGORY_ICONS[cat.value] && (
-              <span className="mr-1">{CATEGORY_ICONS[cat.value]}</span>
+              <span className="ml-1">{CATEGORY_ICONS[cat.value]}</span>
             )}
             {cat.label}
           </button>
@@ -124,32 +140,40 @@ export default function PromptsLibrary({ initialPrompts, initialTotal, featuredP
 
       {/* Featured section */}
       {showFeatured && (
-        <section className="mb-12">
-          <h2 className="mb-4 text-lg font-semibold text-white">⭐ مميزة</h2>
+        <section className="mb-10">
+          <h2 className="mb-4 text-lg font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+            ⭐ مميزة
+          </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredPrompts.map(p => (
-              <PromptCard key={p.id} prompt={p} />
-            ))}
+            {featuredPrompts.map(p => <PromptCard key={p.id} prompt={p} />)}
           </div>
         </section>
       )}
 
       {/* All prompts grid */}
       <section>
-        {showFeatured && <h2 className="mb-4 text-lg font-semibold text-white">جميع البرومبتس</h2>}
+        {showFeatured && (
+          <h2 className="mb-4 text-lg font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+            جميع البرومبتس
+          </h2>
+        )}
+
         {loading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="h-44 animate-pulse rounded-2xl bg-white/5" />
+              <div key={i} className="h-44 animate-pulse rounded-[6px] border"
+                style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }} />
             ))}
           </div>
         ) : prompts.length === 0 ? (
-          <div className="py-20 text-center text-gray-500">لا توجد نتائج</div>
+          <div className="py-24 text-center" style={{ color: "var(--text-muted)" }}>
+            <p className="text-4xl mb-4">🔍</p>
+            <p className="text-lg font-medium" style={{ color: "var(--text-secondary)" }}>لا توجد نتائج</p>
+            <p className="text-sm mt-1">جرّب كلمة بحث مختلفة أو اختر فئة أخرى</p>
+          </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {prompts.map(p => (
-              <PromptCard key={p.id} prompt={p} />
-            ))}
+            {prompts.map(p => <PromptCard key={p.id} prompt={p} />)}
           </div>
         )}
       </section>
@@ -160,17 +184,19 @@ export default function PromptsLibrary({ initialPrompts, initialTotal, featuredP
           <button
             onClick={() => handlePage(page - 1)}
             disabled={page <= 1}
-            className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm disabled:opacity-30"
+            className="rounded-[6px] border px-4 py-2 text-sm transition-colors disabled:opacity-30"
+            style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
           >
             السابق
           </button>
-          <span className="text-sm text-gray-400">
+          <span className="text-sm" style={{ color: "var(--text-muted)" }}>
             {page} / {pages}
           </span>
           <button
             onClick={() => handlePage(page + 1)}
             disabled={page >= pages}
-            className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm disabled:opacity-30"
+            className="rounded-[6px] border px-4 py-2 text-sm transition-colors disabled:opacity-30"
+            style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
           >
             التالي
           </button>
@@ -181,50 +207,60 @@ export default function PromptsLibrary({ initialPrompts, initialTotal, featuredP
 }
 
 function PromptCard({ prompt }: { prompt: PromptItem }) {
+  const catStyle = CATEGORY_COLORS[prompt.category] ?? CATEGORY_COLORS.general;
+
   return (
     <Link
       href={`/prompts/${prompt.slug}`}
-      className="group relative flex flex-col rounded-2xl border border-white/10 bg-white/5 p-5 transition-all hover:border-violet-500/40 hover:bg-white/8"
+      className="group relative flex flex-col rounded-[6px] border p-5 transition-all"
+      style={{
+        borderColor: "var(--border-subtle)",
+        backgroundColor: "var(--bg-surface)",
+      }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)";
+        (e.currentTarget as HTMLElement).style.backgroundColor = "var(--bg-subtle)";
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)";
+        (e.currentTarget as HTMLElement).style.backgroundColor = "var(--bg-surface)";
+      }}
     >
       {/* Category badge */}
-      <span
-        className={`mb-3 inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-          CATEGORY_COLORS[prompt.category] ?? "bg-gray-500/20 text-gray-300"
-        }`}
-      >
+      <span className="mb-3 inline-flex w-fit items-center gap-1 rounded-[3px] border px-2 py-0.5 text-xs font-semibold"
+        style={{ backgroundColor: catStyle.bg, color: catStyle.color, borderColor: catStyle.border }}>
         {CATEGORY_ICONS[prompt.category]} {categoryLabel(prompt.category)}
       </span>
 
-      <h3 className="mb-2 line-clamp-2 text-sm font-semibold leading-snug text-white group-hover:text-violet-300">
+      <h3 className="mb-2 line-clamp-2 text-sm font-semibold leading-snug transition-colors"
+        style={{ color: "var(--text-primary)" }}>
         {prompt.titleAr}
       </h3>
 
       {prompt.description && (
-        <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-gray-400">{prompt.description}</p>
+        <p className="mb-3 line-clamp-2 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+          {prompt.description}
+        </p>
       )}
 
-      <div className="mt-auto flex items-center justify-between">
+      <div className="mt-auto flex items-center justify-between pt-2 border-t"
+        style={{ borderColor: "var(--border-subtle)" }}>
         {prompt.tool ? (
-          <span className="flex items-center gap-1.5 text-xs text-gray-500">
+          <span className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
             {prompt.tool.logoUrl && (
-              <Image
-                src={prompt.tool.logoUrl}
-                alt={prompt.tool.name}
-                width={16}
-                height={16}
-                className="rounded-sm"
-              />
+              <Image src={prompt.tool.logoUrl} alt={prompt.tool.name} width={14} height={14} className="rounded-sm" />
             )}
             {prompt.tool.name}
           </span>
         ) : (
-          <span className="text-xs text-gray-600">عام</span>
+          <span className="text-xs" style={{ color: "var(--text-muted)" }}>عام</span>
         )}
-        <span className="text-xs text-gray-600">{prompt.viewCount} مشاهدة</span>
+        <span className="text-xs" style={{ color: "var(--accent)" }}>نسخ ←</span>
       </div>
 
       {prompt.featured && (
-        <span className="absolute left-3 top-3 rounded-full bg-violet-500/30 px-1.5 py-0.5 text-[10px] text-violet-300">
+        <span className="absolute left-3 top-3 rounded-[3px] border px-1.5 py-0.5 text-[10px] font-bold"
+          style={{ backgroundColor: "#fffbeb", color: "#b45309", borderColor: "#fde68a" }}>
           مميز
         </span>
       )}
@@ -234,11 +270,7 @@ function PromptCard({ prompt }: { prompt: PromptItem }) {
 
 function categoryLabel(cat: string): string {
   const map: Record<string, string> = {
-    image: "صور",
-    writing: "كتابة",
-    code: "برمجة",
-    marketing: "تسويق",
-    general: "عام",
+    image: "صور", writing: "كتابة", code: "برمجة", marketing: "تسويق", general: "عام",
   };
   return map[cat] ?? cat;
 }

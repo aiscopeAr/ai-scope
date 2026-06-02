@@ -35,16 +35,9 @@ async function getData() {
       orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
       take: 24,
       select: {
-        id: true,
-        title: true,
-        titleAr: true,
-        description: true,
-        category: true,
-        tags: true,
-        slug: true,
-        featured: true,
-        viewCount: true,
-        createdAt: true,
+        id: true, title: true, titleAr: true, description: true,
+        category: true, tags: true, slug: true, featured: true,
+        viewCount: true, createdAt: true,
         tool: { select: { name: true, slug: true, logoUrl: true } },
       },
     }),
@@ -54,16 +47,9 @@ async function getData() {
       orderBy: { viewCount: "desc" },
       take: 6,
       select: {
-        id: true,
-        title: true,
-        titleAr: true,
-        description: true,
-        category: true,
-        tags: true,
-        slug: true,
-        featured: true,
-        viewCount: true,
-        createdAt: true,
+        id: true, title: true, titleAr: true, description: true,
+        category: true, tags: true, slug: true, featured: true,
+        viewCount: true, createdAt: true,
         tool: { select: { name: true, slug: true, logoUrl: true } },
       },
     }),
@@ -76,20 +62,36 @@ export default async function PromptsPage() {
   const { prompts, total, featured } = await getData();
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white" dir="rtl">
-      {/* Hero */}
-      <section className="border-b border-white/10 bg-gradient-to-b from-violet-950/40 to-gray-950 px-4 py-16 text-center">
-        <div className="mx-auto max-w-3xl">
-          <span className="mb-4 inline-block rounded-full bg-violet-500/20 px-4 py-1 text-sm font-medium text-violet-300">
-            مكتبة مجانية
-          </span>
-          <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
-            مكتبة البرومبتس
-          </h1>
-          <p className="mb-6 text-lg text-gray-400">
-            أفضل الـ prompts للذكاء الاصطناعي — مجاناً، منسّقة، وجاهزة للاستخدام
-          </p>
-          <p className="text-sm text-gray-500">{total.toLocaleString("ar-SA")} برومبت متاح</p>
+    <main className="min-h-screen" dir="rtl">
+      {/* Hero — matches ai-tools style */}
+      <section className="relative overflow-hidden border-b py-14" style={{ borderColor: "var(--border-subtle)" }}>
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+          <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full opacity-[0.06]"
+            style={{ background: "radial-gradient(circle, #6366f1, transparent)" }} />
+          <div className="absolute -bottom-16 -left-16 h-60 w-60 rounded-full opacity-[0.04]"
+            style={{ background: "radial-gradient(circle, #8b5cf6, transparent)" }} />
+        </div>
+
+        <div className="container relative mx-auto px-4">
+          <div className="mx-auto max-w-2xl text-center">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-semibold"
+              style={{ borderColor: "var(--accent)", backgroundColor: "var(--accent-bg)", color: "var(--accent)" }}>
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ backgroundColor: "var(--accent)" }} />
+              {total > 0 ? `${total.toLocaleString("ar-EG")} برومبت جاهز` : "مكتبة مجانية"}
+            </div>
+
+            <h1 className="mb-4 text-4xl font-bold leading-tight md:text-5xl"
+              style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+              مكتبة<br />
+              <span style={{ color: "var(--accent)" }}>البرومبتس</span>
+            </h1>
+            <p className="mb-2 text-lg leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+              أفضل الـ prompts للذكاء الاصطناعي — مجاناً، منسّقة، وجاهزة للاستخدام
+            </p>
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+              تُضاف prompts جديدة تلقائياً كل يوم
+            </p>
+          </div>
         </div>
       </section>
 
