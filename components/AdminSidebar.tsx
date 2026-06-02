@@ -20,6 +20,7 @@ import {
   GitCompare,
   Mail,
   Zap,
+  Sparkles,
 } from "lucide-react";
 
 const NAV = [
@@ -28,6 +29,7 @@ const NAV = [
   { href: "/admin/queue",        icon: ClipboardList,   label: "طابور التقارير" },
   { href: "/admin/reviews",      icon: BookOpen,        label: "التقارير"       },
   { href: "/admin/ai-tools",     icon: Wrench,          label: "أدوات AI"       },
+  { href: "/admin/prompts",      icon: Sparkles,        label: "البرومبتس"      },
   { href: "/admin/comparisons",  icon: GitCompare,      label: "المقارنات"      },
   { href: "/admin/analytics",    icon: BarChart2,       label: "الإحصاءات"      },
   { href: "/admin/newsletter",   icon: Mail,            label: "النشرة البريدية"},
