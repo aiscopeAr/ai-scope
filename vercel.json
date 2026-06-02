@@ -6,6 +6,7 @@
     { "path": "/api/cron/publish-review", "schedule": "0 9 * * *"  },
     { "path": "/api/cron/social-queue",   "schedule": "30 9 * * *" },
     { "path": "/api/cron/trending",       "schedule": "0 0 * * *"  },
-    { "path": "/api/cron/ingest-tools",   "schedule": "0 8 * * *"  }
+    { "path": "/api/cron/ingest-tools",     "schedule": "0 8 * * *"  },
+    { "path": "/api/cron/generate-prompts", "schedule": "0 3 * * *"  }
   ]
 }
