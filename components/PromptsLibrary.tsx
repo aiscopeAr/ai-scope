@@ -145,7 +145,7 @@ export default function PromptsLibrary({ initialPrompts, initialTotal, featuredP
             ⭐ مميزة
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredPrompts.map(p => <PromptCard key={p.id} prompt={p} />)}
+            {featuredPrompts.slice(0, 6).map(p => <PromptCard key={p.id} prompt={p} />)}
           </div>
         </section>
       )}
@@ -159,7 +159,7 @@ export default function PromptsLibrary({ initialPrompts, initialTotal, featuredP
         )}
 
         {loading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="h-44 animate-pulse rounded-[6px] border"
                 style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }} />
@@ -172,7 +172,7 @@ export default function PromptsLibrary({ initialPrompts, initialTotal, featuredP
             <p className="text-sm mt-1">جرّب كلمة بحث مختلفة أو اختر فئة أخرى</p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {prompts.map(p => <PromptCard key={p.id} prompt={p} />)}
           </div>
         )}

@@ -45,7 +45,7 @@ async function getData() {
     prisma.prompt.findMany({
       where: { published: true, featured: true },
       orderBy: { viewCount: "desc" },
-      take: 6,
+      take: 6,  // always fills 2 full rows of 3
       select: {
         id: true, title: true, titleAr: true, description: true,
         category: true, tags: true, slug: true, featured: true,
