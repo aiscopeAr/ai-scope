@@ -87,9 +87,9 @@ export default async function AIToolsPage({
         <section className="relative overflow-hidden border-b py-14" style={{ borderColor: "var(--border-subtle)" }}>
           {/* Decorative blobs — pure CSS, no JS */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-            <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full opacity-[0.06]"
+            <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full opacity-[0.06] hidden sm:block"
               style={{ background: "radial-gradient(circle, #6366f1, transparent)" }} />
-            <div className="absolute -bottom-16 -left-16 h-60 w-60 rounded-full opacity-[0.04]"
+            <div className="absolute -bottom-16 -left-16 h-60 w-60 rounded-full opacity-[0.04] hidden sm:block"
               style={{ background: "radial-gradient(circle, #8b5cf6, transparent)" }} />
           </div>
 
@@ -156,7 +156,7 @@ export default async function AIToolsPage({
           )}
 
           {/* ── Trending + Newest ─────────────────────────────────────── */}
-          <div className="mb-12 grid gap-6 md:grid-cols-2">
+          <div className="mb-12 grid gap-6 grid-cols-1 md:grid-cols-2">
             {trending.length > 0 && (
               <section>
                 <div className="mb-4 flex items-center gap-2">

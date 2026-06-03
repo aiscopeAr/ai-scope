@@ -66,9 +66,9 @@ export default async function PromptsPage() {
       {/* Hero — matches ai-tools style */}
       <section className="relative overflow-hidden border-b py-14" style={{ borderColor: "var(--border-subtle)" }}>
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-          <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full opacity-[0.06]"
+          <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full opacity-[0.06] hidden sm:block"
             style={{ background: "radial-gradient(circle, #6366f1, transparent)" }} />
-          <div className="absolute -bottom-16 -left-16 h-60 w-60 rounded-full opacity-[0.04]"
+          <div className="absolute -bottom-16 -left-16 h-60 w-60 rounded-full opacity-[0.04] hidden sm:block"
             style={{ background: "radial-gradient(circle, #8b5cf6, transparent)" }} />
         </div>
 

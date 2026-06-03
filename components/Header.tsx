@@ -132,7 +132,7 @@ export default function Header() {
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileOpen((v) => !v)}
-            className="flex h-8 w-8 items-center justify-center rounded-[6px] border md:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-[6px] border md:hidden"
             style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)" }}
             aria-label={mobileOpen ? "إغلاق" : "فتح القائمة"}
           >

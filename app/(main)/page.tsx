@@ -94,7 +94,7 @@ export default async function HomePage() {
         <section className="mb-12">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>آخر التقارير</h2>
-            <Link href="/reviews" className="text-sm font-semibold hover-opacity transition" style={{ color: "var(--accent)" }}>
+            <Link href="/reviews" className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition hover:opacity-75 min-h-[44px]" style={{ color: "var(--accent)" }}>
               عرض الكل ←
             </Link>
           </div>
@@ -113,7 +113,7 @@ export default async function HomePage() {
         <section className="mb-12">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>اكتشف أدوات الذكاء الاصطناعي</h2>
-            <Link href="/ai-tools" className="text-sm font-semibold hover-opacity transition" style={{ color: "var(--accent)" }}>
+            <Link href="/ai-tools" className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition hover:opacity-75 min-h-[44px]" style={{ color: "var(--accent)" }}>
               عرض الكل ←
             </Link>
           </div>
