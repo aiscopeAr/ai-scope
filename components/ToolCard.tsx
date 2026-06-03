@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { track } from "@vercel/analytics";
 
 export interface ToolCardData {
   slug: string;
@@ -55,6 +56,7 @@ export default function ToolCard({ tool }: { tool: ToolCardData }) {
   return (
     <Link
       href={`/ai-tools/${tool.slug}`}
+      onClick={() => track("tool_click", { slug: tool.slug, category: tool.toolCategory })}
       className="group relative flex items-start gap-4 rounded-[10px] border p-4 transition-all duration-200"
       style={{
         borderColor: "var(--border-subtle)",

@@ -6,9 +6,11 @@ import CopyPromptButton from "@/components/CopyPromptButton";
 interface Props {
   body: string;
   bodyAr: string | null;
+  slug?: string;
+  category?: string;
 }
 
-export default function PromptBodyTabs({ body, bodyAr }: Props) {
+export default function PromptBodyTabs({ body, bodyAr, slug, category }: Props) {
   const [lang, setLang] = useState<"en" | "ar">(bodyAr ? "ar" : "en");
 
   const activeText = lang === "ar" && bodyAr ? bodyAr : body;
@@ -52,7 +54,7 @@ export default function PromptBodyTabs({ body, bodyAr }: Props) {
             </div>
           )}
 
-          <CopyPromptButton text={activeText} />
+          <CopyPromptButton text={activeText} slug={slug} category={category} lang={lang} />
         </div>
       </div>
 

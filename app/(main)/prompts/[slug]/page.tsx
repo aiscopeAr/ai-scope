@@ -5,6 +5,7 @@ import Image from "next/image";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, truncate } from "@/lib/seo";
 import PromptBodyTabs from "@/components/PromptBodyTabs";
+import ArticleTracker from "@/components/ArticleTracker";
 
 export const revalidate = 600;
 
@@ -95,6 +96,7 @@ export default async function PromptPage({ params }: Props) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
+      <ArticleTracker slug={prompt.slug} category={prompt.category} />
       <main className="min-h-screen" dir="rtl">
         <div className="container mx-auto max-w-5xl px-4 py-10">
 
@@ -142,7 +144,7 @@ export default async function PromptPage({ params }: Props) {
               </div>
 
               {/* Prompt body with language tabs */}
-              <PromptBodyTabs body={prompt.body} bodyAr={prompt.bodyAr ?? null} />
+              <PromptBodyTabs body={prompt.body} bodyAr={prompt.bodyAr ?? null} slug={prompt.slug} category={prompt.category} />
 
               {/* Tags */}
               {prompt.tags.length > 0 && (

@@ -13,6 +13,7 @@ import ReadingProgress from "@/components/ReadingProgress";
 import ShareButtons from "@/components/ShareButtons";
 import AdSlot from "@/components/AdSlot";
 import RelatedArticles from "@/components/RelatedArticles";
+import ArticleTracker from "@/components/ArticleTracker";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_TWITTER_HANDLE, truncate, absoluteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -153,6 +154,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
       <ViewTracker slug={review.slug} />
+      <ArticleTracker slug={review.slug} category={review.category?.slug} />
       <ReadingProgress />
       <article className="container mx-auto max-w-3xl px-4 py-8" dir="rtl">
 

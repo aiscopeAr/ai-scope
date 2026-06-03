@@ -2,13 +2,26 @@
 
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
+import { track } from "@vercel/analytics";
 
-export default function CopyPromptButton({ text }: { text: string }) {
+interface Props {
+  text: string;
+  slug?: string;
+  category?: string;
+  lang?: "ar" | "en";
+}
+
+export default function CopyPromptButton({ text, slug, category, lang }: Props) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(text);
     setCopied(true);
+    track("prompt_copy", {
+      ...(slug     && { slug }),
+      ...(category && { category }),
+      ...(lang     && { lang }),
+    });
     setTimeout(() => setCopied(false), 2000);
   };
 
