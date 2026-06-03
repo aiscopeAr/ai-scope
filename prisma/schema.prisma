@@ -357,6 +357,42 @@ model Prompt {
   @@index([featured, published])
 }
 
+// ─── Analytics & Reporting ───────────────────────────────────────────────────
+
+// Daily snapshot — one row per day
+model DailyStats {
+  id              String   @id @default(cuid())
+  date            DateTime @unique // midnight UTC
+  pageViews       Int      @default(0)
+  uniqueArticles  Int      @default(0) // distinct articles viewed
+  promptsCopied   Int      @default(0) // from viewCount delta on prompts
+  toolClicks      Int      @default(0) // from viewCount delta on tools
+  articlesPublished Int    @default(0)
+  promptsGenerated Int     @default(0)
+  topArticleSlug  String?
+  topArticleViews Int      @default(0)
+  topPromptSlug   String?
+  topPromptViews  Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  @@index([date])
+}
+
+// Weekly AI-generated report
+model WeeklyReport {
+  id          String   @id @default(cuid())
+  weekStart   DateTime // Monday midnight UTC
+  weekEnd     DateTime // Sunday midnight UTC
+  summary     String   @db.Text  // AI-generated Arabic summary
+  insights    Json     // array of {title, body, type: "win"|"warning"|"tip"}
+  topContent  Json     // top articles + prompts of the week
+  stats       Json     // aggregated numbers for the week
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([weekStart])
+}
+
 // ─── System Settings ─────────────────────────────────────────────────────────
 
 model SystemSetting {
