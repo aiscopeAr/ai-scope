@@ -103,11 +103,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* Prevent dark-mode flash on load */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t===null&&d))document.documentElement.classList.add('dark')})()` }} />
+        {/* Google Analytics 4 */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-0TS7VKFC1K" />
+        <script dangerouslySetInnerHTML={{ __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-0TS7VKFC1K',{page_path:window.location.pathname});` }} />
         {/* Preconnect to image CDNs for faster LCP */}
         <link rel="preconnect" href="https://replicate.delivery" />
         <link rel="preconnect" href="https://pbxt.replicate.delivery" />
         <link rel="preconnect" href="https://res.cloudinary.com" />
-        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
       </head>
       <body className="font-sans">
         {children}
