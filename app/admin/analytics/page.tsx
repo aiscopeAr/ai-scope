@@ -361,18 +361,32 @@ export default function AnalyticsPage() {
         </div>
       )}
 
-      {/* GA4 link */}
-      <div className="flex justify-end">
-        <a
-          href="https://analytics.google.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-indigo-600 transition-colors"
-        >
-          <BarChart2 className="h-3.5 w-3.5" />
-          فتح Google Analytics
-          <ArrowUpRight className="h-3 w-3" />
-        </a>
+      {/* External links */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div>
+          <p className="text-sm font-bold text-slate-800">Vercel Analytics</p>
+          <p className="text-xs text-slate-500 mt-0.5">بيانات real-time — الزوار، الصفحات، البلدان، الأجهزة</p>
+        </div>
+        <div className="flex gap-2">
+          <a
+            href="https://vercel.com/aiscopear/ai-scope/analytics"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
+          >
+            <ArrowUpRight className="h-3.5 w-3.5" />
+            فتح Vercel Analytics
+          </a>
+          <a
+            href="https://analytics.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+          >
+            <BarChart2 className="h-3.5 w-3.5" />
+            Google Analytics
+          </a>
+        </div>
       </div>
 
     </div>
