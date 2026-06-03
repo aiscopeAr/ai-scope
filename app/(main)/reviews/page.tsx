@@ -70,7 +70,7 @@ export default async function ReviewsIndexPage() {
               <Link
                 key={category.id}
                 href={`/category/${category.slug}`}
-                className="pill-hover "
+                className="pill-hover min-h-[44px] flex items-center"
                 style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
               >
                 {category.nameAr}

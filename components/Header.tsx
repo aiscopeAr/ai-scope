@@ -156,7 +156,7 @@ export default function Header() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  className="rounded-[6px] px-3 py-2.5 text-[13px] font-sans transition-colors"
+                  className="rounded-[6px] px-3 py-3 text-[13px] font-sans transition-colors min-h-[44px] flex items-center"
                   style={{
                     color: active ? "var(--accent)" : "var(--text-secondary)",
                     backgroundColor: active ? "var(--bg-accent-soft)" : "transparent",
