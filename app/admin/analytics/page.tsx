@@ -369,7 +369,7 @@ export default function AnalyticsPage() {
         </div>
         <div className="flex gap-2">
           <a
-            href="https://vercel.com/aiscopear/ai-scope/analytics"
+            href="https://vercel.com/ai-scope-s-projects/ai-scope/analytics"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
