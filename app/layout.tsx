@@ -63,7 +63,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    locale: "ar_SA",
+    locale: "ar_AR",
     url: SITE_URL,
     siteName: SITE_NAME,
     title: `${SITE_NAME} — ${SITE_NAME_AR}`,
@@ -97,10 +97,42 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
 };
 
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": `${SITE_URL}/#organization`,
+  name: SITE_NAME,
+  alternateName: SITE_NAME_AR,
+  url: SITE_URL,
+  logo: { "@type": "ImageObject", url: `${SITE_URL}/icon-192.png` },
+  sameAs: ["https://twitter.com/lumiq_news", "https://t.me/lumiq_news"],
+  description: SITE_DESCRIPTION_AR,
+  inLanguage: "ar",
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": `${SITE_URL}/#website`,
+  url: SITE_URL,
+  name: SITE_NAME,
+  alternateName: SITE_NAME_AR,
+  description: SITE_DESCRIPTION_AR,
+  inLanguage: "ar",
+  isPartOf: { "@id": `${SITE_URL}/#organization` },
+  potentialAction: {
+    "@type": "SearchAction",
+    target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/search?q={search_term_string}` },
+    "query-input": "required name=search_term_string",
+  },
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl" className={`${amiri.variable} ${cairo.variable}`}>
       <head>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
         {/* Prevent dark-mode flash on load */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t===null&&d))document.documentElement.classList.add('dark')})()` }} />
         {/* Google Analytics 4 */}

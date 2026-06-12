@@ -130,9 +130,13 @@ export default async function AIToolPage({
     inLanguage: ["ar", ...(tool.arabicSupport ? ["ar"] : [])],
     offers: {
       "@type": "Offer",
-      price: tool.pricing === "free" ? "0" : tool.monthlyPrice ?? undefined,
-      priceCurrency: "USD",
+      ...(tool.pricing === "free"
+        ? { price: "0", priceCurrency: "USD" }
+        : tool.monthlyPrice
+        ? { price: String(tool.monthlyPrice), priceCurrency: "USD" }
+        : {}),
       availability: "https://schema.org/OnlineOnly",
+      name: PRICING_LABELS[tool.pricing] ?? tool.pricing,
     },
     aggregateRating: tool.likes > 0 ? {
       "@type": "AggregateRating",

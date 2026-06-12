@@ -156,9 +156,20 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
     ...(review.imageUrl ? { image: { "@type": "ImageObject", url: review.imageUrl } } : {}),
   };
 
+  const faqJsonLd = faq.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.map((f) => ({
+      "@type": "Question",
+      name: f.question,
+      acceptedAnswer: { "@type": "Answer", text: f.answer },
+    })),
+  } : null;
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
+      {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />}
       <ViewTracker slug={review.slug} />
       <ArticleTracker slug={review.slug} category={review.category?.slug} />
       <ReadingProgress />

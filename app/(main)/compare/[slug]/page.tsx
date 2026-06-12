@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { absoluteUrl, SITE_NAME_AR, truncate } from "@/lib/seo";
+import { absoluteUrl, SITE_NAME_AR, SITE_URL, SITE_TWITTER_HANDLE, truncate } from "@/lib/seo";
 import { CheckCircle2, XCircle, Trophy, ArrowLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -51,7 +51,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `${comparison.title} | ${SITE_NAME_AR}`,
     description,
     alternates: { canonical: url },
-    openGraph: { title: `${comparison.title} | ${SITE_NAME_AR}`, description, url, type: "article", locale: "ar_AR" },
+    openGraph: {
+      title: `${comparison.title} | ${SITE_NAME_AR}`,
+      description, url, type: "article", locale: "ar_AR",
+      images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630, alt: comparison.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      site: SITE_TWITTER_HANDLE,
+      title: `${comparison.title} | ${SITE_NAME_AR}`,
+      description,
+      images: [`${SITE_URL}/opengraph-image`],
+    },
   };
 }
 

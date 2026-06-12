@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { absoluteUrl, SITE_NAME_AR } from "@/lib/seo";
+import { absoluteUrl, SITE_NAME_AR, SITE_URL, SITE_TWITTER_HANDLE } from "@/lib/seo";
 import ReviewCard from "@/components/ReviewCard";
 import AdSlot from "@/components/AdSlot";
 
@@ -54,7 +54,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `${data.category.nameAr} | ${SITE_NAME_AR}`,
     description,
     alternates: { canonical: url },
-    openGraph: { title: `${data.category.nameAr} | ${SITE_NAME_AR}`, description, url, type: "website", locale: "ar_AR" },
+    openGraph: {
+      title: `${data.category.nameAr} | ${SITE_NAME_AR}`,
+      description, url, type: "website", locale: "ar_AR",
+      images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630, alt: data.category.nameAr }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      site: SITE_TWITTER_HANDLE,
+      title: `${data.category.nameAr} | ${SITE_NAME_AR}`,
+      description,
+      images: [`${SITE_URL}/opengraph-image`],
+    },
   };
 }
 
