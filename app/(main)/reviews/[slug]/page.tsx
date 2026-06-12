@@ -16,7 +16,15 @@ import RelatedArticles from "@/components/RelatedArticles";
 import ArticleTracker from "@/components/ArticleTracker";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_TWITTER_HANDLE, truncate, absoluteUrl } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600; // re-render at most once per hour
+
+export async function generateStaticParams() {
+  const reviews = await prisma.review.findMany({
+    where: { published: true },
+    select: { slug: true },
+  });
+  return reviews.map((r) => ({ slug: r.slug }));
+}
 
 /** Build /api/og URL with article data embedded — avoids internal fetch from edge runtime */
 function buildOgUrl(review: {
