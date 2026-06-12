@@ -91,24 +91,22 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
   const review = await getReview(slug);
   if (!review?.published) notFound();
 
-  // Fetch related articles from same category
-  const relatedArticles = await prisma.review.findMany({
-    where: {
-      published: true,
-      categoryId: review.categoryId,
-      slug: { not: slug },
-    },
-    orderBy: { publishedAt: "desc" },
-    take: 3,
-    select: {
-      slug: true,
-      titleAr: true,
-      summary: true,
-      imageUrl: true,
-      publishedAt: true,
-      category: { select: { nameAr: true, slug: true } },
-    },
-  });
+  const [relatedArticles, midArticle] = await Promise.all([
+    prisma.review.findMany({
+      where: { published: true, categoryId: review.categoryId, slug: { not: slug } },
+      orderBy: { publishedAt: "desc" },
+      take: 6,
+      select: {
+        slug: true, titleAr: true, summary: true, imageUrl: true, publishedAt: true,
+        category: { select: { nameAr: true, slug: true } },
+      },
+    }),
+    prisma.review.findFirst({
+      where: { published: true, categoryId: { not: review.categoryId } },
+      orderBy: { publishedAt: "desc" },
+      select: { slug: true, titleAr: true, summary: true, imageUrl: true, category: { select: { nameAr: true, slug: true } } },
+    }),
+  ]);
 
   const author = AUTHORS[review.authorSlug as AuthorSlug];
   const reviewUrl = absoluteUrl(`/reviews/${slug}`);
@@ -227,20 +225,49 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
         {/* Content */}
         <div className="prose-ar mb-12 space-y-4">
           {paragraphs.map((p, i) => {
-            if (p.startsWith("## ")) return (
+            const isH2 = p.startsWith("## ");
+            const isH3 = p.startsWith("### ");
+            const isList = p.startsWith("- ") || p.startsWith("* ");
+
+            const el = isH2 ? (
               <h2 key={i} className="mt-8 text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{p.slice(3)}</h2>
-            );
-            if (p.startsWith("### ")) return (
+            ) : isH3 ? (
               <h3 key={i} className="mt-6 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{p.slice(4)}</h3>
-            );
-            if (p.startsWith("- ") || p.startsWith("* ")) return (
+            ) : isList ? (
               <ul key={i} className="list-disc list-inside space-y-1">
                 {p.split("\n").map((line, j) => (
                   <li key={j}>{line.replace(/^[-*]\s+/, "")}</li>
                 ))}
               </ul>
+            ) : (
+              <p key={i}>{p}</p>
             );
-            return <p key={i}>{p}</p>;
+
+            if (i === 3 && midArticle) return (
+              <>
+                {el}
+                <aside key="mid-cta" className="my-6 flex gap-4 rounded-[8px] border p-4 transition hover:shadow-sm" style={{ borderColor: "var(--accent)", backgroundColor: "var(--bg-surface)" }}>
+                  {midArticle.imageUrl && (
+                    <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-[4px]">
+                      <img src={midArticle.imageUrl} alt={midArticle.titleAr} className="h-full w-full object-cover" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="mb-1 text-[11px] font-semibold" style={{ color: "var(--accent)" }}>
+                      اقرأ أيضاً · {midArticle.category.nameAr}
+                    </p>
+                    <a href={`/reviews/${midArticle.slug}`} className="text-sm font-bold leading-snug line-clamp-2 hover:underline" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                      {midArticle.titleAr}
+                    </a>
+                    {midArticle.summary && (
+                      <p className="mt-1 text-xs line-clamp-2" style={{ color: "var(--text-muted)" }}>{midArticle.summary}</p>
+                    )}
+                  </div>
+                </aside>
+              </>
+            );
+
+            return el;
           })}
         </div>
 

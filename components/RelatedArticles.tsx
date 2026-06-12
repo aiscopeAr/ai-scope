@@ -20,7 +20,7 @@ export default function RelatedArticles({ articles }: { articles: Article[] }) {
       <h2 className="mb-5 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
         تقارير ذات صلة
       </h2>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-3">
         {articles.map((article) => (
           <Link key={article.slug} href={`/reviews/${article.slug}`} className="group block">
             <div className="h-full overflow-hidden rounded-[6px] border transition"
