@@ -229,24 +229,13 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
             const isH3 = p.startsWith("### ");
             const isList = p.startsWith("- ") || p.startsWith("* ");
 
-            const el = isH2 ? (
-              <h2 key={i} className="mt-8 text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{p.slice(3)}</h2>
-            ) : isH3 ? (
-              <h3 key={i} className="mt-6 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{p.slice(4)}</h3>
-            ) : isList ? (
-              <ul key={i} className="list-disc list-inside space-y-1">
-                {p.split("\n").map((line, j) => (
-                  <li key={j}>{line.replace(/^[-*]\s+/, "")}</li>
-                ))}
-              </ul>
-            ) : (
-              <p key={i}>{p}</p>
-            );
-
             if (i === 3 && midArticle) return (
-              <>
-                {el}
-                <aside key="mid-cta" className="my-6 flex gap-4 rounded-[8px] border p-4 transition hover:shadow-sm" style={{ borderColor: "var(--accent)", backgroundColor: "var(--bg-surface)" }}>
+              <div key={i}>
+                {isH2 ? <h2 className="mt-8 text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{p.slice(3)}</h2>
+                  : isH3 ? <h3 className="mt-6 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{p.slice(4)}</h3>
+                  : isList ? <ul className="list-disc list-inside space-y-1">{p.split("\n").map((line, j) => <li key={j}>{line.replace(/^[-*]\s+/, "")}</li>)}</ul>
+                  : <p>{p}</p>}
+                <aside className="my-6 flex gap-4 rounded-[8px] border p-4 transition hover:shadow-sm" style={{ borderColor: "var(--accent)", backgroundColor: "var(--bg-surface)" }}>
                   {midArticle.imageUrl && (
                     <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-[4px]">
                       <img src={midArticle.imageUrl} alt={midArticle.titleAr} className="h-full w-full object-cover" />
@@ -264,10 +253,17 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
                     )}
                   </div>
                 </aside>
-              </>
+              </div>
             );
 
-            return el;
+            if (isH2) return <h2 key={i} className="mt-8 text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{p.slice(3)}</h2>;
+            if (isH3) return <h3 key={i} className="mt-6 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{p.slice(4)}</h3>;
+            if (isList) return (
+              <ul key={i} className="list-disc list-inside space-y-1">
+                {p.split("\n").map((line, j) => <li key={j}>{line.replace(/^[-*]\s+/, "")}</li>)}
+              </ul>
+            );
+            return <p key={i}>{p}</p>;
           })}
         </div>
 
