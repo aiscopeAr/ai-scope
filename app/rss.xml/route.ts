@@ -90,7 +90,7 @@ ${categories}
     <lastBuildDate>${buildDate}</lastBuildDate>
     <atom:link href="${SITE_URL}/rss.xml" rel="self" type="application/rss+xml"/>
     <image>
-      <url>${SITE_URL}/og-default.png</url>
+      <url>${SITE_URL}/opengraph-image</url>
       <title>${escapeXml(SITE_NAME)}</title>
       <link>${SITE_URL}</link>
     </image>
