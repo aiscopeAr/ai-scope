@@ -220,10 +220,11 @@ export default async function HomePage() {
       {/* Authors intro */}
       <section className="mb-12 rounded-[6px] border p-6" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
         <h2 className="mb-6 text-center text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>فريق التقارير</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           {[
-            { slug: "zayd", name: "زيد", title: "محلل نماذج الذكاء الاصطناعي", accent: "#6366f1", desc: "يحلل النماذج الكبرى ويقارن قدراتها بعيناً نقدية — لا يصدق الضجيج التسويقي." },
-            { slug: "lina", name: "لينا", title: "مراسلة شؤون الشركات والسياسات", accent: "#ec4899", desc: "تقرأ بين سطور قرارات شركات AI وتربط الأحداث بالصورة الاقتصادية الأشمل." },
+            { slug: "zayd",  name: "زيد",   title: "محلل نماذج الذكاء الاصطناعي",          accent: "#6366f1", desc: "يحلل النماذج الكبرى ويقارن قدراتها بعيناً نقدية — لا يصدق الضجيج التسويقي." },
+            { slug: "lina",  name: "لينا",   title: "مراسلة شؤون الشركات والسياسات",        accent: "#ec4899", desc: "تقرأ بين سطور قرارات شركات AI وتربط الأحداث بالصورة الاقتصادية الأشمل." },
+            { slug: "tariq", name: "طارق",   title: "محلل أدوات الذكاء الاصطناعي",          accent: "#f59e0b", desc: "يحلل أدوات AI الجديدة بأرقام حقيقية — ويكشف من يستحق وقتك فعلاً." },
           ].map((a) => (
             <Link
               key={a.slug}
