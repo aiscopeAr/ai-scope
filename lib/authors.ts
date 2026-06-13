@@ -27,7 +27,7 @@ export const AUTHORS: Record<AuthorSlug, Author> = {
       "لا يكتفي بنقل الخبر — بل يضع كل تطور في سياقه التقني الحقيقي.",
     specialty: "AI Models & Research",
     specialtyAr: "نماذج الذكاء الاصطناعي والأبحاث",
-    categories: ["ai-models", "research", "tools"],
+    categories: ["ai-models", "research"],
     avatarUrl: "/images/authors/zayd.svg",
     accentColor: "#6366f1", // indigo
     voiceTraits: [

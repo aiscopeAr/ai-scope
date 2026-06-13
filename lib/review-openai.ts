@@ -86,7 +86,7 @@ ${sourcesText}
   "seoTitle": "عنوان SEO (50-60 حرف)",
   "seoDescription": "وصف SEO يحفّز النقر (150-160 حرف)",
   "isAiRelated": true,
-  "suggestedCategory": "ai-models | research | companies | tools | policy",
+  "suggestedCategory": "ai-models | research | companies | tools | tools-analysis | productivity | policy",
   "slug": "english-slug-max-6-words",
   "featuredImagePrompt": "Vivid English scene description for image generation (max 20 words)",
   "faq": [
@@ -182,10 +182,11 @@ export async function writeReview(
 
 function guessCategoryFromTopic(topic: string): string {
   const t = topic.toLowerCase();
-  if (/openai|google|meta|anthropic|apple|microsoft|startup|funding|investment/.test(t)) return "companies";
   if (/law|regulation|policy|eu|act|ban|govern|safety|alignment/.test(t)) return "policy";
+  if (/openai|google|meta|anthropic|apple|microsoft|startup|funding|investment/.test(t)) return "companies";
   if (/gpt|claude|gemini|llama|mistral|model|benchmark|release|version/.test(t)) return "ai-models";
   if (/research|paper|arxiv|study|published|university|lab/.test(t)) return "research";
-  if (/tool|app|product|launch|feature|plugin|api/.test(t)) return "tools";
+  if (/review|vs|compare|pricing|free|tier|tool|app|product|launch|feature|plugin|workflow|productivity/.test(t)) return "tools-analysis";
+  if (/api|integration|sdk|developer/.test(t)) return "tools";
   return "ai-models";
 }
