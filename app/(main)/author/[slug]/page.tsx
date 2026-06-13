@@ -7,7 +7,7 @@ import { ar } from "date-fns/locale";
 
 import { prisma } from "@/lib/db";
 import { AUTHORS, type AuthorSlug } from "@/lib/authors";
-import { SITE_NAME_AR, absoluteUrl } from "@/lib/seo";
+import { SITE_NAME, SITE_NAME_AR, SITE_URL, SITE_TWITTER_HANDLE, absoluteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -19,10 +19,29 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const author = AUTHORS[slug as AuthorSlug];
   if (!author) return {};
+  const url = absoluteUrl(`/author/${slug}`);
+  const avatarAbsolute = author.avatarUrl.startsWith("http") ? author.avatarUrl : `${SITE_URL}${author.avatarUrl}`;
   return {
     title: `${author.nameAr} — ${author.titleAr} | ${SITE_NAME_AR}`,
     description: author.bioAr,
-    alternates: { canonical: absoluteUrl(`/author/${slug}`) },
+    alternates: { canonical: url },
+    robots: { index: true, follow: true },
+    openGraph: {
+      type: "profile",
+      url,
+      title: `${author.nameAr} — ${author.titleAr} | ${SITE_NAME_AR}`,
+      description: author.bioAr,
+      locale: "ar_AR",
+      siteName: SITE_NAME,
+      images: [{ url: avatarAbsolute, width: 200, height: 200, alt: author.nameAr }],
+    },
+    twitter: {
+      card: "summary",
+      site: SITE_TWITTER_HANDLE,
+      title: `${author.nameAr} — ${author.titleAr}`,
+      description: author.bioAr,
+      images: [avatarAbsolute],
+    },
   };
 }
 
@@ -30,6 +49,22 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
   const { slug } = await params;
   const author = AUTHORS[slug as AuthorSlug];
   if (!author) notFound();
+
+  const authorUrl = absoluteUrl(`/author/${slug}`);
+  const avatarAbsolute = author.avatarUrl.startsWith("http") ? author.avatarUrl : `${SITE_URL}${author.avatarUrl}`;
+  const personJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "@id": authorUrl,
+    name: author.nameAr,
+    jobTitle: author.titleAr,
+    url: authorUrl,
+    image: { "@type": "ImageObject", url: avatarAbsolute, width: 200, height: 200 },
+    description: author.bioAr,
+    knowsAbout: author.specialtyAr,
+    worksFor: { "@type": "Organization", "@id": `${SITE_URL}/#organization`, name: SITE_NAME },
+    sameAs: author.socialTwitter ? [author.socialTwitter] : [],
+  };
 
   let reviews: Array<{
     id: string; slug: string; titleAr: string; summary: string;
@@ -55,6 +90,8 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
   } catch { /* DB unavailable */ }
 
   return (
+    <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }} />
     <div className="min-h-screen" dir="rtl">
       {/* Hero */}
       <section className="border-b py-16" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }}>
@@ -171,5 +208,6 @@ export default async function AuthorPage({ params }: { params: Promise<{ slug: s
         )}
       </section>
     </div>
+    </>
   );
 }

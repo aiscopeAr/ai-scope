@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/db";
-import { absoluteUrl, SITE_NAME, SITE_NAME_AR, SITE_URL, truncate } from "@/lib/seo";
+import { absoluteUrl, SITE_NAME, SITE_NAME_AR, SITE_URL, SITE_TWITTER_HANDLE, truncate } from "@/lib/seo";
 import { getCategoryMeta } from "@/lib/tool-categories";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
@@ -41,6 +41,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
+      site: SITE_TWITTER_HANDLE,
       title,
       description,
     },
