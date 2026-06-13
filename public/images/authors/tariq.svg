@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="bg3" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#1c1408"/>
+      <stop offset="100%" stop-color="#0d0d18"/>
+    </radialGradient>
+    <radialGradient id="face3" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#c4a070"/>
+      <stop offset="100%" stop-color="#9a7850"/>
+    </radialGradient>
+    <filter id="glow3">
+      <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <circle cx="100" cy="100" r="100" fill="url(#bg3)"/>
+
+  <!-- Amber data/chart lines -->
+  <g opacity="0.18" stroke="#f59e0b" stroke-width="0.8" fill="none">
+    <polyline points="15,150 30,130 45,140 60,110 75,120 90,95" />
+    <circle cx="90" cy="95" r="2.5" fill="#f59e0b"/>
+    <polyline points="110,100 125,115 140,90 155,105 175,85" />
+    <circle cx="110" cy="100" r="2.5" fill="#f59e0b"/>
+    <line x1="20" y1="55" x2="55" y2="55"/><circle cx="55" cy="55" r="2" fill="#f59e0b"/>
+    <line x1="145" y1="55" x2="180" y2="55"/><circle cx="145" cy="55" r="2" fill="#f59e0b"/>
+  </g>
+
+  <!-- Shirt / body -->
+  <ellipse cx="100" cy="185" rx="52" ry="30" fill="#92400e"/>
+  <ellipse cx="100" cy="175" rx="42" ry="22" fill="#b45309"/>
+
+  <!-- Neck -->
+  <rect x="88" y="142" width="24" height="20" rx="6" fill="url(#face3)"/>
+
+  <!-- Head -->
+  <ellipse cx="100" cy="115" rx="38" ry="42" fill="url(#face3)"/>
+
+  <!-- Short dark hair -->
+  <ellipse cx="100" cy="80" rx="38" ry="18" fill="#1a0f05"/>
+  <ellipse cx="100" cy="74" rx="32" ry="12" fill="#2a1a08"/>
+  <ellipse cx="72" cy="90" rx="10" ry="16" fill="#1a0f05"/>
+  <ellipse cx="128" cy="90" rx="10" ry="16" fill="#1a0f05"/>
+
+  <!-- Ears -->
+  <ellipse cx="63" cy="116" rx="7" ry="9" fill="url(#face3)"/>
+  <ellipse cx="137" cy="116" rx="7" ry="9" fill="url(#face3)"/>
+
+  <!-- Eyes -->
+  <ellipse cx="86" cy="112" rx="6.5" ry="5.5" fill="#fff" filter="url(#glow3)"/>
+  <ellipse cx="114" cy="112" rx="6.5" ry="5.5" fill="#fff" filter="url(#glow3)"/>
+  <circle cx="87" cy="113" r="3.5" fill="#2d1a00"/>
+  <circle cx="115" cy="113" r="3.5" fill="#2d1a00"/>
+  <circle cx="88.5" cy="111.5" r="1.2" fill="#fff"/>
+  <circle cx="116.5" cy="111.5" r="1.2" fill="#fff"/>
+
+  <!-- Eyebrows — slightly thick/expressive -->
+  <path d="M79,105 Q86,101 93,104" stroke="#2d1a00" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M107,104 Q114,101 121,105" stroke="#2d1a00" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Nose -->
+  <path d="M97,118 Q100,126 103,118" stroke="#8a6040" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Mouth — slight confident smile -->
+  <path d="M90,133 Q100,139 110,133" stroke="#7a4a28" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Amber accent glow ring -->
+  <circle cx="100" cy="100" r="98" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity="0.25"/>
+</svg>
