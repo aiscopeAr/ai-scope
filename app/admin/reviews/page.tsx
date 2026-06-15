@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { RefreshCw, ExternalLink, Pencil } from "lucide-react";
+import { RefreshCw, ExternalLink, Pencil, Plus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
 
@@ -42,6 +42,13 @@ export default function AdminReviewsPage() {
     <div className="p-6" dir="rtl">
       <div className="mb-5 flex items-center gap-3">
         <h1 className="text-xl font-bold text-slate-900 flex-1">التقارير</h1>
+        <Link
+          href="/admin/reviews/new"
+          className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+        >
+          <Plus className="h-4 w-4" />
+          مقال جديد
+        </Link>
         <button onClick={load} className="rounded-xl bg-slate-100 p-2 hover:bg-slate-200">
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
         </button>
