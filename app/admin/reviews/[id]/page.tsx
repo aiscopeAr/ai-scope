@@ -210,7 +210,7 @@ export default function ReviewEditorPage() {
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold text-slate-800 leading-tight">{review.titleAr}</p>
             <div className="flex items-center gap-2 text-[11px] text-slate-400">
-              <span>{review.authorSlug === "zayd" ? "زيد" : "لينا"}</span>
+              <span>{{ zayd: "زيد", lina: "لينا", tariq: "طارق", team: "طاقم لوميك" }[review.authorSlug] ?? review.authorSlug}</span>
               <span>·</span>
               <span>{wordCount.toLocaleString("ar-EG")} كلمة</span>
               <span>·</span>
@@ -352,6 +352,8 @@ export default function ReviewEditorPage() {
                   >
                     <option value="zayd">زيد — محلل النماذج</option>
                     <option value="lina">لينا — مراسلة الشركات</option>
+                    <option value="tariq">طارق — محلل الأدوات</option>
+                    <option value="team">طاقم لوميك — شروحات</option>
                   </select>
                 </div>
 
