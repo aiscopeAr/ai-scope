@@ -114,9 +114,10 @@ export async function GET(request: Request) {
   await prisma.review.create({
     data: {
       slug: finalSlug,
+      title: draft.toolName || topic,
       titleAr: draft.titleAr,
       summary: draft.summaryAr,
-      contentAr: draft.contentAr,
+      content: draft.contentAr,
       seoTitle: draft.seoTitle,
       seoDescription: draft.seoDescription,
       imageUrl,
