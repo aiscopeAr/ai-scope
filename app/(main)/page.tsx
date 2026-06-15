@@ -218,13 +218,13 @@ export default async function HomePage() {
       {toolOfWeek && <ToolOfTheWeek tool={toolOfWeek} />}
 
       {/* Authors intro */}
-      <section className="mb-12 rounded-[6px] border p-6" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+      <section className="mb-8 rounded-[6px] border p-6" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
         <h2 className="mb-6 text-center text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>فريق التقارير</h2>
         <div className="grid gap-4 sm:grid-cols-3">
           {[
-            { slug: "zayd",  name: "زيد",   title: "محلل نماذج الذكاء الاصطناعي",          accent: "#6366f1", desc: "يحلل النماذج الكبرى ويقارن قدراتها بعيناً نقدية — لا يصدق الضجيج التسويقي." },
-            { slug: "lina",  name: "لينا",   title: "مراسلة شؤون الشركات والسياسات",        accent: "#ec4899", desc: "تقرأ بين سطور قرارات شركات AI وتربط الأحداث بالصورة الاقتصادية الأشمل." },
-            { slug: "tariq", name: "طارق",   title: "محلل أدوات الذكاء الاصطناعي",          accent: "#f59e0b", desc: "يحلل أدوات AI الجديدة بأرقام حقيقية — ويكشف من يستحق وقتك فعلاً." },
+            { slug: "zayd",  name: "زيد",   title: "محلل نماذج الذكاء الاصطناعي",    accent: "#6366f1", desc: "يحلل النماذج الكبرى ويقارن قدراتها بعيناً نقدية — لا يصدق الضجيج التسويقي." },
+            { slug: "lina",  name: "لينا",  title: "مراسلة شؤون الشركات والسياسات",   accent: "#ec4899", desc: "تقرأ بين سطور قرارات شركات AI وتربط الأحداث بالصورة الاقتصادية الأشمل." },
+            { slug: "tariq", name: "طارق",  title: "محلل أدوات الذكاء الاصطناعي",     accent: "#f59e0b", desc: "يحلل أدوات AI الجديدة بأرقام حقيقية — ويكشف من يستحق وقتك فعلاً." },
           ].map((a) => (
             <Link
               key={a.slug}
@@ -240,6 +240,41 @@ export default async function HomePage() {
                 <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{a.title}</p>
                 <p className="mt-1 text-xs line-clamp-2" style={{ color: "var(--text-muted)" }}>{a.desc}</p>
               </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Tutorials section */}
+      <section className="mb-12 rounded-[6px] border p-6" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>شروحات الذكاء الاصطناعي</h2>
+          <Link href="/category/tutorials" className="text-xs font-medium transition-opacity hover:opacity-70" style={{ color: "var(--accent)" }}>
+            عرض الكل ←
+          </Link>
+        </div>
+        <div className="mb-4 flex items-center gap-3 rounded-[6px] p-3" style={{ backgroundColor: "var(--bg-subtle)", borderLeft: "3px solid #0ea5e9" }}>
+          <img src="/images/authors/team.svg" alt="طاقم لوميك" className="h-10 w-10 rounded-[4px] object-cover shrink-0" />
+          <div>
+            <p className="text-sm font-bold" style={{ color: "#0ea5e9" }}>طاقم لوميك</p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>أدلة عملية وشروحات خطوة بخطوة — محتوى يبقى مفيداً</p>
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            "كيف تستخدم ChatGPT للمبتدئين",
+            "كيف تستخدم Gemini بالعربي",
+            "كيف تستخدم Canva AI للتصميم",
+            "كيف تستخدم Midjourney لتوليد الصور",
+          ].map((title) => (
+            <Link
+              key={title}
+              href="/category/tutorials"
+              className="flex items-center gap-2.5 rounded-[6px] border px-4 py-3 text-sm transition-colors"
+              style={{ borderColor: "var(--border-subtle)", color: "var(--text-secondary)", backgroundColor: "var(--bg-subtle)" }}
+            >
+              <span style={{ color: "#0ea5e9" }}>📖</span>
+              <span className="line-clamp-1">{title}</span>
             </Link>
           ))}
         </div>

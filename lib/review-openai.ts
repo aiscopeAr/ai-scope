@@ -86,7 +86,7 @@ ${sourcesText}
   "seoTitle": "عنوان SEO (50-60 حرف)",
   "seoDescription": "وصف SEO يحفّز النقر (150-160 حرف)",
   "isAiRelated": true,
-  "suggestedCategory": "ai-models | research | companies | tools | tools-analysis | productivity | policy",
+  "suggestedCategory": "ai-models | research | companies | tools | tools-analysis | productivity | policy | tutorials",
   "slug": "english-slug-max-6-words",
   "featuredImagePrompt": "Vivid English scene description for image generation (max 20 words)",
   "faq": [
@@ -182,6 +182,8 @@ export async function writeReview(
 
 function guessCategoryFromTopic(topic: string): string {
   const t = topic.toLowerCase();
+  // Tutorial/guide — highest priority: "how to", "guide", "شرح", "دليل", "كيف", specific evergreen tools
+  if (/how.?to|guide|tutorial|step.by.step|beginner|دليل|شرح|كيف\s|خطوة|مبتدئ|تعلم|استخدام|للمبتدئين|canva|midjourney|magnific|freepik|cursor ai|perplexity|notion ai/.test(t)) return "tutorials";
   if (/law|regulation|policy|eu|act|ban|govern|safety|alignment/.test(t)) return "policy";
   if (/openai|google|meta|anthropic|apple|microsoft|startup|funding|investment/.test(t)) return "companies";
   if (/gpt|claude|gemini|llama|mistral|model|benchmark|release|version/.test(t)) return "ai-models";

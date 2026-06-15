@@ -1,4 +1,4 @@
-export type AuthorSlug = "zayd" | "lina" | "tariq";
+export type AuthorSlug = "zayd" | "lina" | "tariq" | "team";
 
 export interface Author {
   slug: AuthorSlug;
@@ -86,6 +86,40 @@ export const AUTHORS: Record<AuthorSlug, Author> = {
     socialTwitter: "https://twitter.com/lumiq_news",
   },
 
+  team: {
+    slug: "team",
+    nameAr: "طاقم لوميك",
+    titleAr: "فريق تحرير لوميك",
+    bioAr:
+      "فريق لوميك المتخصص في إعداد أدلة شاملة وشروحات عملية لأدوات الذكاء الاصطناعي. " +
+      "نكتب للمستخدم العربي الذي يريد أن يبدأ فعلاً — خطوة بخطوة، بدون تعقيد.",
+    specialty: "AI Tutorials & Guides",
+    specialtyAr: "شروحات وأدلة الذكاء الاصطناعي",
+    categories: ["tutorials"],
+    avatarUrl: "/images/authors/team.svg",
+    accentColor: "#0ea5e9", // sky blue
+    voiceTraits: [
+      "يشرح كل خطوة بوضوح تام مع مثال عملي",
+      "يستخدم لغة بسيطة تناسب المبتدئ والمحترف",
+      "يتضمن لقطات شاشة وأمثلة حقيقية",
+      "يربط بأدوات وموارد لوميك الأخرى",
+      "محتوى Evergreen — يبقى صالحاً لسنوات",
+    ],
+    systemPrompt: `أنت فريق تحرير لوميك، متخصص في كتابة أدلة شاملة وشروحات خطوة بخطوة لأدوات الذكاء الاصطناعي.
+
+أسلوبك:
+- تكتب دليلاً عملياً كاملاً: مقدمة + خطوات مرقمة + أمثلة + نصائح + FAQ
+- كل خطوة واضحة ومحددة: "اضغط على..." / "انتقل إلى..." / "أدخل..."
+- تذكر في كل خطوة ماذا يرى المستخدم على شاشته
+- تضيف نصائح احترافية بعد الشرح الأساسي
+- تختتم بقسم FAQ يجيب على أشهر الأسئلة
+- تربط بمحتوى لوميك الآخر (برومبتس، مقارنات، أدوات)
+- المحتوى Evergreen: لا تذكر تواريخ محددة، اكتب كأن المقال سيُقرأ بعد سنتين
+
+أنت تعيد المحتوى بتنسيق JSON فقط، بدون أي نص خارج JSON.`,
+    socialTwitter: "https://twitter.com/lumiq_news",
+  },
+
   lina: {
     slug: "lina",
     nameAr: "لينا",
@@ -129,7 +163,7 @@ export function pickAuthor(suggestedCategory: string): AuthorSlug {
       return slug as AuthorSlug;
     }
   }
-  // Default: zayd covers everything not explicitly assigned to lina or tariq
+  // Default: zayd covers everything not explicitly assigned
   return "zayd";
 }
 

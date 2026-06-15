@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0c1a2e"/>
+      <stop offset="100%" stop-color="#0f2a4a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="200" height="200" fill="url(#bg)"/>
+  <circle cx="100" cy="100" r="90" fill="url(#glow)"/>
+  <circle cx="100" cy="100" r="85" fill="none" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.5"/>
+  <!-- Three person icons representing a team -->
+  <!-- Left person -->
+  <circle cx="62" cy="82" r="14" fill="#0ea5e9" opacity="0.7"/>
+  <path d="M38 118 Q38 102 62 102 Q86 102 86 118" fill="#0ea5e9" opacity="0.7"/>
+  <!-- Right person -->
+  <circle cx="138" cy="82" r="14" fill="#0ea5e9" opacity="0.7"/>
+  <path d="M114 118 Q114 102 138 102 Q162 102 162 118" fill="#0ea5e9" opacity="0.7"/>
+  <!-- Center person (larger / front) -->
+  <circle cx="100" cy="76" r="18" fill="#0ea5e9"/>
+  <path d="M70 122 Q70 104 100 104 Q130 104 130 122" fill="#0ea5e9"/>
+  <!-- L logo at bottom -->
+  <rect x="88" y="140" width="5" height="18" rx="2" fill="white" opacity="0.9"/>
+  <rect x="88" y="153" width="14" height="5" rx="2" fill="white" opacity="0.9"/>
+  <circle cx="112" cy="143" r="3.5" fill="white" opacity="0.8"/>
+</svg>

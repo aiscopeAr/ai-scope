@@ -9,6 +9,7 @@
     { "path": "/api/cron/ingest-tools",     "schedule": "0 8 * * *"  },
     { "path": "/api/cron/generate-prompts", "schedule": "0 3 * * *"  },
     { "path": "/api/cron/daily-stats",      "schedule": "0 1 * * *"  },
-    { "path": "/api/cron/weekly-report",    "schedule": "0 8 * * 1"  }
+    { "path": "/api/cron/weekly-report",    "schedule": "0 8 * * 1"  },
+    { "path": "/api/cron/monthly-tutorial", "schedule": "0 10 1 * *" }
   ]
 }
