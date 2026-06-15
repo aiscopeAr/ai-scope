@@ -104,7 +104,7 @@ export async function GET(request: Request) {
   let imageUrl: string | null = null;
   try {
     if (draft.featuredImagePrompt) {
-      imageUrl = await generateReviewImage(draft.featuredImagePrompt, draft.imageAlt);
+      imageUrl = await generateReviewImage(draft.featuredImagePrompt);
     }
   } catch {
     // image generation is best-effort
