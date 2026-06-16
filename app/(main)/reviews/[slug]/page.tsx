@@ -1,4 +1,4 @@
-import { cache } from "react";
+import React, { cache } from "react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -123,6 +123,20 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
     catch { return []; }
   })();
 
+  // Render inline Markdown (bold, italic, inline-code) inside a paragraph
+  function renderInline(text: string): React.ReactNode[] {
+    const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**"))
+        return <strong key={i}>{part.slice(2, -2)}</strong>;
+      if (part.startsWith("*") && part.endsWith("*"))
+        return <em key={i}>{part.slice(1, -1)}</em>;
+      if (part.startsWith("`") && part.endsWith("`"))
+        return <code key={i} className="rounded bg-slate-100 px-1 py-0.5 text-sm font-mono">{part.slice(1, -1)}</code>;
+      return part;
+    });
+  }
+
   const paragraphs = review.content
     .split(/\n\n+/)
     .map((p) => p.trim())
@@ -242,10 +256,10 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
 
             if (i === 3 && midArticle) return (
               <div key={i}>
-                {isH2 ? <h2 className="mt-8 text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{p.slice(3)}</h2>
-                  : isH3 ? <h3 className="mt-6 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{p.slice(4)}</h3>
-                  : isList ? <ul className="list-disc list-inside space-y-1">{p.split("\n").map((line, j) => <li key={j}>{line.replace(/^[-*]\s+/, "")}</li>)}</ul>
-                  : <p>{p}</p>}
+                {isH2 ? <h2 className="mt-8 text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{renderInline(p.slice(3))}</h2>
+                  : isH3 ? <h3 className="mt-6 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{renderInline(p.slice(4))}</h3>
+                  : isList ? <ul className="list-disc list-inside space-y-1">{p.split("\n").map((line, j) => <li key={j}>{renderInline(line.replace(/^[-*]\s+/, ""))}</li>)}</ul>
+                  : <p>{renderInline(p)}</p>}
                 <aside className="my-6 flex gap-4 rounded-[8px] border p-4 transition hover:shadow-sm" style={{ borderColor: "var(--accent)", backgroundColor: "var(--bg-surface)" }}>
                   {midArticle.imageUrl && (
                     <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-[4px]">
@@ -267,14 +281,14 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
               </div>
             );
 
-            if (isH2) return <h2 key={i} className="mt-8 text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{p.slice(3)}</h2>;
-            if (isH3) return <h3 key={i} className="mt-6 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{p.slice(4)}</h3>;
+            if (isH2) return <h2 key={i} className="mt-8 text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{renderInline(p.slice(3))}</h2>;
+            if (isH3) return <h3 key={i} className="mt-6 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>{renderInline(p.slice(4))}</h3>;
             if (isList) return (
               <ul key={i} className="list-disc list-inside space-y-1">
-                {p.split("\n").map((line, j) => <li key={j}>{line.replace(/^[-*]\s+/, "")}</li>)}
+                {p.split("\n").map((line, j) => <li key={j}>{renderInline(line.replace(/^[-*]\s+/, ""))}</li>)}
               </ul>
             );
-            return <p key={i}>{p}</p>;
+            return <p key={i}>{renderInline(p)}</p>;
           })}
         </div>
 
