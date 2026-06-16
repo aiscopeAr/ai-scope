@@ -21,6 +21,7 @@ export default function AdminReviewsPage() {
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "published" | "draft">("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -32,9 +33,15 @@ export default function AdminReviewsPage() {
 
   useEffect(() => { void load(); }, [load]);
 
+  // Derive unique categories from loaded reviews
+  const categories = Array.from(
+    new Map(reviews.map((r) => [r.category.slug, r.category.nameAr])).entries()
+  );
+
   const filtered = reviews.filter((r) => {
-    if (filter === "published") return r.published;
-    if (filter === "draft") return !r.published;
+    if (filter === "published" && !r.published) return false;
+    if (filter === "draft" && r.published) return false;
+    if (categoryFilter !== "all" && r.category.slug !== categoryFilter) return false;
     return true;
   });
 
@@ -54,8 +61,8 @@ export default function AdminReviewsPage() {
         </button>
       </div>
 
-      {/* Filter */}
-      <div className="mb-5 flex gap-2">
+      {/* Status filter */}
+      <div className="mb-3 flex gap-2">
         {(["all", "published", "draft"] as const).map((f) => (
           <button
             key={f}
@@ -65,6 +72,28 @@ export default function AdminReviewsPage() {
             {{ all: "الكل", published: "منشورة", draft: "مسودات" }[f]}
             <span className="mr-1.5 opacity-60">
               {{ all: reviews.length, published: reviews.filter((r) => r.published).length, draft: reviews.filter((r) => !r.published).length }[f]}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Category filter */}
+      <div className="mb-5 flex flex-wrap gap-2">
+        <button
+          onClick={() => setCategoryFilter("all")}
+          className={`rounded-full px-3 py-1 text-xs font-semibold transition ${categoryFilter === "all" ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+        >
+          كل التصنيفات
+        </button>
+        {categories.map(([slug, nameAr]) => (
+          <button
+            key={slug}
+            onClick={() => setCategoryFilter(slug)}
+            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${categoryFilter === slug ? "bg-slate-700 text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+          >
+            {nameAr}
+            <span className="mr-1 opacity-50">
+              {reviews.filter((r) => r.category.slug === slug).length}
             </span>
           </button>
         ))}

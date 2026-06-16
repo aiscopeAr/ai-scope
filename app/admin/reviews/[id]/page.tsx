@@ -8,7 +8,7 @@ import {
   ArrowRight, Save, Eye, Trash2, Wand2, ImageIcon,
   RefreshCw, ChevronDown, CheckCircle2, AlertCircle,
   Bold, Italic, Heading2, Heading3, List, Quote, Code, Link2,
-  X, ExternalLink,
+  X, ExternalLink, Upload,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -80,6 +80,10 @@ export default function ReviewEditorPage() {
   const [generatingImage, setGeneratingImage] = useState(false);
   const [imageError, setImageError] = useState("");
 
+  // Image upload
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
   // ── Load ──
@@ -121,6 +125,33 @@ export default function ReviewEditorPage() {
     if (!confirm("حذف هذا التقرير نهائياً؟ لا يمكن التراجع.")) return;
     await fetch(`/api/admin/reviews/${id}`, { method: "DELETE" });
     router.push("/admin/reviews");
+  }
+
+  // ── Upload image from file ──
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setImageError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`/api/admin/reviews/${id}/upload-image`, {
+        method: "POST",
+        body: fd,
+      });
+      if (!res.ok) {
+        const { error } = await res.json() as { error: string };
+        throw new Error(error ?? "Upload failed");
+      }
+      const { imageUrl } = await res.json() as { imageUrl: string };
+      setReview((r) => r ? { ...r, imageUrl } : r);
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : "خطأ في الرفع");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   }
 
   // ── Generate image ──
@@ -590,6 +621,41 @@ export default function ReviewEditorPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Upload from device */}
+                  <div className="mt-4">
+                    <label className={lbl}>رفع صورة من جهازك</label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 py-3 text-sm font-semibold text-slate-600 transition hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-50"
+                    >
+                      {uploading ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                          جارٍ الرفع…
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4" />
+                          Upload Picture
+                        </>
+                      )}
+                    </button>
+                    <p className="mt-1 text-center text-[11px] text-slate-400">
+                      JPEG · PNG · WebP · GIF — حجم أقصى 10 MB — تُرفع تلقائياً لـ Cloudinary
+                    </p>
+                    {imageError && (
+                      <p className="mt-1.5 text-center text-xs text-red-500">{imageError}</p>
+                    )}
+                  </div>
 
                   {/* Manual URL input */}
                   <div className="mt-4">
