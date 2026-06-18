@@ -26,14 +26,14 @@ export const metadata: Metadata = {
 
 async function getData() {
   try {
-    const [featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts] = await Promise.all([
+    const [featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews] = await Promise.all([
       prisma.review.findFirst({
-        where: { published: true },
+        where: { published: true, category: { slug: { not: "tutorials" } } },
         orderBy: { publishedAt: "desc" },
         include: { category: true },
       }),
       prisma.review.findMany({
-        where: { published: true },
+        where: { published: true, category: { slug: { not: "tutorials" } } },
         orderBy: { publishedAt: "desc" },
         skip: 1,
         take: 8,
@@ -68,15 +68,25 @@ async function getData() {
           tool: { select: { name: true, slug: true, logoUrl: true } },
         },
       }),
+      prisma.review.findMany({
+        where: { published: true, category: { slug: "tutorials" } },
+        orderBy: { publishedAt: "desc" },
+        take: 4,
+        select: {
+          id: true, slug: true, titleAr: true, summary: true,
+          imageUrl: true, publishedAt: true, tags: true,
+          category: { select: { nameAr: true, slug: true } },
+        },
+      }),
     ]);
-    return { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts };
+    return { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews };
   } catch {
-    return { featuredReview: null, latestReviews: [], featuredTools: [], toolOfWeek: null, latestComparisons: [], featuredPrompts: [] };
+    return { featuredReview: null, latestReviews: [], featuredTools: [], toolOfWeek: null, latestComparisons: [], featuredPrompts: [], tutorialReviews: [] };
   }
 }
 
 export default async function HomePage() {
-  const { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts } = await getData();
+  const { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews } = await getData();
 
   return (
     <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
@@ -246,39 +256,27 @@ export default async function HomePage() {
       </section>
 
       {/* Tutorials section */}
-      <section className="mb-12 rounded-[6px] border p-6" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>شروحات الذكاء الاصطناعي</h2>
-          <Link href="/category/tutorials" className="text-xs font-medium transition-opacity hover:opacity-70" style={{ color: "var(--accent)" }}>
-            عرض الكل ←
-          </Link>
-        </div>
-        <div className="mb-4 flex items-center gap-3 rounded-[6px] p-3" style={{ backgroundColor: "var(--bg-subtle)", borderLeft: "3px solid #0ea5e9" }}>
-          <img src="/images/authors/team.svg" alt="طاقم لوميك" className="h-10 w-10 rounded-[4px] object-cover shrink-0" />
-          <div>
-            <p className="text-sm font-bold" style={{ color: "#0ea5e9" }}>طاقم لوميك</p>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>أدلة عملية وشروحات خطوة بخطوة — محتوى يبقى مفيداً</p>
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {[
-            "كيف تستخدم ChatGPT للمبتدئين",
-            "كيف تستخدم Gemini بالعربي",
-            "كيف تستخدم Canva AI للتصميم",
-            "كيف تستخدم Midjourney لتوليد الصور",
-          ].map((title) => (
-            <Link
-              key={title}
-              href="/category/tutorials"
-              className="flex items-center gap-2.5 rounded-[6px] border px-4 py-3 text-sm transition-colors"
-              style={{ borderColor: "var(--border-subtle)", color: "var(--text-secondary)", backgroundColor: "var(--bg-subtle)" }}
-            >
-              <span style={{ color: "#0ea5e9" }}>📖</span>
-              <span className="line-clamp-1">{title}</span>
+      {tutorialReviews.length > 0 && (
+        <section className="mb-12">
+          <div className="mb-5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img src="/images/authors/team.svg" alt="طاقم لوميك" className="h-9 w-9 rounded-[4px] shrink-0" />
+              <div>
+                <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>شروحات الذكاء الاصطناعي</h2>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>أدلة خطوة بخطوة — محتوى يبقى مفيداً</p>
+              </div>
+            </div>
+            <Link href="/category/tutorials" className="text-sm font-semibold transition hover:opacity-70" style={{ color: "var(--accent)" }}>
+              عرض الكل ←
             </Link>
-          ))}
-        </div>
-      </section>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {tutorialReviews.map((r) => (
+              <ReviewCard key={r.id} review={{ ...r, authorSlug: "team", viewCount: 0, tags: r.tags }} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Newsletter */}
       <NewsletterInline />
