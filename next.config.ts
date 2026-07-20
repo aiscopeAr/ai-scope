@@ -43,6 +43,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.medium.com" },
       { protocol: "https", hostname: "miro.medium.com" },
       { protocol: "https", hostname: "res.cloudinary.com" },
+      { protocol: "https", hostname: "www.google.com", pathname: "/s2/favicons" },
     ],
   },
 };

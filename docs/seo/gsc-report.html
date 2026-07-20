@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>ניתוח Google Search Console — Lumiq</title>
+<style>
+  .viz-root {
+    --surface-1:      #fcfcfb;
+    --page-plane:     #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6; /* blue */
+    --series-2:       #1baf7a; /* aqua */
+    --series-3:       #eda100; /* yellow */
+    --series-4:       #008300; /* green */
+    --series-5:       #4a3aa7; /* violet */
+    --series-6:       #e34948; /* red */
+    --status-good:    #0ca30c;
+    --status-warning: #fab219;
+    --status-critical:#d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    .viz-root {
+      --surface-1:      #1a1a19;
+      --page-plane:     #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --series-2:       #199e70;
+      --series-3:       #c98500;
+      --series-4:       #008300;
+      --series-5:       #9085e9;
+      --series-6:       #e66767;
+      --status-good:    #0ca30c;
+      --status-warning: #fab219;
+      --status-critical:#d03b3b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page-plane);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .subtitle { color: var(--text-secondary); font-size: 14px; margin: 0 0 8px; }
+  .snapshot-picker { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+  .snapshot-picker label { font-size: 12px; color: var(--text-muted); }
+  .snapshot-picker select {
+    font-family: inherit; font-size: 13px; padding: 6px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary);
+  }
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 16px; color: var(--text-primary); }
+  .card h2 .hint { font-weight: 400; color: var(--text-muted); font-size: 12px; }
+
+  /* KPI row */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .kpi { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+  .kpi .label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .kpi .value { font-size: 28px; font-weight: 600; font-variant-numeric: proportional-nums; }
+  .kpi .delta { font-size: 12px; margin-top: 4px; }
+  .kpi .delta.flat { color: var(--text-muted); }
+  .kpi .delta.bad { color: var(--status-critical); }
+  .kpi .delta.good { color: var(--status-good); }
+
+  /* status banner */
+  .banner {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-inline-start: 4px solid var(--status-critical);
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 20px;
+  }
+  .banner.info { border-inline-start-color: var(--series-1); }
+  .banner .icon { font-size: 16px; line-height: 1.4; }
+  .banner .text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  .banner .text b { color: var(--text-primary); }
+
+  /* trend chart */
+  svg { display: block; overflow: visible; }
+  .axis-label { font-size: 11px; fill: var(--text-muted); font-family: inherit; }
+  .gridline { stroke: var(--gridline); stroke-width: 1; }
+  .baseline { stroke: var(--baseline); stroke-width: 1; }
+  .legend { display: flex; gap: 18px; margin-top: 10px; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; }
+  .legend .item { display: flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .legend .line { width: 14px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+
+  /* tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: right; font-weight: 500; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.02em; padding: 8px 10px; border-bottom: 1px solid var(--gridline); }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--gridline); color: var(--text-secondary); }
+  tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: left; font-variant-numeric: tabular-nums; }
+  td.primary { color: var(--text-primary); }
+  .ltr { direction: ltr; text-align: left; unicode-bidi: isolate; }
+  .bar-cell { position: relative; }
+  .bar-track { position: relative; height: 6px; background: var(--gridline); border-radius: 3px; overflow: hidden; margin-top: 4px; width: 100%; }
+  .bar-fill { position: absolute; inset-inline-start: 0; top: 0; bottom: 0; border-radius: 3px; }
+
+  /* two-col grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 820px) { .grid-2 { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(2,1fr); } }
+
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .pill.critical { background: rgba(208,59,59,0.12); color: var(--status-critical); }
+  .pill.good { background: rgba(12,163,12,0.12); color: var(--status-good); }
+  .foot-note { font-size: 12px; color: var(--text-muted); line-height: 1.7; }
+  .empty-state { font-size: 13px; color: var(--text-muted); padding: 20px 0; text-align: center; }
+</style>
+</head>
+<body>
+<div class="viz-root">
+<div class="wrap">
+
+  <h1>ניתוח Google Search Console — lumiq.news</h1>
+  <p class="subtitle" id="range-subtitle">טוען נתונים...</p>
+  <div class="snapshot-picker" id="snapshot-picker" style="display:none;">
+    <label for="snapshot-select">תמונת מצב:</label>
+    <select id="snapshot-select"></select>
+  </div>
+
+  <div id="history-banner"></div>
+
+  <div id="banner-slot"></div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <!-- Trend chart -->
+  <div class="card">
+    <h2>מגמה יומית — הופעות מול מיקום ממוצע <span class="hint" id="trend-hint"></span></h2>
+    <div id="trend-chart"></div>
+    <div class="legend">
+      <div class="item"><span class="line" style="background:var(--series-1)"></span> הופעות (ציר שמאל)</div>
+      <div class="item"><span class="line" style="background:var(--series-3); border-top:2px dashed var(--series-3); height:0;"></span> מיקום ממוצע (ציר ימין, הפוך — למעלה=טוב)</div>
+      <div class="item"><span class="swatch" style="background:var(--series-6)"></span> ימים עם קליק</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Countries -->
+    <div class="card">
+      <h2>מדינות מובילות <span class="hint">לפי הופעות</span></h2>
+      <table>
+        <thead>
+          <tr><th>מדינה</th><th class="num">הופעות</th><th class="num">קליקים</th><th class="num">מיקום</th></tr>
+        </thead>
+        <tbody id="countries-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Devices -->
+    <div class="card">
+      <h2>לפי מכשיר</h2>
+      <table>
+        <thead>
+          <tr><th>מכשיר</th><th class="num">הופעות</th><th class="num">קליקים</th><th class="num">CTR</th></tr>
+        </thead>
+        <tbody id="devices-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pages -->
+  <div class="card">
+    <h2>עמודים מובילים <span class="hint">TOP 12 לפי הופעות</span></h2>
+    <table>
+      <thead>
+        <tr><th>עמוד</th><th class="num">הופעות</th><th class="num">קליקים</th><th class="num">CTR</th><th class="num">מיקום</th></tr>
+      </thead>
+      <tbody id="pages-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Queries -->
+  <div class="card">
+    <h2>שאילתות מובילות</h2>
+    <table>
+      <thead>
+        <tr><th>שאילתה</th><th class="num">הופעות</th><th class="num">קליקים</th><th class="num">מיקום</th></tr>
+      </thead>
+      <tbody id="queries-body"></tbody>
+    </table>
+    <p class="foot-note" id="queries-note" style="margin-top:12px;"></p>
+  </div>
+
+</div>
+</div>
+
+<script>
+(function() {
+  const root = document.querySelector('.viz-root');
+  const cs = getComputedStyle(root);
+  const c = (name) => cs.getPropertyValue(name).trim();
+
+  fetch('gsc-snapshots.json')
+    .then(r => r.json())
+    .then(data => init(data))
+    .catch(err => {
+      document.getElementById('range-subtitle').textContent =
+        'שגיאה בטעינת gsc-snapshots.json — ודאי שהקובץ פתוח מתוך docs/seo/ ולא הועתק לבד. (' + err + ')';
+    });
+
+  function fmtDelta(curr, prev, unit, lowerIsBetter) {
+    if (prev === null || prev === undefined) return '<span class="delta flat">אין נתון קודם להשוואה</span>';
+    const diff = curr - prev;
+    if (Math.abs(diff) < 0.005) return '<span class="delta flat">ללא שינוי</span>';
+    const better = lowerIsBetter ? diff < 0 : diff > 0;
+    const cls = better ? 'good' : 'bad';
+    const arrow = diff > 0 ? '▲' : '▼';
+    const sign = diff > 0 ? '+' : '';
+    return `<span class="delta ${cls}">${arrow} ${sign}${diff.toFixed(unit === '%' ? 2 : 1)}${unit} לעומת תמונת המצב הקודמת</span>`;
+  }
+
+  function init(data) {
+    const snapshots = data.snapshots || [];
+    if (snapshots.length === 0) {
+      document.getElementById('range-subtitle').textContent = 'אין עדיין תמונות מצב שמורות.';
+      return;
+    }
+
+    const picker = document.getElementById('snapshot-picker');
+    const select = document.getElementById('snapshot-select');
+    if (snapshots.length > 1) {
+      picker.style.display = 'flex';
+      snapshots.forEach((s, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `${s.capturedAt} — ${s.rangeLabel}`;
+        select.appendChild(opt);
+      });
+      select.value = snapshots.length - 1;
+      select.addEventListener('change', () => render(snapshots, parseInt(select.value, 10)));
+    }
+
+    render(snapshots, snapshots.length - 1);
+  }
+
+  function render(snapshots, idx) {
+    const snap = snapshots[idx];
+    const prev = idx > 0 ? snapshots[idx - 1] : null;
+
+    document.getElementById('range-subtitle').textContent =
+      `טווח נתונים: ${snap.rangeLabel} · נלכד ב-${snap.capturedAt} (${snap.filters.searchType}, ${snap.filters.date})`;
+
+    // history banner
+    const histEl = document.getElementById('history-banner');
+    if (prev) {
+      histEl.innerHTML = `
+        <div class="banner info">
+          <span class="icon">📊</span>
+          <div class="text">מציגה תמונת מצב <b>${idx + 1} מתוך ${snapshots.length}</b> —
+          משווה מול תמונת המצב הקודמת מ-${prev.capturedAt}.</div>
+        </div>`;
+    } else {
+      histEl.innerHTML = `
+        <div class="banner info">
+          <span class="icon">📊</span>
+          <div class="text">זו תמונת המצב הראשונה שנשמרה. בפעם הבאה שתעלי CSV חדשים, נוסיף תמונת מצב נוספת כאן ותוכלי לראות מגמה בין תקופות.</div>
+        </div>`;
+    }
+
+    // status banner (only meaningful for near-zero traffic story; kept generic)
+    const t = snap.totals;
+    const bannerEl = document.getElementById('banner-slot');
+    if (t.clicks <= 5 && t.position > 15) {
+      bannerEl.innerHTML = `
+        <div class="banner">
+          <span class="icon">⚠️</span>
+          <div class="text">
+            <b>הבעיה המרכזית: תנועה כמעט אפסית.</b>
+            סה״כ ${t.clicks} קליקים על פני ${t.impressions} הופעות (CTR כולל ${t.ctr}%),
+            ומיקום ממוצע ${t.position} (עמוד 2–3 בתוצאות החיפוש). הבעיה היא <b>דירוג נמוך מדי כדי לקבל קליקים</b>, לא היעדר תוכן.
+          </div>
+        </div>`;
+    } else {
+      bannerEl.innerHTML = '';
+    }
+
+    // KPIs
+    const pt = prev ? prev.totals : null;
+    document.getElementById('kpis').innerHTML = `
+      <div class="kpi">
+        <div class="label">סה״כ קליקים</div>
+        <div class="value">${t.clicks}</div>
+        ${fmtDelta(t.clicks, pt ? pt.clicks : null, '', false)}
+      </div>
+      <div class="kpi">
+        <div class="label">סה״כ הופעות</div>
+        <div class="value">${t.impressions}</div>
+        ${fmtDelta(t.impressions, pt ? pt.impressions : null, '', false)}
+      </div>
+      <div class="kpi">
+        <div class="label">CTR ממוצע</div>
+        <div class="value">${t.ctr}%</div>
+        ${fmtDelta(t.ctr, pt ? pt.ctr : null, '%', false)}
+      </div>
+      <div class="kpi">
+        <div class="label">מיקום ממוצע</div>
+        <div class="value">${t.position}</div>
+        ${fmtDelta(t.position, pt ? pt.position : null, '', true)}
+      </div>`;
+
+    document.getElementById('trend-hint').textContent = snap.rangeLabel;
+    renderTrend(snap.daily);
+    renderCountries(snap.countries);
+    renderDevices(snap.devices);
+    renderPages(snap.pages);
+    renderQueries(snap.queries, snap.queriesNote);
+  }
+
+  function renderTrend(daily) {
+    const trend = daily.map(d => [d[0].slice(5), d[1], d[2]]);
+    const pos = daily.map(d => d[3]);
+
+    const W = 1136, H = 260, padL = 36, padR = 36, padT = 16, padB = 28;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const n = trend.length;
+    const xStep = n > 1 ? plotW / (n - 1) : 0;
+    const maxImp = Math.max(1, ...trend.map(d => d[2]));
+    const yImp = (v) => padT + plotH - (v / maxImp) * plotH;
+
+    const posVals = pos.filter(v => v !== null && v !== undefined);
+    const maxPos = posVals.length ? Math.max(...posVals) : 1;
+
+    const yPos = (v) => padT + ((v - 1) / Math.max(1, (maxPos - 1))) * plotH;
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">`;
+
+    for (let i = 0; i <= 4; i++) {
+      const y = padT + (plotH / 4) * i;
+      svg += `<line class="gridline" x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" />`;
+    }
+    svg += `<line class="baseline" x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" />`;
+
+    trend.forEach((d, i) => {
+      const x = padL + i * xStep;
+      const y = yImp(d[2]);
+      const barW = Math.max(3, xStep * 0.45);
+      svg += `<rect x="${x - barW/2}" y="${y}" width="${barW}" height="${padT + plotH - y}" rx="1.5" fill="${c('--series-1')}" opacity="0.55" />`;
+    });
+
+    let path = '';
+    pos.forEach((p, i) => {
+      if (p === null || p === undefined) return;
+      const x = padL + i * xStep;
+      const y = yPos(p);
+      path += (path === '' ? 'M' : 'L') + x + ',' + y + ' ';
+    });
+    svg += `<path d="${path}" fill="none" stroke="${c('--series-3')}" stroke-width="2" stroke-dasharray="4,3" stroke-linejoin="round" stroke-linecap="round" />`;
+
+    trend.forEach((d, i) => {
+      if (d[1] > 0) {
+        const x = padL + i * xStep;
+        const y = yImp(d[2]);
+        svg += `<circle cx="${x}" cy="${y}" r="5" fill="${c('--series-6')}" stroke="${c('--surface-1')}" stroke-width="2" />`;
+      }
+    });
+
+    trend.forEach((d, i) => {
+      if (i % 5 === 0 || i === n - 1) {
+        const x = padL + i * xStep;
+        svg += `<text class="axis-label" x="${x}" y="${H - 6}" text-anchor="middle">${d[0]}</text>`;
+      }
+    });
+
+    for (let i = 0; i <= 4; i++) {
+      const val = Math.round(maxImp - (maxImp / 4) * i);
+      const y = padT + (plotH / 4) * i;
+      svg += `<text class="axis-label" x="${padL - 8}" y="${y + 4}" text-anchor="end">${val}</text>`;
+    }
+
+    svg += `</svg>`;
+    document.getElementById('trend-chart').innerHTML = svg;
+  }
+
+  function renderCountries(countries) {
+    const el = document.getElementById('countries-body');
+    if (!countries || !countries.length) { el.innerHTML = `<tr><td class="empty-state" colspan="4">אין נתונים</td></tr>`; return; }
+    const maxImp = Math.max(...countries.map(r => r[2]));
+    el.innerHTML = countries.map(r => `
+      <tr>
+        <td class="primary">${r[0]}</td>
+        <td class="num"><div class="bar-cell">${r[2]}
+          <div class="bar-track"><div class="bar-fill" style="width:${(r[2]/maxImp*100).toFixed(0)}%; background:${c('--series-1')}"></div></div>
+        </div></td>
+        <td class="num">${r[1]}</td>
+        <td class="num">${r[4]}</td>
+      </tr>`).join('');
+  }
+
+  function renderDevices(devices) {
+    const el = document.getElementById('devices-body');
+    if (!devices || !devices.length) { el.innerHTML = `<tr><td class="empty-state" colspan="4">אין נתונים</td></tr>`; return; }
+    const maxImp = Math.max(...devices.map(r => r[1]));
+    const colors = [c('--series-1'), c('--series-2'), c('--series-5')];
+    el.innerHTML = devices.map((r,i) => `
+      <tr>
+        <td class="primary">${r[0]}</td>
+        <td class="num"><div class="bar-cell">${r[1]}
+          <div class="bar-track"><div class="bar-fill" style="width:${(r[1]/maxImp*100).toFixed(0)}%; background:${colors[i % colors.length]}"></div></div>
+        </div></td>
+        <td class="num">${r[0] === 'Tablet' ? 0 : r[2]}</td>
+        <td class="num">${r[3]}%</td>
+      </tr>`).join('');
+  }
+
+  function renderPages(pages) {
+    const el = document.getElementById('pages-body');
+    if (!pages || !pages.length) { el.innerHTML = `<tr><td class="empty-state" colspan="5">אין נתונים</td></tr>`; return; }
+    const top = pages.slice(0, 12);
+    const maxImp = Math.max(...top.map(r => r[2]));
+    el.innerHTML = top.map(r => `
+      <tr>
+        <td class="primary ltr">${r[0].replace(/^https?:\/\/(www\.)?lumiq\.news/, '') || '/'}</td>
+        <td class="num"><div class="bar-cell">${r[2]}
+          <div class="bar-track"><div class="bar-fill" style="width:${(r[2]/maxImp*100).toFixed(0)}%; background:${c('--series-1')}"></div></div>
+        </div></td>
+        <td class="num">${r[1]}</td>
+        <td class="num">${r[3]}%</td>
+        <td class="num">${r[4]}</td>
+      </tr>`).join('');
+  }
+
+  function renderQueries(queries, note) {
+    const el = document.getElementById('queries-body');
+    const noteEl = document.getElementById('queries-note');
+    noteEl.innerHTML = note ? `⚠️ ${note}` : '';
+    if (!queries || !queries.length) { el.innerHTML = `<tr><td class="empty-state" colspan="4">אין נתונים</td></tr>`; return; }
+    const maxImp = Math.max(...queries.map(r => r[1]));
+    el.innerHTML = queries.map(r => `
+      <tr>
+        <td class="primary">${r[0]}</td>
+        <td class="num"><div class="bar-cell">${r[1]}
+          <div class="bar-track"><div class="bar-fill" style="width:${(r[1]/maxImp*100).toFixed(0)}%; background:${r[2]>0?c('--status-good'):c('--series-1')}"></div></div>
+        </div></td>
+        <td class="num">${r[2]}</td>
+        <td class="num">${r[4]}</td>
+      </tr>`).join('');
+  }
+})();
+</script>
+</body>
+</html>

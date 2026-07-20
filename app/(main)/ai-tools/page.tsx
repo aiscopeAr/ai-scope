@@ -11,11 +11,11 @@ import ToolCategoryGrid from "@/components/ToolCategoryGrid";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: `أفضل أدوات الذكاء الاصطناعي 2025 — دليل شامل | ${SITE_NAME_AR}`,
-  description: "دليل شامل لأكثر من 500 أداة ذكاء اصطناعي مع مراجعات عربية مفصّلة — الأسعار، المميزات، العيوب، ومقارنات بين الأدوات.",
+  title: `أفضل أدوات الذكاء الاصطناعي 2026 — دليل ومراجعات بالعربية | ${SITE_NAME_AR}`,
+  description: "دليل شامل ومحدّث لأفضل أدوات الذكاء الاصطناعي — مراجعات عربية مفصّلة للأسعار والمميزات والعيوب، ومقارنات بين الأدوات مثل Gemini وChatGPT وMidjourney.",
   alternates: { canonical: absoluteUrl("/ai-tools") },
   openGraph: {
-    title: `دليل أدوات الذكاء الاصطناعي | ${SITE_NAME_AR}`,
+    title: `دليل أدوات الذكاء الاصطناعي 2026 | ${SITE_NAME_AR}`,
     description: "أفضل أدوات AI مع مراجعات ومقارنات بالعربية",
     locale: "ar_AR",
     type: "website",

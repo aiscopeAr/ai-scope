@@ -178,7 +178,7 @@ export default async function AIToolPage({
             <div className="flex items-start gap-5">
               {tool.logoUrl ? (
                 <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[6px] border" style={{ borderColor: "var(--border-subtle)" }}>
-                  <Image src={tool.logoUrl} alt={tool.imageAlt ?? tool.name} fill className="object-cover" unoptimized />
+                  <Image src={tool.logoUrl} alt={tool.imageAlt ?? tool.name} fill className="object-cover" />
                 </div>
               ) : (
                 <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[6px] text-3xl font-black"

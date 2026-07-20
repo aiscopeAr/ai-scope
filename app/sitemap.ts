@@ -10,6 +10,7 @@ const staticPages: MetadataRoute.Sitemap = [
   { url: `${SITE_URL}/reviews`,    lastModified: new Date(), changeFrequency: "daily",   priority: 0.95 },
   { url: `${SITE_URL}/ai-tools`,   lastModified: new Date(), changeFrequency: "daily",   priority: 0.9 },
   { url: `${SITE_URL}/compare`,    lastModified: new Date(), changeFrequency: "weekly",  priority: 0.7 },
+  { url: `${SITE_URL}/prompts`,    lastModified: new Date(), changeFrequency: "daily",   priority: 0.85 },
   { url: `${SITE_URL}/author/zayd`,  lastModified: new Date(), changeFrequency: "daily",   priority: 0.8 },
   { url: `${SITE_URL}/author/lina`,  lastModified: new Date(), changeFrequency: "daily",   priority: 0.8 },
   { url: `${SITE_URL}/author/tariq`, lastModified: new Date(), changeFrequency: "daily",   priority: 0.8 },
@@ -30,7 +31,7 @@ const staticPages: MetadataRoute.Sitemap = [
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
-    const [reviews, categories, aiTools, comparisons] = await Promise.all([
+    const [reviews, categories, aiTools, comparisons, prompts] = await Promise.all([
       prisma.review.findMany({
         where: { published: true },
         select: { slug: true, updatedAt: true },
@@ -51,6 +52,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       prisma.comparison.findMany({
         where: { published: true },
         select: { slug: true, updatedAt: true },
+      }),
+      prisma.prompt.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+        take: 2000,
       }),
     ]);
 
@@ -79,6 +85,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: comparison.updatedAt,
         changeFrequency: "monthly" as const,
         priority: 0.7,
+      })),
+      ...prompts.map((p) => ({
+        url: `${SITE_URL}/prompts/${p.slug}`,
+        lastModified: p.updatedAt,
+        changeFrequency: "monthly" as const,
+        priority: 0.6,
       })),
     ];
   } catch {
