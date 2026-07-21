@@ -15,6 +15,7 @@ import AdSlot from "@/components/AdSlot";
 import RelatedArticles from "@/components/RelatedArticles";
 import ArticleTracker from "@/components/ArticleTracker";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_TWITTER_HANDLE, truncate, absoluteUrl } from "@/lib/seo";
+import { tagToSlug, normalizeTag, buildTagSummaries } from "@/lib/tags";
 
 export const revalidate = 3600; // re-render at most once per hour
 
@@ -47,6 +48,13 @@ const getReview = cache(async (slug: string) => {
     where: { slug },
     include: { category: true },
   });
+});
+
+/** Canonical tags with enough reviews to have a /tag/[tag] page — cached per request. */
+const getLinkableTagSet = cache(async (): Promise<Set<string>> => {
+  const reviews = await prisma.review.findMany({ where: { published: true }, select: { tags: true } });
+  const summaries = buildTagSummaries(reviews.map((r) => r.tags));
+  return new Set(summaries.map((s) => s.canonical));
 });
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -91,7 +99,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
   const review = await getReview(slug);
   if (!review?.published) notFound();
 
-  const [relatedArticles, midArticle] = await Promise.all([
+  const [relatedArticles, midArticle, linkableTags] = await Promise.all([
     prisma.review.findMany({
       where: { published: true, categoryId: review.categoryId, slug: { not: slug } },
       orderBy: { publishedAt: "desc" },
@@ -106,6 +114,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
       orderBy: { publishedAt: "desc" },
       select: { slug: true, titleAr: true, summary: true, imageUrl: true, category: { select: { nameAr: true, slug: true } } },
     }),
+    getLinkableTagSet(),
   ]);
 
   const author = AUTHORS[review.authorSlug as AuthorSlug];
@@ -314,14 +323,20 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
           </section>
         )}
 
-        {/* Tags */}
+        {/* Tags — only linked when the tag has enough reviews for its own /tag page */}
         {review.tags.length > 0 && (
           <div className="mb-8 flex flex-wrap gap-2">
-            {review.tags.map((tag) => (
-              <span key={tag} className="rounded-[3px] border px-3 py-1 text-sm" style={{ borderColor: "var(--border-medium)", color: "var(--text-muted)", backgroundColor: "var(--bg-subtle)" }}>
-                #{tag}
-              </span>
-            ))}
+            {review.tags.map((tag) => {
+              const badgeClass = "rounded-[3px] border px-3 py-1 text-sm";
+              const badgeStyle = { borderColor: "var(--border-medium)", color: "var(--text-muted)", backgroundColor: "var(--bg-subtle)" };
+              return linkableTags.has(normalizeTag(tag)) ? (
+                <Link key={tag} href={`/tag/${tagToSlug(tag)}`} className={`${badgeClass} transition-colors hover:opacity-75`} style={badgeStyle}>
+                  #{tag}
+                </Link>
+              ) : (
+                <span key={tag} className={badgeClass} style={badgeStyle}>#{tag}</span>
+              );
+            })}
           </div>
         )}
 

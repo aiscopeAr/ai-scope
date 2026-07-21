@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/seo";
 import { TOOL_CATEGORIES } from "@/lib/tool-categories";
+import { buildTagSummaries, tagToSlug } from "@/lib/tags";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const [reviews, categories, aiTools, comparisons, prompts] = await Promise.all([
       prisma.review.findMany({
         where: { published: true },
-        select: { slug: true, updatedAt: true },
+        select: { slug: true, updatedAt: true, tags: true },
         orderBy: { publishedAt: "desc" },
         take: 2000,
       }),
@@ -91,6 +92,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: p.updatedAt,
         changeFrequency: "monthly" as const,
         priority: 0.6,
+      })),
+      ...buildTagSummaries(reviews.map((r) => r.tags)).map((tag) => ({
+        url: `${SITE_URL}/tag/${tagToSlug(tag.label)}`,
+        lastModified: new Date(),
+        changeFrequency: "weekly" as const,
+        priority: 0.5,
       })),
     ];
   } catch {
