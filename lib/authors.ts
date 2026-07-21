@@ -183,3 +183,20 @@ export function getAuthorSlugFromTags(tags: string[]): AuthorSlug {
 export function getPublicTags(tags: string[]): string[] {
   return tags.filter((t) => !t.startsWith("__author:"));
 }
+
+/**
+ * Maps an author's `categories` values to the actual Category.slug values in the DB —
+ * a few names differ ("policy" → "ai-policy", "tools"/"tools-analysis"/"productivity" → "ai-tools").
+ * Returns candidates in priority order; caller should pick the first one that exists in the DB.
+ */
+export function categorySlugCandidatesForAuthor(authorSlug: string): string[] {
+  const author = AUTHORS[authorSlug as AuthorSlug];
+  if (!author) return [];
+  const alias: Record<string, string> = {
+    policy: "ai-policy",
+    tools: "ai-tools",
+    "tools-analysis": "ai-tools",
+    productivity: "ai-tools",
+  };
+  return author.categories.map((c) => alias[c] ?? c);
+}

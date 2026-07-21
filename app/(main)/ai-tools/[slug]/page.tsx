@@ -69,32 +69,13 @@ export default async function AIToolPage({
 }) {
   const { slug } = await params;
 
-  const [tool, relatedTools, relatedReviews, toolPrompts] = await Promise.all([
+  const [tool, toolPrompts] = await Promise.all([
     prisma.aITool.findUnique({
       where: { slug },
       include: {
         comparisons: { include: { comparison: true }, take: 3 },
       },
     }).catch(() => null),
-
-    prisma.aITool.findMany({
-      where: { published: true, slug: { not: slug } },
-      orderBy: { viewCount: "desc" },
-      take: 4,
-      select: {
-        id: true, slug: true, name: true, tagline: true, descriptionAr: true,
-        logoUrl: true, toolCategory: true, pricing: true, monthlyPrice: true,
-        arabicSupport: true, hasApi: true, tags: true, viewCount: true, likes: true,
-        featured: true, editorPick: true,
-      },
-    }).catch(() => []),
-
-    prisma.review.findMany({
-      where: { published: true },
-      orderBy: { publishedAt: "desc" },
-      take: 4,
-      select: { id: true, slug: true, titleAr: true, summary: true, publishedAt: true, authorSlug: true },
-    }).catch(() => []),
 
     prisma.prompt.findMany({
       where: { published: true, tool: { slug } },
@@ -105,6 +86,65 @@ export default async function AIToolPage({
   ]);
 
   if (!tool || !tool.published) notFound();
+
+  const [sameCategoryTools, relatedReviews] = await Promise.all([
+    // Related tools — same toolCategory first, only backfill with popular tools if too few
+    prisma.aITool.findMany({
+      where: { published: true, slug: { not: slug }, toolCategory: tool.toolCategory },
+      orderBy: { viewCount: "desc" },
+      take: 4,
+      select: {
+        id: true, slug: true, name: true, tagline: true, descriptionAr: true,
+        logoUrl: true, toolCategory: true, pricing: true, monthlyPrice: true,
+        arabicSupport: true, hasApi: true, tags: true, viewCount: true, likes: true,
+        featured: true, editorPick: true,
+      },
+    }).catch(() => []),
+
+    // Reviews that actually mention this tool by name, falling back to same-category reviews
+    prisma.review.findMany({
+      where: {
+        published: true,
+        OR: [
+          { titleAr: { contains: tool.name, mode: "insensitive" } },
+          { tags: { has: tool.name } },
+        ],
+      },
+      orderBy: { publishedAt: "desc" },
+      take: 4,
+      select: { id: true, slug: true, titleAr: true, summary: true, publishedAt: true, authorSlug: true },
+    }).catch(() => []),
+  ]);
+
+  let relatedTools = sameCategoryTools;
+  if (relatedTools.length < 4) {
+    const backfillTools = await prisma.aITool.findMany({
+      where: {
+        published: true,
+        slug: { notIn: [slug, ...relatedTools.map((t) => t.slug)] },
+      },
+      orderBy: { viewCount: "desc" },
+      take: 4 - relatedTools.length,
+      select: {
+        id: true, slug: true, name: true, tagline: true, descriptionAr: true,
+        logoUrl: true, toolCategory: true, pricing: true, monthlyPrice: true,
+        arabicSupport: true, hasApi: true, tags: true, viewCount: true, likes: true,
+        featured: true, editorPick: true,
+      },
+    }).catch(() => []);
+    relatedTools = [...relatedTools, ...backfillTools];
+  }
+
+  let relatedReviewsList = relatedReviews;
+  if (relatedReviewsList.length === 0) {
+    // No review mentions this tool by name — fall back to the general "ai-tools" review category
+    relatedReviewsList = await prisma.review.findMany({
+      where: { published: true, category: { slug: "ai-tools" } },
+      orderBy: { publishedAt: "desc" },
+      take: 4,
+      select: { id: true, slug: true, titleAr: true, summary: true, publishedAt: true, authorSlug: true },
+    }).catch(() => []);
+  }
 
   void prisma.aITool.update({ where: { id: tool.id }, data: { viewCount: { increment: 1 } } }).catch(() => {});
 
@@ -381,11 +421,11 @@ export default async function AIToolPage({
               )}
 
               {/* Related reviews */}
-              {relatedReviews.length > 0 && (
+              {relatedReviewsList.length > 0 && (
                 <section className="mb-8">
                   <h2 className="mb-4 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>تقارير ذات صلة</h2>
                   <div className="space-y-3">
-                    {relatedReviews.map((r) => (
+                    {relatedReviewsList.map((r) => (
                       <Link
                         key={r.id}
                         href={`/reviews/${r.slug}`}

@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { approveReview } from "@/lib/review-queue";
 import { generateReviewImage } from "@/lib/images";
 import { getSetting, SETTING_KEYS } from "@/lib/settings";
+import { categorySlugCandidatesForAuthor } from "@/lib/authors";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -56,13 +57,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, message: "No processed reviews ready" });
   }
 
-  // Need a default category — get first available
-  const defaultCategory = await prisma.category.findFirst({
+  // Fallback category if an item's author has no matching Category row
+  const fallbackCategory = await prisma.category.findFirst({
     orderBy: { createdAt: "asc" },
   });
-  if (!defaultCategory) {
+  if (!fallbackCategory) {
     return NextResponse.json({ ok: false, error: "No categories found — seed the DB first" });
   }
+
+  const allCategories = await prisma.category.findMany({ select: { id: true, slug: true } });
+  const categoryBySlug = new Map(allCategories.map((c) => [c.slug, c.id]));
 
   const published: string[] = [];
   for (const item of items) {
@@ -76,8 +80,15 @@ export async function GET(request: Request) {
         }
       }
 
+      // Pick the category that matches this item's author/topic instead of always
+      // falling back to the first category in the DB (was flattening all auto-published
+      // reviews into one bucket regardless of actual subject).
+      const candidateSlugs = categorySlugCandidatesForAuthor(item.authorSlug);
+      const categoryId =
+        candidateSlugs.map((slug) => categoryBySlug.get(slug)).find(Boolean) ?? fallbackCategory.id;
+
       const reviewId = await approveReview(item.id, {
-        categoryId: defaultCategory.id,
+        categoryId,
         slug: item.slug!,
         published: true,
         imageUrl,
