@@ -5,10 +5,13 @@ import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, SITE_URL, SITE_TWITTER_HANDLE } from "@/lib/seo";
 import ReviewCard from "@/components/ReviewCard";
 import AdSlot from "@/components/AdSlot";
+import Pagination from "@/components/Pagination";
 
 export const dynamic = "force-dynamic";
 
-async function getCategoryPageData(slug: string) {
+const PAGE_SIZE = 24;
+
+async function getCategoryPageData(slug: string, page: number) {
   try {
     const category = await prisma.category.findUnique({
       where: { slug },
@@ -16,17 +19,19 @@ async function getCategoryPageData(slug: string) {
     });
     if (!category) return null;
 
-    const [reviews, relatedCategories] = await Promise.all([
+    const [reviews, totalCount, relatedCategories] = await Promise.all([
       prisma.review.findMany({
         where: { published: true, categoryId: category.id },
         orderBy: { publishedAt: "desc" },
-        take: 24,
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
         select: {
           id: true, slug: true, titleAr: true, summary: true, imageUrl: true,
           publishedAt: true, authorSlug: true, tags: true, viewCount: true,
           category: { select: { nameAr: true, slug: true } },
         },
       }),
+      prisma.review.count({ where: { published: true, categoryId: category.id } }),
       prisma.category.findMany({
         where: { slug: { not: slug } },
         orderBy: { nameAr: "asc" },
@@ -37,6 +42,7 @@ async function getCategoryPageData(slug: string) {
     return {
       category,
       reviews,
+      totalCount,
       relatedCategories: relatedCategories.filter((item) => item._count.reviews > 0).slice(0, 8),
     };
   } catch {
@@ -44,36 +50,55 @@ async function getCategoryPageData(slug: string) {
   }
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
+}): Promise<Metadata> {
   const { slug } = await params;
-  const data = await getCategoryPageData(slug);
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
+  const data = await getCategoryPageData(slug, page);
   if (!data) return {};
-  const url = absoluteUrl(`/category/${slug}`);
+  const url = absoluteUrl(page > 1 ? `/category/${slug}?page=${page}` : `/category/${slug}`);
   const description = `تقارير وتحليلات في تصنيف ${data.category.nameAr} على ${SITE_NAME_AR}.`;
+  const title = page > 1
+    ? `${data.category.nameAr} — صفحة ${page} | ${SITE_NAME_AR}`
+    : `${data.category.nameAr} | ${SITE_NAME_AR}`;
   return {
-    title: `${data.category.nameAr} | ${SITE_NAME_AR}`,
+    title,
     description,
     alternates: { canonical: url },
     openGraph: {
-      title: `${data.category.nameAr} | ${SITE_NAME_AR}`,
-      description, url, type: "website", locale: "ar_AR",
+      title, description, url, type: "website", locale: "ar_AR",
       images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630, alt: data.category.nameAr }],
     },
     twitter: {
       card: "summary_large_image",
       site: SITE_TWITTER_HANDLE,
-      title: `${data.category.nameAr} | ${SITE_NAME_AR}`,
+      title,
       description,
       images: [`${SITE_URL}/opengraph-image`],
     },
   };
 }
 
-export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function CategoryPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { slug } = await params;
-  const data = await getCategoryPageData(slug);
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
+  const data = await getCategoryPageData(slug, page);
   if (!data) notFound();
-  const { category, reviews, relatedCategories } = data;
+  const { category, reviews, totalCount, relatedCategories } = data;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   return (
     <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
@@ -120,11 +145,14 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           </Link>
         </section>
       ) : (
-        <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {reviews.map((review) => (
-            <ReviewCard key={review.id} review={review} />
-          ))}
-        </section>
+        <>
+          <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {reviews.map((review) => (
+              <ReviewCard key={review.id} review={review} />
+            ))}
+          </section>
+          <Pagination currentPage={page} totalPages={totalPages} basePath={`/category/${slug}`} />
+        </>
       )}
     </main>
   );

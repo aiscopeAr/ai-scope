@@ -5,19 +5,32 @@ import PromptsLibrary from "@/components/PromptsLibrary";
 
 export const revalidate = 300;
 
-export const metadata: Metadata = {
-  title: `مكتبة البرومبتس — أفضل Prompts للذكاء الاصطناعي | ${SITE_NAME_AR}`,
-  description:
-    "مكتبة مجانية تضم أفضل الـ prompts للذكاء الاصطناعي — ChatGPT، Midjourney، Claude وأكثر. ابحث، انسخ، واستخدم مباشرة.",
-  alternates: { canonical: absoluteUrl("/prompts") },
-  openGraph: {
-    title: `مكتبة البرومبتس | ${SITE_NAME_AR}`,
-    description: "أفضل الـ prompts للذكاء الاصطناعي — مجاناً",
-    locale: "ar_AR",
-    type: "website",
-    url: absoluteUrl("/prompts"),
-  },
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}): Promise<Metadata> {
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
+  const canonicalPath = page > 1 ? `/prompts?page=${page}` : "/prompts";
+  const title = page > 1
+    ? `مكتبة البرومبتس — صفحة ${page} | ${SITE_NAME_AR}`
+    : `مكتبة البرومبتس — أفضل Prompts للذكاء الاصطناعي | ${SITE_NAME_AR}`;
+
+  return {
+    title,
+    description:
+      "مكتبة مجانية تضم أفضل الـ prompts للذكاء الاصطناعي — ChatGPT، Midjourney، Claude وأكثر. ابحث، انسخ، واستخدم مباشرة.",
+    alternates: { canonical: absoluteUrl(canonicalPath) },
+    openGraph: {
+      title,
+      description: "أفضل الـ prompts للذكاء الاصطناعي — مجاناً",
+      locale: "ar_AR",
+      type: "website",
+      url: absoluteUrl(canonicalPath),
+    },
+  };
+}
 
 const CATEGORIES = [
   { value: "all", label: "الكل" },
@@ -28,12 +41,15 @@ const CATEGORIES = [
   { value: "general", label: "عام" },
 ];
 
-async function getData() {
+const PAGE_SIZE = 24;
+
+async function getData(page: number) {
   const [prompts, total, featured] = await Promise.all([
     prisma.prompt.findMany({
       where: { published: true },
       orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
-      take: 24,
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
       select: {
         id: true, title: true, titleAr: true, description: true,
         category: true, tags: true, slug: true, featured: true,
@@ -58,8 +74,14 @@ async function getData() {
   return { prompts, total, featured };
 }
 
-export default async function PromptsPage() {
-  const { prompts, total, featured } = await getData();
+export default async function PromptsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
+  const { prompts, total, featured } = await getData(page);
 
   return (
     <main className="min-h-screen" dir="rtl">
@@ -98,6 +120,7 @@ export default async function PromptsPage() {
       <PromptsLibrary
         initialPrompts={prompts}
         initialTotal={total}
+        initialPage={page}
         featuredPrompts={featured}
         categories={CATEGORIES}
       />

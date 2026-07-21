@@ -109,6 +109,7 @@ model Review {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   socialPosts   SocialPost[]
+  syndicationPosts SyndicationPost[]
   metrics       ReviewMetrics?
 
   @@index([published, publishedAt])
@@ -160,6 +161,25 @@ model SocialPost {
   @@index([status])
   @@index([reviewId])
   @@index([accountId])
+}
+
+// ─── Syndication (cross-posting to partner sites, e.g. WordPress) ────────────
+
+model SyndicationPost {
+  id           String    @id @default(cuid())
+  reviewId     String
+  review       Review    @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  target       String    // "wordpress:sonara" — identifies which destination
+  remotePostId String?   // ID returned by the destination once published
+  remoteUrl    String?   // public URL of the syndicated post
+  status       String    @default("pending") // "pending" | "sent" | "failed"
+  errorMsg     String?
+  sentAt       DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([status])
+  @@index([reviewId])
+  @@unique([reviewId, target]) // don't syndicate the same review twice to the same target
 }
 
 // ─── Ads ─────────────────────────────────────────────────────────────────────

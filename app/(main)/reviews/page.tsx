@@ -4,49 +4,75 @@ import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
 import ReviewCard from "@/components/ReviewCard";
 import AdSlot from "@/components/AdSlot";
+import Pagination from "@/components/Pagination";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: `تقارير وتحليلات الذكاء الاصطناعي | ${SITE_NAME_AR}`,
-  description: SITE_DESCRIPTION_AR,
-  alternates: { canonical: absoluteUrl("/reviews") },
-  openGraph: {
-    title: `تقارير وتحليلات الذكاء الاصطناعي | ${SITE_NAME_AR}`,
-    description: SITE_DESCRIPTION_AR,
-    url: absoluteUrl("/reviews"),
-    type: "website",
-    locale: "ar_AR",
-  },
-};
+const PAGE_SIZE = 24;
 
-async function getData() {
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}): Promise<Metadata> {
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
+  const canonicalPath = page > 1 ? `/reviews?page=${page}` : "/reviews";
+  const title = page > 1
+    ? `تقارير وتحليلات الذكاء الاصطناعي — صفحة ${page} | ${SITE_NAME_AR}`
+    : `تقارير وتحليلات الذكاء الاصطناعي | ${SITE_NAME_AR}`;
+
+  return {
+    title,
+    description: SITE_DESCRIPTION_AR,
+    alternates: { canonical: absoluteUrl(canonicalPath) },
+    openGraph: {
+      title,
+      description: SITE_DESCRIPTION_AR,
+      url: absoluteUrl(canonicalPath),
+      type: "website",
+      locale: "ar_AR",
+    },
+  };
+}
+
+async function getData(page: number) {
   try {
-    const [reviews, categories] = await Promise.all([
+    const [reviews, totalCount, categories] = await Promise.all([
       prisma.review.findMany({
         where: { published: true },
         orderBy: { publishedAt: "desc" },
-        take: 24,
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
         select: {
           id: true, slug: true, titleAr: true, summary: true, imageUrl: true,
           publishedAt: true, authorSlug: true, tags: true, viewCount: true,
           category: { select: { nameAr: true, slug: true } },
         },
       }),
+      prisma.review.count({ where: { published: true } }),
       prisma.category.findMany({
         orderBy: { nameAr: "asc" },
         select: { id: true, slug: true, nameAr: true, _count: { select: { reviews: true } } },
       }),
     ]);
-    return { reviews, categories: categories.filter((c) => c._count.reviews > 0) };
+    return { reviews, totalCount, categories: categories.filter((c) => c._count.reviews > 0) };
   } catch {
-    return { reviews: [], categories: [] };
+    return { reviews: [], totalCount: 0, categories: [] };
   }
 }
 
-export default async function ReviewsIndexPage() {
-  const { reviews, categories } = await getData();
-  const [featuredReview, ...restReviews] = reviews;
+export default async function ReviewsIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
+  const { reviews, totalCount, categories } = await getData(page);
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const featuredReview = page === 1 ? reviews[0] : undefined;
+  const restReviews = page === 1 ? reviews.slice(1) : reviews;
 
   return (
     <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
@@ -102,6 +128,7 @@ export default async function ReviewsIndexPage() {
               ))}
             </section>
           )}
+          <Pagination currentPage={page} totalPages={totalPages} basePath="/reviews" />
         </>
       )}
     </main>

@@ -3,6 +3,7 @@ import type { ReviewDraft } from "@/lib/review-openai";
 import type { AuthorSlug } from "@/lib/authors";
 import { embedReview } from "@/lib/embeddings";
 import { extractMemoryFromReview } from "@/lib/author-memory";
+import { syndicateReviewToWordPress } from "@/lib/wordpress";
 
 // ─── NewsItem queue ────────────────────────────────────────────────────────
 
@@ -175,6 +176,11 @@ export async function approveReview(
     // חלץ זיכרון מהכתבה החדשה — ישפר את הכתיבה הבאה
     extractMemoryFromReview(review.id).catch(() => {
       // memory extraction is best-effort
+    });
+
+    // Cross-post to partner WordPress site (no-op if not configured yet)
+    syndicateReviewToWordPress(review.id).catch(() => {
+      // syndication is best-effort; failures are recorded in SyndicationPost.status
     });
 
     // Auto-draft social posts

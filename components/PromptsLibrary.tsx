@@ -39,16 +39,17 @@ const CATEGORY_COLORS: Record<string, { bg: string; color: string; border: strin
 interface Props {
   initialPrompts: PromptItem[];
   initialTotal: number;
+  initialPage?: number;
   featuredPrompts: PromptItem[];
   categories: Category[];
 }
 
-export default function PromptsLibrary({ initialPrompts, initialTotal, featuredPrompts, categories }: Props) {
+export default function PromptsLibrary({ initialPrompts, initialTotal, initialPage = 1, featuredPrompts, categories }: Props) {
   const [prompts, setPrompts] = useState(initialPrompts);
   const [total, setTotal] = useState(initialTotal);
   const [activeCategory, setActiveCategory] = useState("all");
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage);
   const [loading, setLoading] = useState(false);
   const [pages, setPages] = useState(Math.ceil(initialTotal / 24));
 
@@ -178,28 +179,60 @@ export default function PromptsLibrary({ initialPrompts, initialTotal, featuredP
         )}
       </section>
 
-      {/* Pagination */}
+      {/* Pagination — real <Link> when unfiltered so crawlers can reach every page;
+          falls back to JS-driven buttons once a search/category filter is active,
+          since filtered result sets aren't stable canonical URLs worth indexing. */}
       {pages > 1 && (
         <div className="mt-10 flex items-center justify-center gap-2">
-          <button
-            onClick={() => handlePage(page - 1)}
-            disabled={page <= 1}
-            className="rounded-[6px] border px-4 py-2 text-sm transition-colors disabled:opacity-30"
-            style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
-          >
-            السابق
-          </button>
-          <span className="text-sm" style={{ color: "var(--text-muted)" }}>
-            {page} / {pages}
-          </span>
-          <button
-            onClick={() => handlePage(page + 1)}
-            disabled={page >= pages}
-            className="rounded-[6px] border px-4 py-2 text-sm transition-colors disabled:opacity-30"
-            style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
-          >
-            التالي
-          </button>
+          {activeCategory === "all" && !search ? (
+            <>
+              {page <= 1 ? (
+                <span className="rounded-[6px] border px-4 py-2 text-sm opacity-30"
+                  style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}>
+                  السابق
+                </span>
+              ) : (
+                <Link href={page - 1 <= 1 ? "/prompts" : `/prompts?page=${page - 1}`}
+                  className="rounded-[6px] border px-4 py-2 text-sm transition-colors hover:opacity-75"
+                  style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}>
+                  السابق
+                </Link>
+              )}
+              <span className="text-sm" style={{ color: "var(--text-muted)" }}>{page} / {pages}</span>
+              {page >= pages ? (
+                <span className="rounded-[6px] border px-4 py-2 text-sm opacity-30"
+                  style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}>
+                  التالي
+                </span>
+              ) : (
+                <Link href={`/prompts?page=${page + 1}`}
+                  className="rounded-[6px] border px-4 py-2 text-sm transition-colors hover:opacity-75"
+                  style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}>
+                  التالي
+                </Link>
+              )}
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => handlePage(page - 1)}
+                disabled={page <= 1}
+                className="rounded-[6px] border px-4 py-2 text-sm transition-colors disabled:opacity-30"
+                style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
+              >
+                السابق
+              </button>
+              <span className="text-sm" style={{ color: "var(--text-muted)" }}>{page} / {pages}</span>
+              <button
+                onClick={() => handlePage(page + 1)}
+                disabled={page >= pages}
+                className="rounded-[6px] border px-4 py-2 text-sm transition-colors disabled:opacity-30"
+                style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)", backgroundColor: "var(--bg-surface)" }}
+              >
+                التالي
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
