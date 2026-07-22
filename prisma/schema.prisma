@@ -23,8 +23,24 @@ model Source {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   newsItems    NewsItem[]
+  runs         SourceRun[]
 
   @@index([enabled])
+}
+
+/** Per-source outcome of each fetch-news cron run — lastSyncedAt alone can't
+ *  distinguish "synced and found nothing" from "synced and everything got filtered". */
+model SourceRun {
+  id        String   @id @default(cuid())
+  sourceId  String
+  source    Source   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  fetched   Int      @default(0) // items returned by the feed after RSS-level filtering
+  added     Int      @default(0) // items actually enqueued as NewsItem
+  skipped   Int      @default(0) // fetched but not added (duplicate, off-topic, over per-run cap)
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([sourceId, createdAt])
 }
 
 // Raw RSS item — fetched, waiting to be clustered

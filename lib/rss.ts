@@ -9,7 +9,7 @@ export type RssItem = {
   imageUrl?: string;
 };
 
-const MIN_CONTENT_LENGTH = 400;
+const MIN_CONTENT_LENGTH = 100;
 const FETCH_TIMEOUT_MS = 15_000;
 
 function stripHtml(html: string): string {
@@ -35,6 +35,26 @@ function extractText(node: unknown): string {
     if ("$" in obj) return "";
   }
   return String(node);
+}
+
+/**
+ * RSS 2.0's <link> is a plain text node; Atom's <link href="..."/> is an
+ * attribute-only element with no text content, so extractText() always
+ * returns "" for it. Falling through to the href attribute here is required
+ * or every Atom-format feed silently drops all of its items.
+ */
+function extractLink(node: unknown): string {
+  const text = extractText(node);
+  if (text) return text;
+
+  const candidates = Array.isArray(node) ? node : [node];
+  for (const candidate of candidates) {
+    if (candidate && typeof candidate === "object" && "$" in (candidate as Record<string, unknown>)) {
+      const attrs = (candidate as Record<string, unknown>).$ as Record<string, string> | undefined;
+      if (attrs?.href && (!attrs.rel || attrs.rel === "alternate")) return attrs.href;
+    }
+  }
+  return "";
 }
 
 export async function fetchRssFeed(rssUrl: string): Promise<RssItem[]> {
@@ -75,7 +95,7 @@ export async function fetchRssFeed(rssUrl: string): Promise<RssItem[]> {
 
     const title = stripHtml(extractText(r.title));
     const link =
-      extractText(r.link) ||
+      extractLink(r.link) ||
       extractText((r as Record<string, unknown>)["feedburner:origLink"]) ||
       "";
 

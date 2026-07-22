@@ -30,10 +30,12 @@ export async function GET(request: Request) {
   for (const source of sources) {
     let added = 0;
     let skipped = 0;
+    let fetched = 0;
     let errorMsg: string | undefined;
 
     try {
       const items = await fetchRssFeed(source.rssUrl);
+      fetched = items.length;
       let enqueued = 0;
 
       for (const item of items) {
@@ -62,6 +64,15 @@ export async function GET(request: Request) {
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : "Unknown error";
     }
+
+    // Persisted per-source outcome — lastSyncedAt alone can't tell "synced, found
+    // nothing usable" from "actually broken", which let several dead feeds go
+    // unnoticed for weeks.
+    await prisma.sourceRun.create({
+      data: { sourceId: source.id, fetched, added, skipped, error: errorMsg },
+    }).catch(() => {
+      // logging is best-effort; must never block the ingest loop
+    });
 
     results.push({ name: source.name, added, skipped, error: errorMsg });
   }
