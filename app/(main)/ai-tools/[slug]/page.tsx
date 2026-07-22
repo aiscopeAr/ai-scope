@@ -2,16 +2,22 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME, SITE_NAME_AR, SITE_URL, SITE_TWITTER_HANDLE, truncate } from "@/lib/seo";
 import { getCategoryMeta } from "@/lib/tool-categories";
+import { CACHE_TAGS, DEFAULT_REVALIDATE_SECONDS } from "@/lib/cache";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
 import AdSlot from "@/components/AdSlot";
 import ToolCard from "@/components/ToolCard";
 import ToolInteractions from "@/components/ToolInteractions";
 
-export const revalidate = 300;
+const getToolBySlug = unstable_cache(
+  async (slug: string) => prisma.aITool.findUnique({ where: { slug } }).catch(() => null),
+  ["ai-tool-by-slug"],
+  { tags: [CACHE_TAGS.aiTools], revalidate: DEFAULT_REVALIDATE_SECONDS },
+);
 
 export async function generateMetadata({
   params,
@@ -19,7 +25,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const tool = await prisma.aITool.findUnique({ where: { slug } }).catch(() => null);
+  const tool = await getToolBySlug(slug);
   if (!tool || !tool.published) return {};
 
   const url = absoluteUrl(`/ai-tools/${slug}`);
@@ -62,6 +68,91 @@ const PRICING_BADGE: Record<string, { bg: string; color: string; border: string 
 
 interface FaqItem { question: string; answer: string; }
 
+const getToolPageData = unstable_cache(
+  async (slug: string) => {
+    const [tool, toolPrompts] = await Promise.all([
+      prisma.aITool.findUnique({
+        where: { slug },
+        include: {
+          comparisons: { include: { comparison: true }, take: 3 },
+        },
+      }).catch(() => null),
+
+      prisma.prompt.findMany({
+        where: { published: true, tool: { slug } },
+        orderBy: [{ featured: "desc" }, { viewCount: "desc" }],
+        take: 6,
+        select: { id: true, slug: true, titleAr: true, description: true, category: true, viewCount: true },
+      }).catch(() => []),
+    ]);
+
+    if (!tool || !tool.published) return null;
+
+    const [sameCategoryTools, relatedReviews] = await Promise.all([
+      // Related tools — same toolCategory first, only backfill with popular tools if too few
+      prisma.aITool.findMany({
+        where: { published: true, slug: { not: slug }, toolCategory: tool.toolCategory },
+        orderBy: { viewCount: "desc" },
+        take: 4,
+        select: {
+          id: true, slug: true, name: true, tagline: true, descriptionAr: true,
+          logoUrl: true, toolCategory: true, pricing: true, monthlyPrice: true,
+          arabicSupport: true, hasApi: true, tags: true, viewCount: true, likes: true,
+          featured: true, editorPick: true,
+        },
+      }).catch(() => []),
+
+      // Reviews that actually mention this tool by name, falling back to same-category reviews
+      prisma.review.findMany({
+        where: {
+          published: true,
+          OR: [
+            { titleAr: { contains: tool.name, mode: "insensitive" } },
+            { tags: { has: tool.name } },
+          ],
+        },
+        orderBy: { publishedAt: "desc" },
+        take: 4,
+        select: { id: true, slug: true, titleAr: true, summary: true, publishedAt: true, authorSlug: true },
+      }).catch(() => []),
+    ]);
+
+    let relatedTools = sameCategoryTools;
+    if (relatedTools.length < 4) {
+      const backfillTools = await prisma.aITool.findMany({
+        where: {
+          published: true,
+          slug: { notIn: [slug, ...relatedTools.map((t) => t.slug)] },
+        },
+        orderBy: { viewCount: "desc" },
+        take: 4 - relatedTools.length,
+        select: {
+          id: true, slug: true, name: true, tagline: true, descriptionAr: true,
+          logoUrl: true, toolCategory: true, pricing: true, monthlyPrice: true,
+          arabicSupport: true, hasApi: true, tags: true, viewCount: true, likes: true,
+          featured: true, editorPick: true,
+        },
+      }).catch(() => []);
+      relatedTools = [...relatedTools, ...backfillTools];
+    }
+
+    let relatedReviewsList = relatedReviews;
+    if (relatedReviewsList.length === 0) {
+      // No review mentions this tool by name — fall back to the general "ai-tools" review category
+      relatedReviewsList = await prisma.review.findMany({
+        where: { published: true, category: { slug: "ai-tools" } },
+        orderBy: { publishedAt: "desc" },
+        take: 4,
+        select: { id: true, slug: true, titleAr: true, summary: true, publishedAt: true, authorSlug: true },
+      }).catch(() => []);
+    }
+
+    return { tool, toolPrompts, relatedTools, relatedReviewsList };
+  },
+  ["ai-tool-page"],
+  { tags: [CACHE_TAGS.aiTools, CACHE_TAGS.reviews, CACHE_TAGS.prompts], revalidate: DEFAULT_REVALIDATE_SECONDS },
+);
+
 export default async function AIToolPage({
   params,
 }: {
@@ -69,82 +160,9 @@ export default async function AIToolPage({
 }) {
   const { slug } = await params;
 
-  const [tool, toolPrompts] = await Promise.all([
-    prisma.aITool.findUnique({
-      where: { slug },
-      include: {
-        comparisons: { include: { comparison: true }, take: 3 },
-      },
-    }).catch(() => null),
-
-    prisma.prompt.findMany({
-      where: { published: true, tool: { slug } },
-      orderBy: [{ featured: "desc" }, { viewCount: "desc" }],
-      take: 6,
-      select: { id: true, slug: true, titleAr: true, description: true, category: true, viewCount: true },
-    }).catch(() => []),
-  ]);
-
-  if (!tool || !tool.published) notFound();
-
-  const [sameCategoryTools, relatedReviews] = await Promise.all([
-    // Related tools — same toolCategory first, only backfill with popular tools if too few
-    prisma.aITool.findMany({
-      where: { published: true, slug: { not: slug }, toolCategory: tool.toolCategory },
-      orderBy: { viewCount: "desc" },
-      take: 4,
-      select: {
-        id: true, slug: true, name: true, tagline: true, descriptionAr: true,
-        logoUrl: true, toolCategory: true, pricing: true, monthlyPrice: true,
-        arabicSupport: true, hasApi: true, tags: true, viewCount: true, likes: true,
-        featured: true, editorPick: true,
-      },
-    }).catch(() => []),
-
-    // Reviews that actually mention this tool by name, falling back to same-category reviews
-    prisma.review.findMany({
-      where: {
-        published: true,
-        OR: [
-          { titleAr: { contains: tool.name, mode: "insensitive" } },
-          { tags: { has: tool.name } },
-        ],
-      },
-      orderBy: { publishedAt: "desc" },
-      take: 4,
-      select: { id: true, slug: true, titleAr: true, summary: true, publishedAt: true, authorSlug: true },
-    }).catch(() => []),
-  ]);
-
-  let relatedTools = sameCategoryTools;
-  if (relatedTools.length < 4) {
-    const backfillTools = await prisma.aITool.findMany({
-      where: {
-        published: true,
-        slug: { notIn: [slug, ...relatedTools.map((t) => t.slug)] },
-      },
-      orderBy: { viewCount: "desc" },
-      take: 4 - relatedTools.length,
-      select: {
-        id: true, slug: true, name: true, tagline: true, descriptionAr: true,
-        logoUrl: true, toolCategory: true, pricing: true, monthlyPrice: true,
-        arabicSupport: true, hasApi: true, tags: true, viewCount: true, likes: true,
-        featured: true, editorPick: true,
-      },
-    }).catch(() => []);
-    relatedTools = [...relatedTools, ...backfillTools];
-  }
-
-  let relatedReviewsList = relatedReviews;
-  if (relatedReviewsList.length === 0) {
-    // No review mentions this tool by name — fall back to the general "ai-tools" review category
-    relatedReviewsList = await prisma.review.findMany({
-      where: { published: true, category: { slug: "ai-tools" } },
-      orderBy: { publishedAt: "desc" },
-      take: 4,
-      select: { id: true, slug: true, titleAr: true, summary: true, publishedAt: true, authorSlug: true },
-    }).catch(() => []);
-  }
+  const data = await getToolPageData(slug);
+  if (!data) notFound();
+  const { tool, toolPrompts, relatedTools, relatedReviewsList } = data;
 
   void prisma.aITool.update({ where: { id: tool.id }, data: { viewCount: { increment: 1 } } }).catch(() => {});
 

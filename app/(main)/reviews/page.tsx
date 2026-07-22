@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
+import { CACHE_TAGS, DEFAULT_REVALIDATE_SECONDS } from "@/lib/cache";
 import ReviewCard from "@/components/ReviewCard";
 import AdSlot from "@/components/AdSlot";
 import Pagination from "@/components/Pagination";
-
-export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 24;
 
@@ -36,31 +36,35 @@ export async function generateMetadata({
   };
 }
 
-async function getData(page: number) {
-  try {
-    const [reviews, totalCount, categories] = await Promise.all([
-      prisma.review.findMany({
-        where: { published: true },
-        orderBy: { publishedAt: "desc" },
-        skip: (page - 1) * PAGE_SIZE,
-        take: PAGE_SIZE,
-        select: {
-          id: true, slug: true, titleAr: true, summary: true, imageUrl: true,
-          publishedAt: true, authorSlug: true, tags: true, viewCount: true,
-          category: { select: { nameAr: true, slug: true } },
-        },
-      }),
-      prisma.review.count({ where: { published: true } }),
-      prisma.category.findMany({
-        orderBy: { nameAr: "asc" },
-        select: { id: true, slug: true, nameAr: true, _count: { select: { reviews: true } } },
-      }),
-    ]);
-    return { reviews, totalCount, categories: categories.filter((c) => c._count.reviews > 0) };
-  } catch {
-    return { reviews: [], totalCount: 0, categories: [] };
-  }
-}
+const getData = unstable_cache(
+  async (page: number) => {
+    try {
+      const [reviews, totalCount, categories] = await Promise.all([
+        prisma.review.findMany({
+          where: { published: true },
+          orderBy: { publishedAt: "desc" },
+          skip: (page - 1) * PAGE_SIZE,
+          take: PAGE_SIZE,
+          select: {
+            id: true, slug: true, titleAr: true, summary: true, imageUrl: true,
+            publishedAt: true, authorSlug: true, tags: true, viewCount: true,
+            category: { select: { nameAr: true, slug: true } },
+          },
+        }),
+        prisma.review.count({ where: { published: true } }),
+        prisma.category.findMany({
+          orderBy: { nameAr: "asc" },
+          select: { id: true, slug: true, nameAr: true, _count: { select: { reviews: true } } },
+        }),
+      ]);
+      return { reviews, totalCount, categories: categories.filter((c) => c._count.reviews > 0) };
+    } catch {
+      return { reviews: [], totalCount: 0, categories: [] };
+    }
+  },
+  ["reviews-index"],
+  { tags: [CACHE_TAGS.reviews, CACHE_TAGS.categories], revalidate: DEFAULT_REVALIDATE_SECONDS },
+);
 
 export default async function ReviewsIndexPage({
   searchParams,

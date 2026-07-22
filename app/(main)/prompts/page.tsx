@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR } from "@/lib/seo";
+import { CACHE_TAGS, DEFAULT_REVALIDATE_SECONDS } from "@/lib/cache";
 import PromptsLibrary from "@/components/PromptsLibrary";
-
-export const revalidate = 300;
 
 export async function generateMetadata({
   searchParams,
@@ -43,36 +43,40 @@ const CATEGORIES = [
 
 const PAGE_SIZE = 24;
 
-async function getData(page: number) {
-  const [prompts, total, featured] = await Promise.all([
-    prisma.prompt.findMany({
-      where: { published: true },
-      orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-      select: {
-        id: true, title: true, titleAr: true, description: true,
-        category: true, tags: true, slug: true, featured: true,
-        viewCount: true, createdAt: true,
-        tool: { select: { name: true, slug: true, logoUrl: true } },
-      },
-    }),
-    prisma.prompt.count({ where: { published: true } }),
-    prisma.prompt.findMany({
-      where: { published: true, featured: true },
-      orderBy: { viewCount: "desc" },
-      take: 6,  // always fills 2 full rows of 3
-      select: {
-        id: true, title: true, titleAr: true, description: true,
-        category: true, tags: true, slug: true, featured: true,
-        viewCount: true, createdAt: true,
-        tool: { select: { name: true, slug: true, logoUrl: true } },
-      },
-    }),
-  ]);
+const getData = unstable_cache(
+  async (page: number) => {
+    const [prompts, total, featured] = await Promise.all([
+      prisma.prompt.findMany({
+        where: { published: true },
+        orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+        select: {
+          id: true, title: true, titleAr: true, description: true,
+          category: true, tags: true, slug: true, featured: true,
+          viewCount: true, createdAt: true,
+          tool: { select: { name: true, slug: true, logoUrl: true } },
+        },
+      }),
+      prisma.prompt.count({ where: { published: true } }),
+      prisma.prompt.findMany({
+        where: { published: true, featured: true },
+        orderBy: { viewCount: "desc" },
+        take: 6,  // always fills 2 full rows of 3
+        select: {
+          id: true, title: true, titleAr: true, description: true,
+          category: true, tags: true, slug: true, featured: true,
+          viewCount: true, createdAt: true,
+          tool: { select: { name: true, slug: true, logoUrl: true } },
+        },
+      }),
+    ]);
 
-  return { prompts, total, featured };
-}
+    return { prompts, total, featured };
+  },
+  ["prompts-index"],
+  { tags: [CACHE_TAGS.prompts], revalidate: DEFAULT_REVALIDATE_SECONDS },
+);
 
 export default async function PromptsPage({
   searchParams,

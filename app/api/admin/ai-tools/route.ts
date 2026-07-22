@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { CACHE_TAGS, revalidateNow } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,8 @@ export async function POST(request: Request) {
       sourceUrl: sourceUrl ?? null,
     },
   });
+
+  revalidateNow(CACHE_TAGS.aiTools);
 
   return NextResponse.json(tool, { status: 201 });
 }

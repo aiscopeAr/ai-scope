@@ -1,47 +1,51 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR } from "@/lib/seo";
 import { normalizeTag, reviewHasTag, slugToTag } from "@/lib/tags";
+import { CACHE_TAGS, DEFAULT_REVALIDATE_SECONDS } from "@/lib/cache";
 import ReviewCard from "@/components/ReviewCard";
 import Pagination from "@/components/Pagination";
 import AdSlot from "@/components/AdSlot";
 
-export const dynamic = "force-dynamic";
-
 const PAGE_SIZE = 24;
 const MIN_REVIEWS_FOR_TAG_PAGE = 3;
 
-async function getTagPageData(tagSlug: string, page: number) {
-  const canonical = normalizeTag(slugToTag(tagSlug));
-  if (!canonical) return null;
+const getTagPageData = unstable_cache(
+  async (tagSlug: string, page: number) => {
+    const canonical = normalizeTag(slugToTag(tagSlug));
+    if (!canonical) return null;
 
-  // Tag matching needs the same-article "ال" normalization as buildTagSummaries,
-  // which Postgres array `has` can't express — filter in memory (cheap at this scale).
-  const allReviews = await prisma.review.findMany({
-    where: { published: true },
-    orderBy: { publishedAt: "desc" },
-    select: {
-      id: true, slug: true, titleAr: true, summary: true, imageUrl: true,
-      publishedAt: true, authorSlug: true, tags: true, viewCount: true,
-      category: { select: { nameAr: true, slug: true } },
-    },
-  });
+    // Tag matching needs the same-article "ال" normalization as buildTagSummaries,
+    // which Postgres array `has` can't express — filter in memory (cheap at this scale).
+    const allReviews = await prisma.review.findMany({
+      where: { published: true },
+      orderBy: { publishedAt: "desc" },
+      select: {
+        id: true, slug: true, titleAr: true, summary: true, imageUrl: true,
+        publishedAt: true, authorSlug: true, tags: true, viewCount: true,
+        category: { select: { nameAr: true, slug: true } },
+      },
+    });
 
-  const matching = allReviews.filter((r) => reviewHasTag(r.tags, canonical));
-  if (matching.length < MIN_REVIEWS_FOR_TAG_PAGE) return null;
+    const matching = allReviews.filter((r) => reviewHasTag(r.tags, canonical));
+    if (matching.length < MIN_REVIEWS_FOR_TAG_PAGE) return null;
 
-  const label =
-    matching
-      .flatMap((r) => r.tags)
-      .filter((t) => normalizeTag(t) === canonical)[0] ?? canonical;
+    const label =
+      matching
+        .flatMap((r) => r.tags)
+        .filter((t) => normalizeTag(t) === canonical)[0] ?? canonical;
 
-  const totalCount = matching.length;
-  const reviews = matching.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    const totalCount = matching.length;
+    const reviews = matching.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  return { label, canonical, reviews, totalCount };
-}
+    return { label, canonical, reviews, totalCount };
+  },
+  ["tag-page"],
+  { tags: [CACHE_TAGS.reviews], revalidate: DEFAULT_REVALIDATE_SECONDS },
+);
 
 export async function generateMetadata({
   params,

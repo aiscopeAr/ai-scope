@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR } from "@/lib/seo";
 import { TOOL_CATEGORIES } from "@/lib/tool-categories";
+import { CACHE_TAGS, DEFAULT_REVALIDATE_SECONDS } from "@/lib/cache";
 import AdSlot from "@/components/AdSlot";
 import ToolCard from "@/components/ToolCard";
 import ToolsDirectory from "@/components/ToolsDirectory";
 import ToolCategoryGrid from "@/components/ToolCategoryGrid";
-
-export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: `أفضل أدوات الذكاء الاصطناعي 2026 — دليل ومراجعات بالعربية | ${SITE_NAME_AR}`,
@@ -32,35 +32,39 @@ const softwareListJsonLd = {
   inLanguage: "ar",
 };
 
-async function getData() {
-  const [allTools, totalCount] = await Promise.all([
-    prisma.aITool.findMany({
-      where: { published: true },
-      orderBy: [{ featuredAt: { sort: "desc", nulls: "last" } }, { viewCount: "desc" }],
-      select: {
-        id: true, slug: true, name: true, tagline: true, descriptionAr: true,
-        logoUrl: true, toolCategory: true, pricing: true, monthlyPrice: true,
-        arabicSupport: true, hasApi: true, tags: true, viewCount: true, likes: true,
-        featured: true, editorPick: true, featuredAt: true, createdAt: true,
-      },
-    }).catch(() => []),
-    prisma.aITool.count({ where: { published: true } }).catch(() => 0),
-  ]);
+const getData = unstable_cache(
+  async () => {
+    const [allTools, totalCount] = await Promise.all([
+      prisma.aITool.findMany({
+        where: { published: true },
+        orderBy: [{ featuredAt: { sort: "desc", nulls: "last" } }, { viewCount: "desc" }],
+        select: {
+          id: true, slug: true, name: true, tagline: true, descriptionAr: true,
+          logoUrl: true, toolCategory: true, pricing: true, monthlyPrice: true,
+          arabicSupport: true, hasApi: true, tags: true, viewCount: true, likes: true,
+          featured: true, editorPick: true, featuredAt: true, createdAt: true,
+        },
+      }).catch(() => []),
+      prisma.aITool.count({ where: { published: true } }).catch(() => 0),
+    ]);
 
-  const editorPicks = allTools.filter(t => t.editorPick).slice(0, 5);
-  const trending    = [...allTools].sort((a, b) => b.viewCount - a.viewCount).slice(0, 5);
-  const newest      = [...allTools].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 5);
+    const editorPicks = allTools.filter(t => t.editorPick).slice(0, 5);
+    const trending    = [...allTools].sort((a, b) => b.viewCount - a.viewCount).slice(0, 5);
+    const newest      = [...allTools].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 5);
 
-  type ToolItem = (typeof allTools)[number];
-  const byCategory: Record<string, ToolItem[]> = {};
-  for (const t of allTools) {
-    const cat = t.toolCategory || "other";
-    if (!byCategory[cat]) byCategory[cat] = [];
-    byCategory[cat].push(t);
-  }
+    type ToolItem = (typeof allTools)[number];
+    const byCategory: Record<string, ToolItem[]> = {};
+    for (const t of allTools) {
+      const cat = t.toolCategory || "other";
+      if (!byCategory[cat]) byCategory[cat] = [];
+      byCategory[cat].push(t);
+    }
 
-  return { allTools, totalCount, editorPicks, trending, newest, byCategory };
-}
+    return { allTools, totalCount, editorPicks, trending, newest, byCategory };
+  },
+  ["ai-tools-index"],
+  { tags: [CACHE_TAGS.aiTools], revalidate: DEFAULT_REVALIDATE_SECONDS },
+);
 
 export default async function AIToolsPage({
   searchParams,

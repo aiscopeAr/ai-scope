@@ -1,54 +1,58 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, SITE_URL, SITE_TWITTER_HANDLE } from "@/lib/seo";
+import { CACHE_TAGS, DEFAULT_REVALIDATE_SECONDS } from "@/lib/cache";
 import ReviewCard from "@/components/ReviewCard";
 import AdSlot from "@/components/AdSlot";
 import Pagination from "@/components/Pagination";
 
-export const dynamic = "force-dynamic";
-
 const PAGE_SIZE = 24;
 
-async function getCategoryPageData(slug: string, page: number) {
-  try {
-    const category = await prisma.category.findUnique({
-      where: { slug },
-      select: { id: true, slug: true, nameAr: true, name: true },
-    });
-    if (!category) return null;
+const getCategoryPageData = unstable_cache(
+  async (slug: string, page: number) => {
+    try {
+      const category = await prisma.category.findUnique({
+        where: { slug },
+        select: { id: true, slug: true, nameAr: true, name: true },
+      });
+      if (!category) return null;
 
-    const [reviews, totalCount, relatedCategories] = await Promise.all([
-      prisma.review.findMany({
-        where: { published: true, categoryId: category.id },
-        orderBy: { publishedAt: "desc" },
-        skip: (page - 1) * PAGE_SIZE,
-        take: PAGE_SIZE,
-        select: {
-          id: true, slug: true, titleAr: true, summary: true, imageUrl: true,
-          publishedAt: true, authorSlug: true, tags: true, viewCount: true,
-          category: { select: { nameAr: true, slug: true } },
-        },
-      }),
-      prisma.review.count({ where: { published: true, categoryId: category.id } }),
-      prisma.category.findMany({
-        where: { slug: { not: slug } },
-        orderBy: { nameAr: "asc" },
-        select: { id: true, slug: true, nameAr: true, _count: { select: { reviews: true } } },
-      }),
-    ]);
+      const [reviews, totalCount, relatedCategories] = await Promise.all([
+        prisma.review.findMany({
+          where: { published: true, categoryId: category.id },
+          orderBy: { publishedAt: "desc" },
+          skip: (page - 1) * PAGE_SIZE,
+          take: PAGE_SIZE,
+          select: {
+            id: true, slug: true, titleAr: true, summary: true, imageUrl: true,
+            publishedAt: true, authorSlug: true, tags: true, viewCount: true,
+            category: { select: { nameAr: true, slug: true } },
+          },
+        }),
+        prisma.review.count({ where: { published: true, categoryId: category.id } }),
+        prisma.category.findMany({
+          where: { slug: { not: slug } },
+          orderBy: { nameAr: "asc" },
+          select: { id: true, slug: true, nameAr: true, _count: { select: { reviews: true } } },
+        }),
+      ]);
 
-    return {
-      category,
-      reviews,
-      totalCount,
-      relatedCategories: relatedCategories.filter((item) => item._count.reviews > 0).slice(0, 8),
-    };
-  } catch {
-    return null;
-  }
-}
+      return {
+        category,
+        reviews,
+        totalCount,
+        relatedCategories: relatedCategories.filter((item) => item._count.reviews > 0).slice(0, 8),
+      };
+    } catch {
+      return null;
+    }
+  },
+  ["category-page"],
+  { tags: [CACHE_TAGS.reviews, CACHE_TAGS.categories], revalidate: DEFAULT_REVALIDATE_SECONDS },
+);
 
 export async function generateMetadata({
   params,

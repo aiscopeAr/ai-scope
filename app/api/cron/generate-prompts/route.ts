@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { CACHE_TAGS, revalidateNow } from "@/lib/cache";
 import OpenAI from "openai";
 
 export const dynamic = "force-dynamic";
@@ -83,6 +84,8 @@ export async function GET(request: Request) {
       failed.push("general");
     }
   }
+
+  if (generated.length > 0) revalidateNow(CACHE_TAGS.prompts);
 
   return NextResponse.json({ ok: true, generated: generated.length, failed: failed.length });
 }

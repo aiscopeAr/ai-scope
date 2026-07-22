@@ -1,9 +1,11 @@
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import type { ReviewDraft } from "@/lib/review-openai";
 import type { AuthorSlug } from "@/lib/authors";
 import { embedReview } from "@/lib/embeddings";
 import { extractMemoryFromReview } from "@/lib/author-memory";
 import { syndicateReviewToWordPress } from "@/lib/wordpress";
+import { CACHE_TAGS, revalidateNow } from "@/lib/cache";
 
 // ─── NewsItem queue ────────────────────────────────────────────────────────
 
@@ -169,6 +171,13 @@ export async function approveReview(
 
   // Generate embedding + extract memory in background (non-blocking)
   if (overrides.published) {
+    // Invalidate caches so the new review shows up immediately instead of
+    // waiting out unstable_cache's revalidate window on listing pages.
+    revalidateNow(CACHE_TAGS.reviews);
+    revalidateNow(CACHE_TAGS.categories);
+    revalidatePath("/");
+    revalidatePath(`/reviews/${overrides.slug}`);
+
     embedReview(review.id).catch(() => {
       // embedding is best-effort; doesn't block publish
     });

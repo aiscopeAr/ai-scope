@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { CACHE_TAGS, revalidateNow } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     },
   });
 
+  revalidateNow(CACHE_TAGS.prompts);
+
   return NextResponse.json(prompt);
 }
 
@@ -41,5 +44,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
   const { id } = await params;
   await prisma.prompt.delete({ where: { id } });
+  revalidateNow(CACHE_TAGS.prompts);
   return NextResponse.json({ ok: true });
 }
