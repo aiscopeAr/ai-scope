@@ -87,8 +87,19 @@ export default async function PromptsPage({
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
   const { prompts, total, featured } = await getData(page);
 
+  const collectionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `مكتبة البرومبتس | ${SITE_NAME_AR}`,
+    description: "مكتبة مجانية تضم أفضل الـ prompts للذكاء الاصطناعي",
+    url: absoluteUrl(page > 1 ? `/prompts?page=${page}` : "/prompts"),
+    inLanguage: "ar",
+  };
+
   return (
-    <main className="min-h-screen" dir="rtl">
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <main className="min-h-screen" dir="rtl">
       {/* Hero — matches ai-tools style */}
       <section className="relative overflow-hidden border-b py-14" style={{ borderColor: "var(--border-subtle)" }}>
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
@@ -128,6 +139,7 @@ export default async function PromptsPage({
         featuredPrompts={featured}
         categories={CATEGORIES}
       />
-    </main>
+      </main>
+    </>
   );
 }

@@ -247,10 +247,10 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
           </div>
         </div>
 
-        {/* Hero image */}
+        {/* Hero image — priority since this is the LCP element on every article page */}
         {review.imageUrl && (
           <div className="relative mb-8 h-72 overflow-hidden rounded-[6px] sm:h-96">
-            <Image src={review.imageUrl} alt={review.imageAlt ?? review.titleAr} fill className="object-cover" />
+            <Image src={review.imageUrl} alt={review.imageAlt ?? review.titleAr} fill priority className="object-cover" />
           </div>
         )}
 

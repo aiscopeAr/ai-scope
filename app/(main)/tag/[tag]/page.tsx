@@ -90,33 +90,45 @@ export default async function TagPage({
   const { label, reviews, totalCount } = data;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
+  const collectionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `#${label}`,
+    description: `كل التقارير والتحليلات المتعلقة بـ ${label} على ${SITE_NAME_AR}`,
+    url: absoluteUrl(page > 1 ? `/tag/${tag}?page=${page}` : `/tag/${tag}`),
+    inLanguage: "ar",
+  };
+
   return (
-    <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
-      <nav className="mb-6 flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
-        <Link href="/" className="link-muted transition-colors">الرئيسية</Link>
-        <span>/</span>
-        <Link href="/reviews" className="link-muted transition-colors">التقارير</Link>
-        <span>/</span>
-        <span className="font-medium" style={{ color: "var(--text-secondary)" }}>#{label}</span>
-      </nav>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
+        <nav className="mb-6 flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
+          <Link href="/" className="link-muted transition-colors">الرئيسية</Link>
+          <span>/</span>
+          <Link href="/reviews" className="link-muted transition-colors">التقارير</Link>
+          <span>/</span>
+          <span className="font-medium" style={{ color: "var(--text-secondary)" }}>#{label}</span>
+        </nav>
 
-      <section className="mb-10 rounded-[6px] border p-6 md:p-8" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
-        <p className="mb-3 text-sm font-semibold" style={{ color: "var(--accent)" }}>وسم</p>
-        <h1 className="mb-3 text-3xl font-bold md:text-5xl" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>#{label}</h1>
-        <p className="max-w-3xl text-sm leading-relaxed md:text-base" style={{ color: "var(--text-secondary)" }}>
-          {totalCount.toLocaleString("ar-EG")} تقرير مرتبط بهذا الوسم، من الأحدث إلى الأقدم.
-        </p>
-      </section>
+        <section className="mb-10 rounded-[6px] border p-6 md:p-8" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+          <p className="mb-3 text-sm font-semibold" style={{ color: "var(--accent)" }}>وسم</p>
+          <h1 className="mb-3 text-3xl font-bold md:text-5xl" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>#{label}</h1>
+          <p className="max-w-3xl text-sm leading-relaxed md:text-base" style={{ color: "var(--text-secondary)" }}>
+            {totalCount.toLocaleString("ar-EG")} تقرير مرتبط بهذا الوسم، من الأحدث إلى الأقدم.
+          </p>
+        </section>
 
-      <AdSlot position="category-top" className="mb-8" />
+        <AdSlot position="category-top" className="mb-8" />
 
-      <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {reviews.map((review) => (
-          <ReviewCard key={review.id} review={review} />
-        ))}
-      </section>
+        <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {reviews.map((review) => (
+            <ReviewCard key={review.id} review={review} />
+          ))}
+        </section>
 
-      <Pagination currentPage={page} totalPages={totalPages} basePath={`/tag/${tag}`} />
-    </main>
+        <Pagination currentPage={page} totalPages={totalPages} basePath={`/tag/${tag}`} />
+      </main>
+    </>
   );
 }

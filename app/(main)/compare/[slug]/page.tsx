@@ -144,8 +144,31 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
   const maxScore = Math.max(...comparison.sides.map(s => s.score ?? 0));
   const winner = comparison.sides.find(s => s.score === maxScore && maxScore > 0);
 
+  const comparisonUrl = absoluteUrl(`/compare/${slug}`);
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: comparison.title,
+    description: truncate(comparison.summaryAr, 160),
+    url: comparisonUrl,
+    inLanguage: "ar",
+    dateModified: comparison.updatedAt.toISOString(),
+    publisher: {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: SITE_NAME_AR,
+    },
+    about: comparison.sides.map((s) => ({
+      "@type": "SoftwareApplication",
+      name: s.tool.name,
+      applicationCategory: "ArtificialIntelligenceApplication",
+    })),
+  };
+
   return (
-    <main className="container mx-auto max-w-5xl px-4 py-10" dir="rtl">
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
+      <main className="container mx-auto max-w-5xl px-4 py-10" dir="rtl">
 
       {/* Breadcrumb */}
       <nav className="mb-8 flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
@@ -402,6 +425,7 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
           عودة لجميع المقارنات
         </Link>
       </div>
-    </main>
+      </main>
+    </>
   );
 }

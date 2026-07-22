@@ -56,6 +56,15 @@ nextConfig.redirects = async () => [
     destination: "https://www.lumiq.news/:path*",
     permanent: true, // 308 (replaces 301 in Next.js)
   },
+  // Duplicate-content merge: two auto-generated tutorials covered the same
+  // "ChatGPT for beginners" topic a day apart. Google flagged the weaker one
+  // as "Crawled - currently not indexed"; redirect it into the stronger one
+  // instead of leaving both live.
+  {
+    source: "/reviews/what-is-chatgpt-beginners-guide",
+    destination: "/reviews/how-to-use-chatgpt-for-beginners",
+    permanent: true,
+  },
 ];
 
 // Security + performance headers

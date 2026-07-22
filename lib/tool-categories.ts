@@ -4,6 +4,7 @@ export const TOOL_CATEGORIES = [
   { value: "image",            labelAr: "توليد الصور",            icon: "🎨",  descAr: "أدوات إنشاء وتحرير الصور بالذكاء الاصطناعي" },
   { value: "video",            labelAr: "الفيديو والتحريك",       icon: "🎬",  descAr: "أدوات إنتاج وتحرير الفيديو بتقنيات AI" },
   { value: "voice",            labelAr: "الصوت والموسيقى",        icon: "🎵",  descAr: "تحويل النص إلى كلام وتوليد الموسيقى بالذكاء الاصطناعي" },
+  { value: "search",           labelAr: "البحث والإجابات",        icon: "🔍",  descAr: "محركات بحث ذكية تجيب على الأسئلة بمصادر موثقة" },
   { value: "marketing",        labelAr: "التسويق والإعلان",       icon: "📢",  descAr: "أدوات AI لحملات التسويق وتحليل الجمهور" },
   { value: "education",        labelAr: "التعليم والتدريب",       icon: "📚",  descAr: "منصات تعليمية ذكية ومساعدين للتعلم" },
   { value: "startups",         labelAr: "الشركات الناشئة",        icon: "🚀",  descAr: "أدوات AI للمؤسسين وبناء المنتجات" },

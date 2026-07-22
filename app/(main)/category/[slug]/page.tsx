@@ -104,8 +104,19 @@ export default async function CategoryPage({
   const { category, reviews, totalCount, relatedCategories } = data;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
+  const collectionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: category.nameAr,
+    description: `تقارير وتحليلات في تصنيف ${category.nameAr} على ${SITE_NAME_AR}`,
+    url: absoluteUrl(page > 1 ? `/category/${slug}?page=${page}` : `/category/${slug}`),
+    inLanguage: "ar",
+  };
+
   return (
-    <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
       <nav className="mb-6 flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
         <Link href="/" className="link-muted transition-colors">الرئيسية</Link>
         <span>/</span>
@@ -158,6 +169,7 @@ export default async function CategoryPage({
           <Pagination currentPage={page} totalPages={totalPages} basePath={`/category/${slug}`} />
         </>
       )}
-    </main>
+      </main>
+    </>
   );
 }
