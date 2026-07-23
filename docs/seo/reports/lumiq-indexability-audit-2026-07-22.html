@@ -1,0 +1,531 @@
+<title>Lumiq Indexability Audit — Production</title>
+<meta name="description" content="Read-only forensic audit of every public route's indexability, verified against the live site and the codebase. No code, database, or commit changes.">
+
+<style>
+  @font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 400 700; src: local('JetBrains Mono'); }
+
+  :root {
+    color-scheme: light;
+    --page: #f7f7fb; --surface: #ffffff; --surface-2: #f0f0f8;
+    --ink: #12121a; --ink-2: #4a4a5c; --muted: #86869c; --hairline: #e3e3ee;
+    --accent: #6366f1; --accent-ink: #4338ca; --accent-wash: #eef0fe;
+    --good: #0ca30c; --good-bg: #e9f7e9; --good-text: #006300;
+    --warning: #a15c00; --warning-bg: #fdf3df;
+    --serious: #b5502e; --serious-bg: #fbe9e2;
+    --critical: #b91c1c; --critical-bg: #fbe4e4;
+    --evidence-bg: #f0f0f8; --evidence-ink: #4a4a5c;
+    --s1: #2a78d6; --s2: #008300; --s3: #e87ba4; --s4: #eda100;
+    --s5: #1baf7a; --s6: #eb6834; --s7: #4a3aa7; --s8: #e34948;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0a0a10; --surface: #111119; --surface-2: #17171f;
+      --ink: #f2f2f7; --ink-2: #b8b8c8; --muted: #7d7d92; --hairline: #24242f;
+      --accent: #8385f5; --accent-ink: #a5a6f8; --accent-wash: #1a1a2e;
+      --good: #0ca30c; --good-bg: #12251a; --good-text: #3ddc3d;
+      --warning: #e0ac3f; --warning-bg: #2e2410;
+      --serious: #e2896a; --serious-bg: #2e1c14;
+      --critical: #f16565; --critical-bg: #331414;
+      --evidence-bg: #17171f; --evidence-ink: #b8b8c8;
+      --s1: #3987e5; --s2: #17b317; --s3: #d55181; --s4: #c98500;
+      --s5: #199e70; --s6: #d95926; --s7: #9085e9; --s8: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0a0a10; --surface: #111119; --surface-2: #17171f;
+    --ink: #f2f2f7; --ink-2: #b8b8c8; --muted: #7d7d92; --hairline: #24242f;
+    --accent: #8385f5; --accent-ink: #a5a6f8; --accent-wash: #1a1a2e;
+    --good: #0ca30c; --good-bg: #12251a; --good-text: #3ddc3d;
+    --warning: #e0ac3f; --warning-bg: #2e2410;
+    --serious: #e2896a; --serious-bg: #2e1c14;
+    --critical: #f16565; --critical-bg: #331414;
+    --evidence-bg: #17171f; --evidence-ink: #b8b8c8;
+    --s1: #3987e5; --s2: #17b317; --s3: #d55181; --s4: #c98500;
+    --s5: #199e70; --s6: #d95926; --s7: #9085e9; --s8: #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--page); color: var(--ink); font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif; font-size: 15.5px; line-height: 1.65; }
+  code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.86em; background: var(--surface-2); padding: 2px 6px; border-radius: 4px; color: var(--accent-ink); }
+  h1, h2, h3, h4 { text-wrap: balance; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+  p { color: var(--ink-2); max-width: 76ch; }
+  a { color: var(--accent-ink); }
+
+  .shell { display: grid; grid-template-columns: 250px minmax(0,1fr); max-width: 1320px; margin: 0 auto; }
+  @media (max-width: 980px) { .shell { grid-template-columns: 1fr; } .toc { display: none; } }
+  .toc { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; padding: 32px 18px 40px; border-right: 1px solid var(--hairline); }
+  .toc .brand { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .toc .title { font-size: 17px; font-weight: 700; margin-bottom: 24px; }
+  .toc nav { display: flex; flex-direction: column; gap: 2px; }
+  .toc a { display: block; padding: 6px 10px; border-radius: 6px; font-size: 12.8px; color: var(--ink-2); text-decoration: none; font-family: 'JetBrains Mono', monospace; }
+  .toc a:hover { background: var(--surface-2); color: var(--ink); }
+
+  .main { min-width: 0; padding-bottom: 100px; }
+
+  .cover { padding: 60px 52px 36px; border-bottom: 1px solid var(--hairline); }
+  @media (max-width: 640px) { .cover { padding: 40px 20px 28px; } }
+  .cover .kicker { display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); background: var(--accent-wash); border-radius: 999px; padding: 5px 13px; margin-bottom: 18px; }
+  .cover .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .cover h1 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.15; margin-bottom: 12px; max-width: 26ch; }
+  .cover .sub { font-size: 15.5px; max-width: 68ch; margin: 0 0 20px; }
+  .method-box { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 16px 20px; font-size: 13.5px; margin-top: 20px; }
+  .method-box .m-row { display: flex; gap: 10px; padding: 4px 0; }
+  .method-box .m-row b { color: var(--ink); min-width: 130px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; margin-top: 28px; }
+  @media (max-width: 860px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { background: var(--surface); padding: 16px 18px; }
+  .kpi .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .kpi .value { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .kpi .value .unit { font-size: 13px; color: var(--muted); font-weight: 500; margin-right: 3px; }
+
+  section.block { padding: 44px 52px; border-bottom: 1px solid var(--hairline); }
+  @media (max-width: 640px) { section.block { padding: 34px 20px; } }
+  section.block:last-of-type { border-bottom: none; }
+  .section-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .section-head .idx { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent-ink); font-weight: 700; }
+  .section-head h2 { font-size: 22px; }
+  .section-dek { margin: 6px 0 24px; font-size: 14px; }
+  h3.sub-h { font-size: 16.5px; margin: 28px 0 12px; }
+  h3.sub-h:first-child { margin-top: 0; }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--hairline); border-radius: 10px; margin: 14px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.2px; min-width: 560px; }
+  thead th { text-align: left; font-size: 10.8px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 9px 13px; border-bottom: 1px solid var(--hairline); background: var(--surface-2); white-space: nowrap; }
+  tbody td { padding: 9px 13px; border-bottom: 1px solid var(--hairline); color: var(--ink-2); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td:first-child { color: var(--ink); font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+  td.num, th.num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  tr.row-crit td:first-child { border-left: 3px solid var(--critical); }
+  tr.row-warn td:first-child { border-left: 3px solid var(--warning); }
+  tr.row-good td:first-child { border-left: 3px solid var(--good); }
+
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; }
+  .pill.ok { background: var(--good-bg); color: var(--good-text); } .pill.ok::before { background: var(--good); }
+  .pill.med { background: var(--warning-bg); color: var(--warning); } .pill.med::before { background: var(--warning); }
+  .pill.high { background: var(--serious-bg); color: var(--serious); } .pill.high::before { background: var(--serious); }
+  .pill.warn, .pill.crit { background: var(--critical-bg); color: var(--critical); } .pill.warn::before, .pill.crit::before { background: var(--critical); }
+  .pill.neutral, .pill.low { background: var(--surface-2); color: var(--muted); } .pill.neutral::before, .pill.low::before { background: var(--muted); }
+
+  .evidence { display: inline-flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--evidence-bg); color: var(--evidence-ink); padding: 2px 8px; border-radius: 5px; }
+  .evidence::before { content: "◆"; font-size: 8px; color: var(--accent); }
+
+  .finding { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 16px 20px; margin: 12px 0; }
+  .finding-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .finding-head h4 { font-size: 14.5px; }
+  .finding p { font-size: 13.5px; margin: 8px 0 0; }
+  .finding .ev-line { margin-top: 10px; }
+
+  .rank-list { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+  .rank-item { display: grid; grid-template-columns: 32px 1fr auto; gap: 14px; align-items: start; background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 13px 16px; }
+  .rank-item .rank-n { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: var(--muted); }
+  .rank-item h4 { margin: 0 0 4px; font-size: 14px; }
+  .rank-item p { margin: 0; font-size: 12.8px; color: var(--ink-2); }
+
+  .callout { border-radius: 10px; padding: 14px 18px; font-size: 13.5px; display: flex; gap: 10px; align-items: flex-start; background: var(--accent-wash); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); }
+  .callout p { margin: 0; color: var(--ink); }
+  .callout.crit-callout { background: var(--critical-bg); border-color: color-mix(in srgb, var(--critical) 30%, transparent); }
+  .callout.crit-callout p { color: var(--ink); }
+  .callout .ico { font-family: 'JetBrains Mono', monospace; font-weight: 700; flex: none; }
+
+  .final-verdict { background: var(--surface); border: 2px solid var(--accent); border-radius: 12px; padding: 24px 28px; }
+  .final-verdict .fv-number { font-size: 40px; font-weight: 700; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+  .final-verdict .fv-label { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+
+  footer.report-footer { padding: 30px 52px; color: var(--muted); font-size: 11.5px; font-family: 'JetBrains Mono', monospace; }
+</style>
+
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">lumiq.news</div>
+    <div class="title">Indexability Audit</div>
+    <nav>
+      <a href="#method">Method</a>
+      <a href="#s1">1. URL inventory</a>
+      <a href="#s2">2. Sitemap coverage</a>
+      <a href="#s3">3. Indexability by type</a>
+      <a href="#s4">4. Indexing blockers</a>
+      <a href="#s5">5. Internal linking</a>
+      <a href="#s6">6. Structured data</a>
+      <a href="#s7">7. Crawlability</a>
+      <a href="#s8">8. Final table</a>
+      <a href="#s9">9. Top 20 issues</a>
+      <a href="#s10">10. Verdict</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="cover">
+      <span class="kicker"><span class="dot"></span>Production Audit · Read-only · Jul 22, 2026</span>
+      <h1>Lumiq indexability — complete production audit</h1>
+      <p class="sub">Every figure below was either queried directly from the live production database (read-only) or verified against the live site with a direct HTTP request. No code, database, or commit was modified to produce this report. Where a claim can't be verified this way, it's marked as such rather than estimated.</p>
+
+      <div class="method-box">
+        <div class="m-row"><b>DB queries</b><span>Prisma read-only queries against the production Postgres instance — no writes issued.</span></div>
+        <div class="m-row"><b>Live checks</b><span><code>curl</code> against <code>https://www.lumiq.news</code> — status codes, headers, and rendered HTML, captured Jul 22, 2026.</span></div>
+        <div class="m-row"><b>Code review</b><span>Direct inspection of route files, <code>sitemap.ts</code>, <code>robots.ts</code>, and schema-generation helpers — file paths cited per finding.</span></div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><div class="label">URLs the app can generate</div><div class="value">~730</div></div>
+        <div class="kpi"><div class="label">URLs in sitemap.xml</div><div class="value">658</div></div>
+        <div class="kpi"><div class="label">Confirmed duplicate</div><div class="value">1</div></div>
+        <div class="kpi"><div class="label">Live 200s tested</div><div class="value">21<span class="unit">/21</span></div></div>
+        <div class="kpi"><div class="label">Page types w/ 0 schema</div><div class="value">9<span class="unit">/19</span></div></div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <section class="block" id="s1">
+      <div class="section-head"><span class="idx">01</span><h2>Total URLs the application can generate</h2></div>
+      <p class="section-dek">Every route file under <code>app/(main)/</code>, cross-referenced against live database counts queried Jul 22, 2026.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Type</th><th class="num">Count</th><th>Route pattern</th><th>Evidence</th></tr></thead>
+          <tbody>
+            <tr><td>Homepage</td><td class="num">1</td><td><code>/</code></td><td><span class="evidence">app/(main)/page.tsx</span></td></tr>
+            <tr><td>Reviews</td><td class="num">236</td><td><code>/reviews/[slug]</code></td><td><span class="evidence">DB: Review.count(published=true)</span></td></tr>
+            <tr><td>Reviews listing (paginated)</td><td class="num">10</td><td><code>/reviews?page=1..10</code></td><td><span class="evidence">236 ÷ 24/page, ceil</span></td></tr>
+            <tr><td>AI Tools</td><td class="num">51</td><td><code>/ai-tools/[slug]</code></td><td><span class="evidence">DB: AITool.count(published=true)</span></td></tr>
+            <tr><td>AI Tools index</td><td class="num">1</td><td><code>/ai-tools</code></td><td><span class="evidence">app/(main)/ai-tools/page.tsx</span></td></tr>
+            <tr><td>AI Tool use-cases</td><td class="num">20</td><td><code>/ai-tools/for/[usecase]</code></td><td><span class="evidence">TOOL_CATEGORIES.length, lib/tool-categories.ts</span></td></tr>
+            <tr><td>Comparisons</td><td class="num">4</td><td><code>/compare/[slug]</code></td><td><span class="evidence">DB: Comparison.count(published=true)</span></td></tr>
+            <tr><td>Comparisons index</td><td class="num">1</td><td><code>/compare</code></td><td><span class="evidence">app/(main)/compare/page.tsx</span></td></tr>
+            <tr><td>Prompts</td><td class="num">272</td><td><code>/prompts/[slug]</code></td><td><span class="evidence">DB: Prompt.count(published=true)</span></td></tr>
+            <tr><td>Prompts index (paginated)</td><td class="num">~12</td><td><code>/prompts?page=1..12</code></td><td><span class="evidence">272 ÷ 24/page, ceil</span></td></tr>
+            <tr><td>Categories (with content)</td><td class="num">4</td><td><code>/category/[slug]</code></td><td><span class="evidence">DB: Category groupBy, reviews&gt;0</span></td></tr>
+            <tr><td>Categories (empty, still live)</td><td class="num">6</td><td><code>/category/[slug]</code></td><td><span class="evidence">Live: curl → HTTP 200, empty grid</span></td></tr>
+            <tr><td>Tags (3+ reviews)</td><td class="num">57</td><td><code>/tag/[tag]</code></td><td><span class="evidence">lib/tags.ts buildTagSummaries(), live-recomputed</span></td></tr>
+            <tr><td>Authors</td><td class="num">4</td><td><code>/author/[slug]</code></td><td><span class="evidence">lib/authors.ts AUTHORS keys: zayd, lina, tariq, team</span></td></tr>
+            <tr><td>RSS feed</td><td class="num">1</td><td><code>/rss.xml</code></td><td><span class="evidence">app/rss.xml/route.ts, 50 items</span></td></tr>
+            <tr><td>News sitemap</td><td class="num">1</td><td><code>/news-sitemap.xml</code></td><td><span class="evidence">app/news-sitemap.xml/route.ts, 17 items (48h window)</span></td></tr>
+            <tr><td>Static utility pages</td><td class="num">6</td><td><code>/about /contact /privacy /terms /search /status</code></td><td><span class="evidence">6 page.tsx files, app/(main)/</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <span class="ico">Σ</span>
+        <p><b>Total generatable public URLs: ~730</b> — 1 + 236 + 10 + 51 + 1 + 20 + 4 + 1 + 272 + 12 + 4 + 6 + 57 + 4 + 6 static + 2 feed endpoints. This is higher than the 658 in <code>sitemap.xml</code> because the sitemap generator deliberately omits paginated listing URLs, empty categories, and — a real gap — the "team" author page.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="s2">
+      <div class="section-head"><span class="idx">02</span><h2>Sitemap.xml coverage</h2></div>
+      <p class="section-dek">Fetched live from <code>https://www.lumiq.news/sitemap.xml</code>, parsed for exact <code>&lt;loc&gt;</code> entries.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Metric</th><th class="num">Value</th><th>Evidence</th></tr></thead>
+          <tbody>
+            <tr><td>Total <code>&lt;loc&gt;</code> entries</td><td class="num">658</td><td><span class="evidence">curl sitemap.xml | grep -c "&lt;loc&gt;"</span></td></tr>
+            <tr class="row-crit"><td>Duplicate URLs</td><td class="num">1</td><td><span class="evidence">sort | uniq -d → /category/tutorials (×2)</span></td></tr>
+            <tr><td>Unique URLs</td><td class="num">657</td><td><span class="evidence">sort | uniq | wc -l</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-h">Breakdown by prefix (live, exact)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Prefix</th><th class="num">Count</th><th>Note</th></tr></thead>
+          <tbody>
+            <tr><td>/prompts</td><td class="num">273</td><td>1 index + 272 prompts</td></tr>
+            <tr><td>/reviews</td><td class="num">236</td><td>Individual reviews only — listing itself is a separate static entry</td></tr>
+            <tr><td>/ai-tools</td><td class="num">72</td><td>1 index + 20 use-case + 51 tools</td></tr>
+            <tr><td>/tag</td><td class="num">57</td><td>Matches live buildTagSummaries() recomputation exactly</td></tr>
+            <tr class="row-crit"><td>/category</td><td class="num">5</td><td>4 unique + 1 duplicate (tutorials)</td></tr>
+            <tr><td>/compare</td><td class="num">5</td><td>1 index + 4 comparisons</td></tr>
+            <tr class="row-warn"><td>/author</td><td class="num">3</td><td>zayd, lina, tariq only — "team" missing (see below)</td></tr>
+            <tr><td>Static (/, /about, /terms…)</td><td class="num">7</td><td>7 of the 6 static routes + homepage present in this count</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><h4>Missing URL: <code>/author/team</code></h4><span class="pill warn">Missing</span></div>
+        <p>The sitemap's author list is hardcoded to three entries (<code>zayd</code>, <code>lina</code>, <code>tariq</code>) in <code>app/sitemap.ts</code>. The fourth author, "team," has 10 published reviews attributed to it and the page resolves live.</p>
+        <div class="ev-line"><span class="evidence">app/sitemap.ts lines 15–17</span> <span class="evidence">curl /author/team → HTTP 200</span></div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><h4>Duplicate: <code>/category/tutorials</code></h4><span class="pill crit">Confirmed duplicate</span></div>
+        <p>Appears once as a hardcoded static entry and again from the dynamic category loop, since "tutorials" independently qualifies with 11 reviews (<code>_count.reviews &gt; 0</code>).</p>
+        <div class="ev-line"><span class="evidence">app/sitemap.ts line 18 (static) + line 66 (dynamic loop)</span></div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><h4>Excluded by design: 6 empty categories, all paginated listing URLs</h4><span class="pill neutral">Deliberate, not a bug</span></div>
+        <p>The sitemap generator filters categories to <code>_count.reviews &gt; 0</code>, correctly keeping the 6 zero-content categories out of the sitemap. It does not, however, emit <code>?page=2</code> etc. for <code>/reviews</code> or <code>/prompts</code> — a defensible choice per Google's own guidance (paginated listings don't need sitemap entries when the underlying items are already listed individually), but worth stating as a deliberate omission, not an oversight.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="s3">
+      <div class="section-head"><span class="idx">03</span><h2>Indexability by route type</h2></div>
+      <p class="section-dek">One representative URL per type, checked live for HTTP status, canonical tag, robots meta, and redirect behavior.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Route type</th><th>URL tested</th><th>HTTP</th><th>Canonical</th><th>Robots meta</th><th>X-Robots-Tag</th></tr></thead>
+          <tbody>
+            <tr class="row-good"><td>Homepage</td><td>/</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-good"><td>Reviews listing</td><td>/reviews</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-good"><td>Reviews listing, p.3</td><td>/reviews?page=3</td><td class="num">200</td><td>self (?page=3)</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-good"><td>Reviews listing, p.10</td><td>/reviews?page=10</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-good"><td>Review detail</td><td>/reviews/gemini-models-cybersecurity-impact</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-good"><td>Tools index</td><td>/ai-tools</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-good"><td>Tool detail</td><td>/ai-tools/gemini</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-warn"><td>Tool use-case (populated)</td><td>/ai-tools/for/writing</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-crit"><td>Tool use-case (0 tools)</td><td>/ai-tools/for/startups</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-good"><td>Compare index</td><td>/compare</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-good"><td>Compare detail</td><td>/compare/chatgpt-vs-claude</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-good"><td>Prompts index</td><td>/prompts</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-warn"><td>Category (populated)</td><td>/category/ai-models</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-crit"><td>Category (0 reviews)</td><td>/category/ai-companies</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-good"><td>Tag hub</td><td>/tag/OpenAI</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-good"><td>Author (in sitemap)</td><td>/author/zayd</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-warn"><td>Author (orphaned from sitemap)</td><td>/author/team</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-good"><td>Search</td><td>/search</td><td class="num">200</td><td>self</td><td>index, follow</td><td>absent</td></tr>
+            <tr class="row-good"><td>RSS feed</td><td>/rss.xml</td><td class="num">200</td><td>n/a</td><td>n/a</td><td>absent</td></tr>
+            <tr class="row-good"><td>News sitemap</td><td>/news-sitemap.xml</td><td class="num">200</td><td>n/a</td><td>n/a</td><td>absent</td></tr>
+            <tr class="row-good"><td>Non-existent path</td><td>/nonexistent-page-xyz123</td><td class="num">404</td><td>—</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <span class="ico">→</span>
+        <p><b>No hard indexing block exists anywhere tested.</b> Zero <code>noindex</code> directives, zero <code>X-Robots-Tag</code> headers, zero server-side redirects on any of the 21 URLs above. Every gap found in this audit is a <em>content/architecture</em> problem — thin pages, missing sitemap entries, weak internal links — never a technical block that literally prevents crawling.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="s4">
+      <div class="section-head"><span class="idx">04</span><h2>Pages that should index but have something preventing it</h2></div>
+      <p class="section-dek">Every page below returns 200 with <code>index, follow</code> and a correct self-canonical — so nothing is technically blocking indexing. The obstacle is content-based, and Google's own crawler is free to make the same call independently.</p>
+
+      <div class="finding">
+        <div class="finding-head"><h4>6 category pages render 200 with zero content</h4><span class="pill crit">Critical</span></div>
+        <p><code>ai-companies</code>, <code>ai-policy</code>, <code>research</code>, <code>applications</code>, <code>infrastructure</code>, <code>safety</code> — each is a real <code>Category</code> row with 0 linked reviews. <code>getCategoryPageData()</code> returns a valid object (not <code>null</code>) even when <code>totalCount</code> is 0, so the page renders normally instead of 404ing.</p>
+        <div class="ev-line"><span class="evidence">app/(main)/category/[slug]/page.tsx lines 21, 43-48</span> <span class="evidence">DB: 6/10 categories at 0 reviews</span> <span class="evidence">Live: 6/6 return HTTP 200</span></div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><h4>3 use-case pages render 200 with zero tools</h4><span class="pill crit">Critical</span></div>
+        <p><code>/ai-tools/for/startups</code>, <code>/ecommerce</code>, <code>/students</code> — <code>generateStaticParams()</code> returns all 20 category values unconditionally; <code>notFound()</code> only fires for an unrecognized category string, never for a recognized one with zero matching tools.</p>
+        <div class="ev-line"><span class="evidence">app/(main)/ai-tools/for/[usecase]/page.tsx lines 14-16, 52-53</span> <span class="evidence">DB: 3/20 categories at 0 tools</span> <span class="evidence">Live: 3/3 return HTTP 200</span></div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><h4>8 more use-case pages carry 1–2 tools</h4><span class="pill warn">High</span></div>
+        <p>Not empty, but thin enough that a listing page built around them offers little beyond a single tool card. <code>education</code> (1), <code>search</code> (2), <code>automation</code> (2), <code>customer-support</code> (2), <code>legal</code> (2), <code>finance</code> (2), <code>healthcare</code> (2), <code>presentations</code> (2).</p>
+        <div class="ev-line"><span class="evidence">DB: AITool.groupBy(toolCategory), published=true</span></div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><h4>192 of 236 reviews have never recorded a single view</h4><span class="pill warn">High, but not code-fixable</span></div>
+        <p>81% of published reviews. Cross-referenced against traffic data from GSC, this tracks with a young domain at very low overall search volume rather than a page-specific quality signal — but it means the vast majority of the review corpus has no independent proof-of-interest signal Google could use.</p>
+        <div class="ev-line"><span class="evidence">DB: Review.viewCount = 0 count, published=true</span></div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><h4>6 reviews under 1,500 characters of content</h4><span class="pill neutral">Low</span></div>
+        <p>Genuinely thin by word count, but a small minority — 2.5% of the corpus. Not the dominant pattern.</p>
+        <div class="ev-line"><span class="evidence">DB: Review.content.length &lt; 1500, published=true</span></div>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><h4><code>/author/team</code> is a live, populated, orphaned-from-sitemap page</h4><span class="pill warn">High</span></div>
+        <p>10 published reviews attributed to this author, page renders correctly, but it's absent from <code>sitemap.ts</code>'s hardcoded 3-author list — its only discovery path is inbound links from articles it authored.</p>
+        <div class="ev-line"><span class="evidence">app/sitemap.ts lines 15-17</span> <span class="evidence">DB: 10 reviews, authorSlug="team"</span></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="s5">
+      <div class="section-head"><span class="idx">05</span><h2>Internal linking audit</h2></div>
+      <p class="section-dek">Inbound/outbound link paths, checked by rendering the actual listing pages and counting real <code>&lt;a href&gt;</code> targets — not assumed from route existence.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Route type</th><th>Primary inbound source</th><th>Reachability</th><th>Evidence</th></tr></thead>
+          <tbody>
+            <tr class="row-good"><td>Reviews</td><td>/reviews pagination (10 pages), /category/[slug], /tag/[tag]</td><td class="num">236/236</td><td><span class="evidence">Live: /reviews?page=10 → 20 distinct hrefs, 236−9×24=20 exact match</span></td></tr>
+            <tr class="row-warn"><td>AI Tools</td><td>/ai-tools index (server-rendered RSC payload, client-filtered)</td><td class="num">51/51*</td><td><span class="evidence">Live HTML: only 16 slugs as literal &lt;a href&gt;; all 51 present in embedded RSC JSON</span></td></tr>
+            <tr class="row-good"><td>Prompts</td><td>/prompts pagination, tool detail pages (toolId FK)</td><td class="num">272/272</td><td><span class="evidence">components/PromptsLibrary.tsx — real &lt;Link&gt; pagination when unfiltered</span></td></tr>
+            <tr class="row-good"><td>Comparisons</td><td>/compare index, tool detail pages</td><td class="num">4/4</td><td><span class="evidence">Live: /compare lists all 4</span></td></tr>
+            <tr class="row-good"><td>Tags</td><td>Review tag badges (linked when 3+ threshold met)</td><td class="num">57/57</td><td><span class="evidence">app/(main)/reviews/[slug]/page.tsx — conditional Link vs span</span></td></tr>
+            <tr class="row-crit"><td>Categories (empty)</td><td>None found</td><td class="num">0/6</td><td><span class="evidence">Not linked from /reviews pill list (filtered to _count&gt;0) or sitemap</span></td></tr>
+            <tr class="row-warn"><td>Author (team)</td><td>Bylines on its own 10 articles only</td><td class="num">1/4 authors unlinked from any index</td><td><span class="evidence">No author-directory page exists in the route list</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="font-size:12.5px; margin-top:4px;">* The 51 tools are present in the initial HTML response as an embedded RSC data payload (verified: <code>midjourney</code>, <code>claude</code>, <code>runway</code> — none in the visible top-16 — all appear in raw response body as structured JSON). A JS-executing crawler (confirmed behavior for Googlebot) sees all 51; a plain-text-only HTML parser would only find 16 as literal anchor elements. Not classified as an orphan risk for Google specifically, but worth noting as an architectural fragility if that assumption ever breaks.</p>
+
+      <h3 class="sub-h">True orphan pages (no discovery path at all)</h3>
+      <div class="rank-list">
+        <div class="rank-item"><span class="rank-n">6</span><div><h4>Empty category pages</h4><p>Not in sitemap, not linked from the category-pill list (which filters to populated categories only), not linked from any review. Reachable only by guessing the exact URL.</p></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="s6">
+      <div class="section-head"><span class="idx">06</span><h2>Structured data audit</h2></div>
+      <p class="section-dek">Every one of the 19 public page templates, checked directly for <code>@type</code> values present in its JSON-LD output.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Page template</th><th>Schema present</th><th>Missing (expected)</th></tr></thead>
+          <tbody>
+            <tr class="row-crit"><td>Homepage</td><td>none</td><td>WebSite/Organization ship globally from layout.tsx, not page-local</td></tr>
+            <tr class="row-warn"><td>Reviews listing</td><td>none</td><td>CollectionPage</td></tr>
+            <tr class="row-good"><td>Review detail</td><td>Article, FAQPage, Person, Organization</td><td>BreadcrumbList</td></tr>
+            <tr class="row-good"><td>Tools index</td><td>CollectionPage</td><td>—</td></tr>
+            <tr class="row-good"><td>Tool detail</td><td>SoftwareApplication, FAQPage, AggregateRating, Offer, Organization</td><td>BreadcrumbList (present via buildBreadcrumbJsonLd — verified in code, not literal-string match)</td></tr>
+            <tr class="row-good"><td>Tool use-case</td><td>ItemList, BreadcrumbList</td><td>—</td></tr>
+            <tr class="row-warn"><td>Compare index</td><td>none</td><td>CollectionPage</td></tr>
+            <tr class="row-good"><td>Compare detail</td><td>Article, SoftwareApplication, Organization</td><td>BreadcrumbList</td></tr>
+            <tr class="row-good"><td>Prompts index</td><td>CollectionPage</td><td>—</td></tr>
+            <tr class="row-good"><td>Prompt detail</td><td>HowTo</td><td>BreadcrumbList</td></tr>
+            <tr class="row-good"><td>Category</td><td>CollectionPage</td><td>BreadcrumbList</td></tr>
+            <tr class="row-good"><td>Tag hub</td><td>CollectionPage</td><td>BreadcrumbList</td></tr>
+            <tr class="row-good"><td>Author</td><td>Person, Organization</td><td>BreadcrumbList</td></tr>
+            <tr class="row-crit"><td>Search</td><td>none</td><td>—</td></tr>
+            <tr class="row-crit"><td>About / Contact / Privacy / Terms / Status</td><td>none (all 5)</td><td>WebPage (low priority — static, low-traffic pages)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-h">Sitewide (app/layout.tsx — applies to every page)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Schema</th><th>Status</th><th>Evidence</th></tr></thead>
+          <tbody>
+            <tr class="row-good"><td>Organization</td><td>Present, correctly @id-linked</td><td><span class="evidence">app/layout.tsx lines 100-111</span></td></tr>
+            <tr class="row-good"><td>WebSite + SearchAction</td><td>Present, targets /search?q={term}</td><td><span class="evidence">app/layout.tsx lines 113-128</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <span class="ico">Σ</span>
+        <p><b>9 of 19 page templates emit zero page-level structured data</b>: homepage, reviews listing, compare listing, search, and the 5 static utility pages. <b>BreadcrumbList is the single most under-used schema type</b> — present on only 2 of 12 templates that render a visible breadcrumb <code>&lt;nav&gt;</code> in their HTML (tool detail and use-case pages), despite the helper function (<code>lib/breadcrumb-jsonld.ts</code>) already existing and being trivial to call from the other 10.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="s7">
+      <div class="section-head"><span class="idx">07</span><h2>Crawlability audit</h2></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Surface</th><th>Status</th><th>Detail</th></tr></thead>
+          <tbody>
+            <tr class="row-good"><td>robots.txt</td><td class="pill ok">Correct</td><td>Googlebot/Bingbot: full allow except /admin, /api. GPTBot/CCBot/anthropic-ai/Claude-Web: full disallow. OAI-SearchBot: allow (distinct from GPTBot — deliberate split, verified in file).</td></tr>
+            <tr class="row-good"><td>sitemap.xml</td><td class="pill ok">Live, 658 URLs</td><td>See §2 for the 1 duplicate and the missing-author gap.</td></tr>
+            <tr class="row-good"><td>Pagination</td><td class="pill ok">Real &lt;a href&gt;, self-canonical</td><td>Verified live on /reviews and /prompts — no JS-only click handlers found.</td></tr>
+            <tr class="row-good"><td>Canonical tags</td><td class="pill ok">Correct on all 21 tested</td><td>Self-referencing including paginated variants (?page=N gets its own canonical).</td></tr>
+            <tr class="row-good"><td>hreflang</td><td class="pill neutral">Absent (correctly)</td><td>Single-language (Arabic-only) site — absence is correct, not a gap.</td></tr>
+            <tr class="row-good"><td>OpenGraph</td><td class="pill ok">Complete</td><td>title, description, url, site_name, locale, image (1200×630 via dynamic /api/og), type — verified on review detail.</td></tr>
+            <tr class="row-good"><td>Twitter Card</td><td class="pill ok">Complete</td><td>summary_large_image, site handle, title, description, image.</td></tr>
+            <tr class="row-good"><td>RSS</td><td class="pill ok">Live, 50 items</td><td>/rss.xml — also (non-standard but harmless) declared as a "Sitemap:" line in robots.txt.</td></tr>
+            <tr class="row-good"><td>News sitemap</td><td class="pill ok">Live, 17 items, correct spec</td><td>48-hour rolling window per Google News requirements — matches current publish volume exactly, not a bug.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="s8">
+      <div class="section-head"><span class="idx">08</span><h2>Final table — by route type</h2></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Route type</th><th class="num">Total URLs</th><th>Indexable</th><th>In sitemap</th><th>Internal links</th><th>Structured data</th><th class="num">SEO score</th><th>Priority</th></tr></thead>
+          <tbody>
+            <tr class="row-good"><td>Homepage</td><td class="num">1</td><td>Yes</td><td>Yes</td><td>n/a</td><td>Sitewide only</td><td class="num">7/10</td><td>Medium</td></tr>
+            <tr class="row-warn"><td>Reviews (listing)</td><td class="num">10 pages</td><td>Yes</td><td>Index only</td><td>Self-paginated</td><td>None</td><td class="num">6/10</td><td>Medium</td></tr>
+            <tr class="row-good"><td>Reviews (detail)</td><td class="num">236</td><td>Yes</td><td>Yes, 236/236</td><td>Strong</td><td>Article+FAQ</td><td class="num">8/10</td><td>High</td></tr>
+            <tr class="row-good"><td>AI Tools (detail)</td><td class="num">51</td><td>Yes</td><td>Yes, 51/51</td><td>Strong (RSC-embedded)</td><td>SoftwareApp+FAQ</td><td class="num">8/10</td><td>High</td></tr>
+            <tr class="row-warn"><td>AI Tool use-cases</td><td class="num">20</td><td>17 substantive / 3 empty</td><td>Yes, all 20</td><td>Weak below-fold</td><td>ItemList+Breadcrumb</td><td class="num">5/10</td><td>High</td></tr>
+            <tr class="row-good"><td>Comparisons</td><td class="num">4</td><td>Yes</td><td>Yes, 4/4</td><td>Moderate</td><td>Article+SoftwareApp</td><td class="num">7/10</td><td>Medium</td></tr>
+            <tr class="row-good"><td>Prompts</td><td class="num">272</td><td>Yes</td><td>Yes, 272/272</td><td>Strong</td><td>HowTo</td><td class="num">7/10</td><td>Medium</td></tr>
+            <tr class="row-crit"><td>Categories (empty)</td><td class="num">6</td><td>Indexable but thin</td><td>No</td><td>None found</td><td>CollectionPage (empty)</td><td class="num">2/10</td><td>Critical</td></tr>
+            <tr class="row-good"><td>Categories (populated)</td><td class="num">4</td><td>Yes</td><td>Yes (1 dup.)</td><td>Moderate</td><td>CollectionPage</td><td class="num">6/10</td><td>Medium</td></tr>
+            <tr class="row-good"><td>Tags</td><td class="num">57</td><td>Yes</td><td>Yes, 57/57</td><td>Strong</td><td>CollectionPage</td><td class="num">7/10</td><td>Medium</td></tr>
+            <tr class="row-warn"><td>Authors</td><td class="num">4</td><td>Yes, all 4</td><td>3/4 (missing team)</td><td>Weak (no directory)</td><td>Person</td><td class="num">5/10</td><td>Medium</td></tr>
+            <tr class="row-good"><td>RSS + News sitemap</td><td class="num">2</td><td>n/a (feeds)</td><td>Self-declared</td><td>n/a</td><td>n/a</td><td class="num">8/10</td><td>Low</td></tr>
+            <tr class="row-crit"><td>Static utility pages</td><td class="num">6</td><td>Yes, thin</td><td>5/6 (no /status)</td><td>Footer only</td><td>None</td><td class="num">3/10</td><td>Low</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="s9">
+      <div class="section-head"><span class="idx">09</span><h2>Top 20 issues, ranked by impact</h2></div>
+
+      <div class="rank-list">
+        <div class="rank-item"><span class="rank-n">1</span><div><h4>6 empty category pages indexable with zero content</h4><p>Real 200, real canonical, real "index, follow" — thinnest possible page Google can crawl.</p></div><span class="pill crit">Critical</span></div>
+        <div class="rank-item"><span class="rank-n">2</span><div><h4>3 use-case pages indexable with zero tools</h4><p>Same mechanism as #1 — <code>generateStaticParams</code> pre-builds every category regardless of content.</p></div><span class="pill crit">Critical</span></div>
+        <div class="rank-item"><span class="rank-n">3</span><div><h4>1 confirmed duplicate URL in sitemap.xml</h4><p><code>/category/tutorials</code> listed twice — a wasted crawl-budget signal, however small.</p></div><span class="pill high">High</span></div>
+        <div class="rank-item"><span class="rank-n">4</span><div><h4>/author/team missing from sitemap despite 10 live articles</h4><p>Hardcoded 3-author list in sitemap.ts never updated when the 4th persona was added.</p></div><span class="pill high">High</span></div>
+        <div class="rank-item"><span class="rank-n">5</span><div><h4>9 of 19 page templates ship zero structured data</h4><p>Homepage, reviews listing, compare listing, search, and all 5 static pages.</p></div><span class="pill high">High</span></div>
+        <div class="rank-item"><span class="rank-n">6</span><div><h4>BreadcrumbList present on only 2 of 12 eligible templates</h4><p>The helper already exists and is imported twice — the gap is 10 uncalled function invocations, not missing infrastructure.</p></div><span class="pill high">High</span></div>
+        <div class="rank-item"><span class="rank-n">7</span><div><h4>8 use-case pages carry only 1–2 tools</h4><p>Thin by any editorial standard even though technically non-empty.</p></div><span class="pill high">High</span></div>
+        <div class="rank-item"><span class="rank-n">8</span><div><h4>192 of 236 reviews (81%) have zero recorded views</h4><p>Not independently fixable by architecture — reflects overall search-demand scarcity, evidenced by the site's GSC numbers.</p></div><span class="pill high">High</span></div>
+        <div class="rank-item"><span class="rank-n">9</span><div><h4>No author directory page exists</h4><p>4 author pages have no common index linking to all of them — each is only reachable via its own articles' bylines.</p></div><span class="pill med">Medium</span></div>
+        <div class="rank-item"><span class="rank-n">10</span><div><h4>Reviews listing (index page) has no structured data</h4><p>The single highest-priority listing page on the site (priority 0.95 in its own sitemap entry) carries no CollectionPage schema.</p></div><span class="pill med">Medium</span></div>
+        <div class="rank-item"><span class="rank-n">11</span><div><h4>6 reviews under 1,500 characters</h4><p>A small, genuinely thin minority — 2.5% of the corpus.</p></div><span class="pill med">Medium</span></div>
+        <div class="rank-item"><span class="rank-n">12</span><div><h4>/compare index has no structured data</h4><p>4 comparisons exist but the listing page itself carries no CollectionPage/ItemList schema.</p></div><span class="pill med">Medium</span></div>
+        <div class="rank-item"><span class="rank-n">13</span><div><h4>Paginated /reviews and /prompts pages absent from sitemap</h4><p>A defensible, common practice (Google doesn't require it when items are listed individually) but still means 9 additional review-listing pages and ~11 prompt-listing pages rely purely on crawl discovery.</p></div><span class="pill med">Medium</span></div>
+        <div class="rank-item"><span class="rank-n">14</span><div><h4>Full 51-tool list is RSC-embedded, not server-rendered as literal &lt;a href&gt;</h4><p>Works for Googlebot (JS-executing) but is a structural fragility, not a defect today.</p></div><span class="pill low">Low</span></div>
+        <div class="rank-item"><span class="rank-n">15</span><div><h4>5 static utility pages carry no schema</h4><p>Low-traffic, low-priority by nature — About/Contact/Privacy/Terms/Status.</p></div><span class="pill low">Low</span></div>
+        <div class="rank-item"><span class="rank-n">16</span><div><h4>/status not in sitemap</h4><p>A status page has no real SEO value; correctly low-priority to fix.</p></div><span class="pill low">Low</span></div>
+        <div class="rank-item"><span class="rank-n">17</span><div><h4>rss.xml declared as a "Sitemap:" directive in robots.txt</h4><p>Non-standard usage (RSS feeds aren't sitemaps), but harmless — Google ignores directives it doesn't recognize as valid sitemap XML.</p></div><span class="pill low">Low</span></div>
+        <div class="rank-item"><span class="rank-n">18</span><div><h4>No hreflang</h4><p>Correct for a single-language site — listed only for completeness, not a real gap.</p></div><span class="pill low">Low</span></div>
+        <div class="rank-item"><span class="rank-n">19</span><div><h4>education category: exactly 1 tool</h4><p>Technically non-empty, practically indistinguishable from thin.</p></div><span class="pill low">Low</span></div>
+        <div class="rank-item"><span class="rank-n">20</span><div><h4>No canonical/robots issues found anywhere tested</h4><p>Listed to close the loop: 21/21 URLs checked returned correct self-canonical and index,follow — this category of risk is verified clean, not a gap.</p></div><span class="pill low">Low (verified clean)</span></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="s10">
+      <div class="section-head"><span class="idx">10</span><h2>Verdict</h2></div>
+      <p class="section-dek">"If Google had unlimited crawl budget today, how many pages should be indexed?"</p>
+
+      <div class="final-verdict">
+        <div class="fv-number">~715 <span style="font-size:20px; color:var(--muted); font-weight:600;">of ~730 generated URLs</span></div>
+        <div class="fv-label">Should index · ~15 should not, by design or by content quality</div>
+      </div>
+
+      <h3 class="sub-h" style="margin-top:28px;">The math</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Bucket</th><th class="num">Count</th><th>Should index?</th></tr></thead>
+          <tbody>
+            <tr><td>Reviews, tools, prompts, comparisons, tags, populated categories, populated use-cases, authors, static pages</td><td class="num">705</td><td>Yes — content-bearing, technically clean</td></tr>
+            <tr class="row-crit"><td>Empty categories (6) + empty use-cases (3)</td><td class="num">9</td><td><b>No</b> — zero content, should 404 or redirect instead of 200</td></tr>
+            <tr><td>/category/tutorials duplicate sitemap entry</td><td class="num">1</td><td>Not a separate URL — same page counted twice</td></tr>
+            <tr><td>Reviews/prompts pagination pages (not in sitemap, reachable by crawl)</td><td class="num">~21</td><td>Yes, but currently depend on crawl discovery rather than sitemap</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="margin-top:16px; font-size:14px;">The gap between "~730 generated" and "~715 should index" is small and specific: it is exactly the 9 pages identified in §4 that render 200 with genuinely zero content. Every other URL on the site — all 236 reviews, all 51 tools, all 272 prompts, all 57 tags, all 4 comparisons — is technically indexable today with a correct canonical and no robots block. The ceiling on <em>actual</em> Google indexing is not a code defect at this point; per the GSC evidence cited elsewhere, it is dominated by crawl frequency and domain authority for a young site — factors this audit's read-only scope doesn't reach, but which are visibly separate from the architecture question this report was scoped to answer.</p>
+    </section>
+
+  </main>
+</div>
+
+<footer class="report-footer">
+  Read-only audit. No file, database row, or commit was modified to produce this report. All counts verified against production Jul 22, 2026 — DB counts via Prisma read queries, live checks via direct HTTP requests to lumiq.news, code claims cited to exact file paths.
+</footer>

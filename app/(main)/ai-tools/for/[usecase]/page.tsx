@@ -72,6 +72,10 @@ export default async function ToolsForUsecasePage({ params }: { params: Promise<
     }).catch(() => []),
   ]);
 
+  // A use-case with zero published tools has nothing to index — treat it the
+  // same as an unrecognized use-case (404) rather than serving an empty page.
+  if (tools.length === 0) notFound();
+
   const breadcrumbItems = [
     { name: "الرئيسية", href: "/" },
     { name: "أدوات AI", href: "/ai-tools" },

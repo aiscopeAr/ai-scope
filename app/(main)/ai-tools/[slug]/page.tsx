@@ -12,6 +12,19 @@ import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
 import AdSlot from "@/components/AdSlot";
 import ToolCard from "@/components/ToolCard";
 import ToolInteractions from "@/components/ToolInteractions";
+import { buildTagSummaries } from "@/lib/tags";
+import { loadLinkableSlugSets } from "@/lib/internal-links";
+import { renderWithInternalLinks } from "@/components/InternalLink";
+
+/** Canonical tags with enough reviews to have a /tag/[tag] page — cached per request. */
+const getLinkableTagSet = unstable_cache(
+  async () => {
+    const reviews = await prisma.review.findMany({ where: { published: true }, select: { tags: true } });
+    return new Set(buildTagSummaries(reviews.map((r) => r.tags)).map((s) => s.canonical));
+  },
+  ["linkable-tag-set"],
+  { tags: [CACHE_TAGS.reviews], revalidate: DEFAULT_REVALIDATE_SECONDS },
+);
 
 const getToolBySlug = unstable_cache(
   async (slug: string) => prisma.aITool.findUnique({ where: { slug } }).catch(() => null),
@@ -163,6 +176,9 @@ export default async function AIToolPage({
   const data = await getToolPageData(slug);
   if (!data) notFound();
   const { tool, toolPrompts, relatedTools, relatedReviewsList } = data;
+
+  const linkableTags = await getLinkableTagSet();
+  const linkableSlugs = await loadLinkableSlugSets(prisma, linkableTags);
 
   void prisma.aITool.update({ where: { id: tool.id }, data: { viewCount: { increment: 1 } } }).catch(() => {});
 
@@ -319,7 +335,7 @@ export default async function AIToolPage({
               <section className="mb-8">
                 <h2 className="mb-4 text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>ما هو {tool.name}؟</h2>
                 <div className="leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>
-                  {tool.contentAr ?? tool.descriptionAr}
+                  {renderWithInternalLinks(tool.contentAr ?? tool.descriptionAr, linkableSlugs)}
                 </div>
               </section>
 

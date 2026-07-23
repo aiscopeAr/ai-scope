@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, SITE_URL, SITE_TWITTER_HANDLE, truncate } from "@/lib/seo";
+import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
 import { CheckCircle2, XCircle, Trophy, ArrowLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -165,9 +166,16 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
     })),
   };
 
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "الرئيسية", href: "/" },
+    { name: "المقارنات", href: "/compare" },
+    { name: comparison.title },
+  ]);
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <main className="container mx-auto max-w-5xl px-4 py-10" dir="rtl">
 
       {/* Breadcrumb */}

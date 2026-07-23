@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/seo";
 import { TOOL_CATEGORIES } from "@/lib/tool-categories";
 import { buildTagSummaries, tagToSlug } from "@/lib/tags";
+import { AUTHORS } from "@/lib/authors";
 
 export const dynamic = "force-dynamic";
 
@@ -12,10 +13,13 @@ const staticPages: MetadataRoute.Sitemap = [
   { url: `${SITE_URL}/ai-tools`,   lastModified: new Date(), changeFrequency: "daily",   priority: 0.9 },
   { url: `${SITE_URL}/compare`,    lastModified: new Date(), changeFrequency: "weekly",  priority: 0.7 },
   { url: `${SITE_URL}/prompts`,    lastModified: new Date(), changeFrequency: "daily",   priority: 0.85 },
-  { url: `${SITE_URL}/author/zayd`,  lastModified: new Date(), changeFrequency: "daily",   priority: 0.8 },
-  { url: `${SITE_URL}/author/lina`,  lastModified: new Date(), changeFrequency: "daily",   priority: 0.8 },
-  { url: `${SITE_URL}/author/tariq`, lastModified: new Date(), changeFrequency: "daily",   priority: 0.8 },
-  { url: `${SITE_URL}/category/tutorials`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.85 },
+  // /author/[slug] — derived from AUTHORS so a future author is never missed here again
+  ...Object.keys(AUTHORS).map((slug) => ({
+    url: `${SITE_URL}/author/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: "daily" as const,
+    priority: 0.8,
+  })),
   { url: `${SITE_URL}/about`,       lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
   { url: `${SITE_URL}/contact`,     lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
   { url: `${SITE_URL}/privacy`,     lastModified: new Date(), changeFrequency: "yearly",  priority: 0.2 },

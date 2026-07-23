@@ -66,8 +66,19 @@ function ToolAvatar({ name, logoUrl }: { name: string; logoUrl: string | null })
 export default async function CompareIndexPage() {
   const comparisons = await getComparisons();
 
+  const collectionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `مقارنات أدوات الذكاء الاصطناعي | ${SITE_NAME_AR}`,
+    description: "مقارنات عربية بين أدوات الذكاء الاصطناعي لمساعدتك على اختيار الأداة الأنسب.",
+    url: absoluteUrl("/compare"),
+    inLanguage: "ar",
+  };
+
   return (
-    <main className="container mx-auto max-w-5xl px-4 py-10" dir="rtl">
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <main className="container mx-auto max-w-5xl px-4 py-10" dir="rtl">
 
       {/* Hero */}
       <section className="mb-12 text-center">
@@ -193,5 +204,6 @@ export default async function CompareIndexPage() {
         </section>
       )}
     </main>
+    </>
   );
 }

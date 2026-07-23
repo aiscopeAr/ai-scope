@@ -5,6 +5,7 @@ import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, SITE_URL, SITE_TWITTER_HANDLE } from "@/lib/seo";
 import { CACHE_TAGS, DEFAULT_REVALIDATE_SECONDS } from "@/lib/cache";
+import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
 import ReviewCard from "@/components/ReviewCard";
 import AdSlot from "@/components/AdSlot";
 import Pagination from "@/components/Pagination";
@@ -39,6 +40,11 @@ const getCategoryPageData = unstable_cache(
           select: { id: true, slug: true, nameAr: true, _count: { select: { reviews: true } } },
         }),
       ]);
+
+      // A category with zero published content has nothing to index — treat it
+      // the same as a category that doesn't exist (404) rather than serving an
+      // empty, thin page that's technically indexable.
+      if (totalCount === 0) return null;
 
       return {
         category,
@@ -113,9 +119,16 @@ export default async function CategoryPage({
     inLanguage: "ar",
   };
 
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "الرئيسية", href: "/" },
+    { name: "التقارير", href: "/reviews" },
+    { name: category.nameAr },
+  ]);
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
       <nav className="mb-6 flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
         <Link href="/" className="link-muted transition-colors">الرئيسية</Link>

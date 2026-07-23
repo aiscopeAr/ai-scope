@@ -12,6 +12,7 @@ export const CACHE_TAGS = {
   aiTools: "ai-tools",
   prompts: "prompts",
   categories: "categories",
+  comparisons: "comparisons",
 } as const;
 
 /** Default revalidation window (seconds) as a safety net behind on-demand revalidation. */

@@ -78,8 +78,20 @@ export default async function ReviewsIndexPage({
   const featuredReview = page === 1 ? reviews[0] : undefined;
   const restReviews = page === 1 ? reviews.slice(1) : reviews;
 
+  const canonicalPath = page > 1 ? `/reviews?page=${page}` : "/reviews";
+  const collectionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `تقارير وتحليلات الذكاء الاصطناعي | ${SITE_NAME_AR}`,
+    description: SITE_DESCRIPTION_AR,
+    url: absoluteUrl(canonicalPath),
+    inLanguage: "ar",
+  };
+
   return (
-    <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
       {/* Hero */}
       <section className="mb-10 rounded-[6px] border p-6 md:p-8" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
         <div className="mb-4 inline-flex items-center gap-2 rounded-[3px] border px-4 py-1.5 text-xs font-semibold"
@@ -136,5 +148,6 @@ export default async function ReviewsIndexPage({
         </>
       )}
     </main>
+    </>
   );
 }

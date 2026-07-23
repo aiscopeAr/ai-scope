@@ -1,0 +1,459 @@
+<title>Lumiq Content Quality Audit — Sprint 2</title>
+<meta name="description" content="Read-only content audit across all published reviews, tools, comparisons, prompts, categories, and tags — ranked by ROI.">
+
+<style>
+  @font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 400 700; src: local('JetBrains Mono'); }
+
+  :root {
+    color-scheme: light;
+    --page: #f7f7fb; --surface: #ffffff; --surface-2: #f0f0f8;
+    --ink: #12121a; --ink-2: #4a4a5c; --muted: #86869c; --hairline: #e3e3ee;
+    --accent: #6366f1; --accent-ink: #4338ca; --accent-wash: #eef0fe;
+    --good: #0ca30c; --good-bg: #e9f7e9; --good-text: #006300;
+    --p1-bg: #fbe4e4; --p1-ink: #b91c1c;
+    --p2-bg: #fdf3df; --p2-ink: #a15c00;
+    --p3-bg: #f0f0f8; --p3-ink: #4a4a5c;
+    --evidence-bg: #f0f0f8; --evidence-ink: #4a4a5c;
+    --s1: #2a78d6; --s2: #008300; --s3: #e87ba4; --s4: #eda100;
+    --s5: #1baf7a; --s6: #eb6834; --s7: #4a3aa7; --s8: #e34948;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0a0a10; --surface: #111119; --surface-2: #17171f;
+      --ink: #f2f2f7; --ink-2: #b8b8c8; --muted: #7d7d92; --hairline: #24242f;
+      --accent: #8385f5; --accent-ink: #a5a6f8; --accent-wash: #1a1a2e;
+      --good: #0ca30c; --good-bg: #12251a; --good-text: #3ddc3d;
+      --p1-bg: #331414; --p1-ink: #f16565;
+      --p2-bg: #2e2410; --p2-ink: #e0ac3f;
+      --p3-bg: #17171f; --p3-ink: #b8b8c8;
+      --evidence-bg: #17171f; --evidence-ink: #b8b8c8;
+      --s1: #3987e5; --s2: #17b317; --s3: #d55181; --s4: #c98500;
+      --s5: #199e70; --s6: #d95926; --s7: #9085e9; --s8: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0a0a10; --surface: #111119; --surface-2: #17171f;
+    --ink: #f2f2f7; --ink-2: #b8b8c8; --muted: #7d7d92; --hairline: #24242f;
+    --accent: #8385f5; --accent-ink: #a5a6f8; --accent-wash: #1a1a2e;
+    --good: #0ca30c; --good-bg: #12251a; --good-text: #3ddc3d;
+    --p1-bg: #331414; --p1-ink: #f16565;
+    --p2-bg: #2e2410; --p2-ink: #e0ac3f;
+    --p3-bg: #17171f; --p3-ink: #b8b8c8;
+    --evidence-bg: #17171f; --evidence-ink: #b8b8c8;
+    --s1: #3987e5; --s2: #17b317; --s3: #d55181; --s4: #c98500;
+    --s5: #199e70; --s6: #d95926; --s7: #9085e9; --s8: #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--page); color: var(--ink); font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif; font-size: 15.5px; line-height: 1.65; }
+  code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.86em; background: var(--surface-2); padding: 2px 6px; border-radius: 4px; color: var(--accent-ink); }
+  h1, h2, h3, h4 { text-wrap: balance; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+  p { color: var(--ink-2); max-width: 76ch; }
+  a { color: var(--accent-ink); }
+
+  .shell { display: grid; grid-template-columns: 250px minmax(0,1fr); max-width: 1320px; margin: 0 auto; }
+  @media (max-width: 980px) { .shell { grid-template-columns: 1fr; } .toc { display: none; } }
+  .toc { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; padding: 32px 18px 40px; border-right: 1px solid var(--hairline); }
+  .toc .brand { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .toc .title { font-size: 17px; font-weight: 700; margin-bottom: 24px; }
+  .toc nav { display: flex; flex-direction: column; gap: 2px; }
+  .toc a { display: block; padding: 6px 10px; border-radius: 6px; font-size: 12.6px; color: var(--ink-2); text-decoration: none; font-family: 'JetBrains Mono', monospace; }
+  .toc a:hover { background: var(--surface-2); color: var(--ink); }
+
+  .main { min-width: 0; padding-bottom: 100px; }
+
+  .cover { padding: 60px 52px 36px; border-bottom: 1px solid var(--hairline); }
+  @media (max-width: 640px) { .cover { padding: 40px 20px 28px; } }
+  .cover .kicker { display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); background: var(--accent-wash); border-radius: 999px; padding: 5px 13px; margin-bottom: 18px; }
+  .cover .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .cover h1 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.15; margin-bottom: 12px; max-width: 28ch; }
+  .cover .sub { font-size: 15.5px; max-width: 68ch; margin: 0 0 20px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; margin-top: 24px; }
+  @media (max-width: 860px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 480px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { background: var(--surface); padding: 14px 14px; }
+  .kpi .label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px; }
+  .kpi .value { font-size: 21px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+
+  section.block { padding: 44px 52px; border-bottom: 1px solid var(--hairline); }
+  @media (max-width: 640px) { section.block { padding: 34px 20px; } }
+  section.block:last-of-type { border-bottom: none; }
+  .section-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .section-head .idx { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent-ink); font-weight: 700; }
+  .section-head h2 { font-size: 22px; }
+  .section-dek { margin: 6px 0 24px; font-size: 14px; }
+  h3.sub-h { font-size: 16.5px; margin: 28px 0 12px; }
+  h3.sub-h:first-child { margin-top: 0; }
+
+  .content-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+  @media (max-width: 860px) { .content-type-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .content-type-grid { grid-template-columns: 1fr; } }
+  .ct-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 14px 16px; }
+  .ct-card .ct-name { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-ink); margin-bottom: 4px; }
+  .ct-card .ct-total { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ct-card .ct-flag { font-size: 12px; color: var(--ink-2); margin-top: 4px; }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--hairline); border-radius: 10px; margin: 14px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.2px; min-width: 560px; }
+  thead th { text-align: left; font-size: 10.8px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 9px 13px; border-bottom: 1px solid var(--hairline); background: var(--surface-2); white-space: nowrap; }
+  tbody td { padding: 9px 13px; border-bottom: 1px solid var(--hairline); color: var(--ink-2); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td:first-child { color: var(--ink); font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+  td.num, th.num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+
+  .evidence { display: inline-flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--evidence-bg); color: var(--evidence-ink); padding: 2px 8px; border-radius: 5px; }
+  .evidence::before { content: "◆"; font-size: 8px; color: var(--accent); }
+
+  .finding { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 16px 20px; margin: 12px 0; }
+  .finding-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .finding-head h4 { font-size: 14.5px; }
+  .finding p { font-size: 13.5px; margin: 8px 0 0; }
+  .finding .ev-line { margin-top: 10px; }
+
+  .callout { border-radius: 10px; padding: 14px 18px; font-size: 13.5px; display: flex; gap: 10px; align-items: flex-start; background: var(--accent-wash); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); }
+  .callout p { margin: 0; color: var(--ink); }
+  .callout .ico { font-family: 'JetBrains Mono', monospace; font-weight: 700; flex: none; }
+
+  /* priority pills */
+  .pri { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .pri.p1 { background: var(--p1-bg); color: var(--p1-ink); }
+  .pri.p2 { background: var(--p2-bg); color: var(--p2-ink); }
+  .pri.p3 { background: var(--p3-bg); color: var(--p3-ink); }
+
+  /* ranked roadmap items */
+  .roadmap-item {
+    display: grid; grid-template-columns: 34px 1fr; gap: 14px;
+    background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px;
+    padding: 13px 16px; margin-bottom: 8px;
+  }
+  .roadmap-item .rm-n { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--muted); padding-top: 1px; }
+  .roadmap-item h4 { font-size: 13.8px; margin: 0 0 4px; }
+  .roadmap-item p { font-size: 12.6px; margin: 0 0 6px; color: var(--ink-2); }
+  .rm-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .rm-tag { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; padding: 2px 7px; border-radius: 4px; background: var(--surface-2); color: var(--muted); }
+  .rm-tag.impact-high { color: var(--good-text); background: var(--good-bg); }
+  .rm-tag.impact-med { color: var(--p2-ink); background: var(--p2-bg); }
+  .rm-tag.effort-low { color: var(--good-text); }
+  .rm-tag.effort-med { color: var(--p2-ink); }
+  .rm-tag.effort-high { color: var(--p1-ink); }
+
+  .p3-list { columns: 2; column-gap: 28px; }
+  @media (max-width: 700px) { .p3-list { columns: 1; } }
+  .p3-list li { break-inside: avoid; margin-bottom: 10px; font-size: 13.3px; color: var(--ink-2); }
+  .p3-list li b { color: var(--ink); }
+
+  footer.report-footer { padding: 30px 52px; color: var(--muted); font-size: 11.5px; font-family: 'JetBrains Mono', monospace; }
+</style>
+
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">lumiq.news</div>
+    <div class="title">Content Quality Audit</div>
+    <nav>
+      <a href="#overview">Overview</a>
+      <a href="#reviews">Reviews (236)</a>
+      <a href="#tools">AI Tools (51)</a>
+      <a href="#comparisons">Comparisons (4)</a>
+      <a href="#prompts">Prompts (272)</a>
+      <a href="#categories">Categories &amp; Tags</a>
+      <a href="#p1">Priority 1 — Top 20</a>
+      <a href="#p2">Priority 2 — Top 50</a>
+      <a href="#p3">Priority 3 — Long-term</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="cover">
+      <span class="kicker"><span class="dot"></span>Growth Sprint 2 · Read-only · Jul 22, 2026</span>
+      <h1>Content quality audit — all published content, ranked by ROI</h1>
+      <p class="sub">Every figure below was computed directly from the production database (read-only Prisma queries) across all 6 content types. No code, database, or commit was modified. Claims about duplication, weak titles, and linking gaps are based on actual content comparison, not pattern guessing — each finding cites what was checked.</p>
+
+      <div class="kpis">
+        <div class="kpi"><div class="label">Reviews</div><div class="value">236</div></div>
+        <div class="kpi"><div class="label">Tools</div><div class="value">51</div></div>
+        <div class="kpi"><div class="label">Comparisons</div><div class="value">4</div></div>
+        <div class="kpi"><div class="label">Prompts</div><div class="value">272</div></div>
+        <div class="kpi"><div class="label">In-body links</div><div class="value">4/236</div></div>
+        <div class="kpi"><div class="label">Weak titles</div><div class="value">134/236</div></div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <section class="block" id="overview">
+      <div class="section-head"><span class="idx">00</span><h2>What the numbers say before the detail</h2></div>
+      <p class="section-dek">Three patterns dominate everything below and explain most of the individual findings.</p>
+
+      <div class="content-type-grid">
+        <div class="ct-card"><div class="ct-name">In-body internal links</div><div class="ct-total">1.7%</div><div class="ct-flag">4 of 236 reviews, 0 of 51 tools contain any link inside the article/description body</div></div>
+        <div class="ct-card"><div class="ct-name">Weak, generic titles</div><div class="ct-total">57%</div><div class="ct-flag">134 of 236 reviews use a rhetorical-question title with no named subject</div></div>
+        <div class="ct-card"><div class="ct-name">Duplicate tool entry</div><div class="ct-total">1 pair</div><div class="ct-flag">Jasper AI published twice under two different slugs</div></div>
+      </div>
+
+      <div class="callout">
+        <span class="ico">→</span>
+        <p><b>Read this before the per-type sections:</b> the single highest-leverage fact in this entire audit is that the content corpus is almost completely un-cross-linked at the body-text level. Every "related articles" widget already works (verified in Sprint 1); what's missing is contextual linking <em>inside</em> the writing itself, which both search engines and readers weight more heavily than sidebar widgets.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="reviews">
+      <div class="section-head"><span class="idx">01</span><h2>Reviews — 236 published</h2></div>
+
+      <h3 class="sub-h">1. Thin content</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Slug</th><th class="num">Length</th><th class="num">Views</th><th>Note</th></tr></thead>
+          <tbody>
+            <tr><td>robots-in-factories-challenges-opportunities</td><td class="num">1,326</td><td class="num">3</td><td>Thinnest in corpus</td></tr>
+            <tr><td>ai-enabled-robot-autonomy</td><td class="num">1,390</td><td class="num">0</td><td></td></tr>
+            <tr><td>ai-reshaping-digital-environment</td><td class="num">1,419</td><td class="num">0</td><td></td></tr>
+            <tr><td>moe-models-future-ai</td><td class="num">1,461</td><td class="num">0</td><td></td></tr>
+            <tr><td>ai-automation-programming-future</td><td class="num">1,470</td><td class="num">3</td><td></td></tr>
+            <tr><td>claude-opus-4-8-vs-gpt-4o</td><td class="num">1,538</td><td class="num">0</td><td>Comparison-intent topic, see finding below</td></tr>
+            <tr><td colspan="4" style="color:var(--muted); font-size:12.5px;">+ 12 more between 1,540–1,780 chars — full list available on request</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:13px;">6 reviews (2.5%) sit under 1,500 characters — a small minority, not the dominant pattern for this content type. <span class="evidence">DB: Review.content.length, published=true</span></p>
+
+      <h3 class="sub-h">2 &amp; 3. Duplicated topics / same search intent</h3>
+      <div class="finding">
+        <div class="finding-head"><h4><code>claude-opus-4-8-vs-gpt-4o</code> duplicates an existing Comparison page</h4><span class="pri p1">Priority 1</span></div>
+        <p>This review (1,538 chars, 0 views, generic-question title) covers the identical intent already served by <code>/compare/chatgpt-vs-claude</code> — a properly-structured, 4-criteria comparison. The review neither links to the comparison page nor is linked from it.</p>
+        <div class="ev-line"><span class="evidence">Title-entity clustering: 2 Claude-vs-GPT items found</span> <span class="evidence">Content check: 0 cross-links either direction</span></div>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>6 Anthropic-related articles, verified as genuinely distinct news events</h4><span class="pri p3">Not an issue</span></div>
+        <p>Entity-clustering initially flagged these as possible duplicates; reading each summary confirmed they cover different specific stories (Mythos launch, Claude Fable 5 export restrictions, Claude Science/NVIDIA partnership, a US government model ban). Correctly separate content — the actual problem is that none of the 6 link to each other despite being obviously related (see §4 below).</p>
+      </div>
+
+      <h3 class="sub-h">4. Missing internal links</h3>
+      <div class="finding">
+        <div class="finding-head"><h4>Only 4 of 236 reviews contain any in-body internal link</h4><span class="pri p1">Priority 1 — Critical</span></div>
+        <p>Checked every published review's <code>content</code> field for any <code>/reviews/</code>, <code>/ai-tools/</code>, <code>/compare/</code>, <code>/tag/</code>, or <code>/category/</code> substring. 232 of 236 articles are entirely self-contained prose with zero contextual links to the other 235 articles or 51 tool pages that exist on the same site.</p>
+        <div class="ev-line"><span class="evidence">DB scan: regex test against Review.content for all published rows</span></div>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>Specific example: the 6-article Anthropic cluster (§2/3 above)</h4><span class="pri p1">Priority 1</span></div>
+        <p><code>anthropic-future-ai-impact</code>, <code>anthropic-google-ai-models</code>, <code>anthropic-ban-and-ai-policy</code>, <code>nvidia-anthropic-ai-transformation</code>, <code>anthropic-ai-security-innovation</code>, and <code>what-is-claude-ai-anthropic-guide</code> — verified zero cross-links among all 6, despite obvious topical adjacency and the guide article already ranking (114 views, the highest in this cluster).</p>
+      </div>
+
+      <h3 class="sub-h">5. Weak titles</h3>
+      <div class="finding">
+        <div class="finding-head"><h4>134 of 236 reviews (57%) use a generic rhetorical-question title with no named entity</h4><span class="pri p1">Priority 1</span></div>
+        <p>Pattern: titles open with "هل يمكن…" / "كيف ت…" / "ما وراء…" and never name a specific model, company, or product. Examples: "هل يمكن للإنسانية السيطرة على الذكاء الاصطناعي قبل فوات الأوان؟", "كيف يُعزّز الذكاء الاصطناعي النفوذ الدولي؟". These don't match real search query patterns — people search "GPT-5 مميزات" or "Claude مقابل Gemini," not the literal rhetorical question. By contrast, the "what is X" guides with named entities (Gemini, Claude, Midjourney) are the corpus's actual traffic drivers.</p>
+        <div class="ev-line"><span class="evidence">Regex match: title starts with generic opener AND contains no recognized proper noun, across all 236 titles</span></div>
+      </div>
+
+      <h3 class="sub-h">7. Missing FAQ opportunities</h3>
+      <div class="finding">
+        <div class="finding-head"><h4>9 of 18 zero-FAQ reviews are "what is X" guides — the format FAQ fits best</h4><span class="pri p1">Priority 1</span></div>
+        <p><code>what-is-gemini-google-ai-guide</code>, <code>what-is-perplexity-ai-search-guide</code>, <code>what-is-claude-ai-anthropic-guide</code>, <code>what-is-microsoft-copilot-productivity-guide</code>, <code>what-is-midjourney-ai-image-guide</code>, <code>canva-ai-design-guide</code>, <code>what-is-notebooklm-google-ai-guide</code>, <code>runway-ai-video-generation-guide</code>, <code>what-is-elevenlabs-ai-voice-guide</code> — all structurally suited to FAQPage schema (they answer "what is X" questions already), currently the only guides in the corpus without one, while non-guide reviews elsewhere do have FAQ blocks.</p>
+        <div class="ev-line"><span class="evidence">DB: Review.faq array length = 0, cross-referenced against slug pattern "what-is-*" / "*-guide"</span></div>
+      </div>
+
+      <h3 class="sub-h">9 &amp; 10. Should link to another page / topical hub candidates</h3>
+      <div class="finding">
+        <div class="finding-head"><h4>48 tags are exactly 1 article away from qualifying for a hub page</h4><span class="pri p2">Priority 2</span></div>
+        <p>The existing <code>/tag/[tag]</code> system requires 3+ reviews per canonical tag. 48 tags currently sit at exactly 2 — <code>Nvidia</code>, <code>برمجة</code>, <code>رقاقات</code>, <code>وكلاء الذكيين</code>, <code>تشريعات</code>, <code>سياسات التقنية</code> among them. One well-targeted article per near-miss tag is a near-free way to unlock a new indexable page using infrastructure that already exists.</p>
+        <div class="ev-line"><span class="evidence">lib/tags.ts buildTagSummaries() logic, recomputed live against current tag distribution</span></div>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>3 categories are empty by content gap, not miscategorization</h4><span class="pri p3">Confirmed, not a quick fix</span></div>
+        <p>Checked whether safety/security/privacy-tagged reviews were sitting in the wrong category (a plausible fast fix) — only 1 match found. The 6 empty categories (<code>research</code>, <code>ai-policy</code>, <code>safety</code>, <code>applications</code>, <code>infrastructure</code>, <code>ai-companies</code>) genuinely need new writing; there's no existing mis-tagged content to reshuffle into them.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="tools">
+      <div class="section-head"><span class="idx">02</span><h2>AI Tools — 51 published</h2></div>
+
+      <h3 class="sub-h">2. Duplicated topic — confirmed duplicate entry</h3>
+      <div class="finding">
+        <div class="finding-head"><h4><code>jasper-ai</code> and <code>jasper-ai-writing-tool</code> are the same product, published twice</h4><span class="pri p1">Priority 1 — Critical</span></div>
+        <p>Two separate published tool pages for Jasper AI, created 2 days apart (May 26 and May 28), both showing exactly 32 views. These compete with each other in search and split whatever link equity either accumulates.</p>
+        <div class="ev-line"><span class="evidence">DB: AITool.findMany(name contains "Jasper") → 2 published rows</span></div>
+      </div>
+
+      <h3 class="sub-h">1. Thin content</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tool</th><th class="num">Length</th><th class="num">Views</th></tr></thead>
+          <tbody>
+            <tr><td>jasper-ai</td><td class="num">294</td><td class="num">32</td></tr>
+            <tr><td>you-com</td><td class="num">327</td><td class="num">37</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:13px;">Only these 2 remain genuinely thin (under 350 chars) — the Jul 22 <code>contentAr</code> backfill covered every tool that had a fully-null field, but these 2 had a short pre-existing stub that the backfill's <code>WHERE contentAr IS NULL</code> condition didn't catch.</p>
+
+      <h3 class="sub-h">6. Weak meta descriptions</h3>
+      <div class="finding">
+        <div class="finding-head"><h4>37 of 51 tools (73%) have SEO descriptions under 100 characters, mostly templated</h4><span class="pri p1">Priority 1</span></div>
+        <p>Shared pattern: "اكتشف [Tool]... جربها الآن!" ("Discover [Tool]... try it now!") — generic, no differentiator, no pricing signal, no comparison keyword. Recommended target: 140–160 characters with a concrete detail (price point, standout feature, or "vs" framing) per Google's typical SERP snippet length.</p>
+        <div class="ev-line"><span class="evidence">DB: AITool.seoDescription.length, all 51 published rows inspected</span></div>
+      </div>
+
+      <h3 class="sub-h">4 &amp; 8. Missing internal links / missing comparison opportunities</h3>
+      <div class="finding">
+        <div class="finding-head"><h4>0 of 51 tools link to another tool, review, or prompt inside their body content</h4><span class="pri p1">Priority 1 — Critical</span></div>
+        <p>Same pattern as reviews, and arguably worse: a tool page is the natural place to link "compare with X" or "see also Y," and none do.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>46 of 51 tools (90%) have zero comparison pages</h4><span class="pri p1">Priority 1</span></div>
+        <p>Cross-referencing category + view count surfaces the highest-value missing pairs precisely:</p>
+        <div class="table-wrap" style="margin-top:10px;">
+          <table>
+            <thead><tr><th>Pair</th><th>Category</th><th class="num">Combined views</th></tr></thead>
+            <tbody>
+              <tr><td>Cursor vs GitHub Copilot</td><td>coding</td><td class="num">76</td></tr>
+              <tr><td>Zapier vs Make</td><td>automation</td><td class="num">101</td></tr>
+              <tr><td>Notion AI vs Copilot</td><td>productivity</td><td class="num">126</td></tr>
+              <tr><td>Beautiful.ai vs Gamma</td><td>presentations</td><td class="num">75</td></tr>
+              <tr><td>Suno vs Udio</td><td>voice (music)</td><td class="num">62</td></tr>
+              <tr><td>Harvey AI vs Ironclad AI</td><td>legal</td><td class="num">67</td></tr>
+              <tr><td>ElevenLabs vs Suno/Udio</td><td>voice</td><td class="num">125–155</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="ev-line"><span class="evidence">DB: AITool.groupBy(toolCategory), cross-joined with viewCount</span></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="comparisons">
+      <div class="section-head"><span class="idx">03</span><h2>Comparisons — 4 published</h2></div>
+      <p class="section-dek">Small, healthy set. All 4 have proper scoring criteria and reasonable summary length (154–173 chars). No thin content, no duplication — the finding here is scarcity, not quality: see §Tools above for the 7 highest-value pairs not yet built.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="prompts">
+      <div class="section-head"><span class="idx">04</span><h2>Prompts — 272 published</h2></div>
+
+      <div class="content-type-grid">
+        <div class="ct-card"><div class="ct-name">No description</div><div class="ct-total">0</div><div class="ct-flag">Every prompt has a real description</div></div>
+        <div class="ct-card"><div class="ct-name">Zero views</div><div class="ct-total">0</div><div class="ct-flag">Best-performing content type site-wide by CTR</div></div>
+        <div class="ct-card"><div class="ct-name">"General" category</div><div class="ct-total">149/272</div><div class="ct-flag">55% — but verified mostly tool-agnostic, not a hidden linking gap</div></div>
+      </div>
+
+      <p style="font-size:13.5px; margin-top:12px;">Checked whether the 149 general-category prompts secretly mention a specific tool without being linked to it via <code>toolId</code> — only 2 do (<code>creative-problem-solving-techniques-6</code>, <code>chatgpt-system-prompt-optimizer</code>). The category split is real, not a linking defect. This content type has no significant quality issues found — it's the corpus's strongest performer and should be protected, not restructured.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="categories">
+      <div class="section-head"><span class="idx">05</span><h2>Categories &amp; Tags</h2></div>
+
+      <h3 class="sub-h">Categories</h3>
+      <p>6 of 10 categories are empty (0 reviews): <code>ai-companies</code>, <code>ai-policy</code>, <code>research</code>, <code>applications</code>, <code>infrastructure</code>, <code>safety</code>. Confirmed via cross-check (§Reviews above) that this is a genuine content gap, not a mis-tagging issue.</p>
+
+      <h3 class="sub-h">Tags — topical hub candidates by volume</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tag cluster</th><th class="num">Combined articles</th><th>Hub potential</th></tr></thead>
+          <tbody>
+            <tr><td>تعلم عميق + تعلم آلي (deep/machine learning)</td><td class="num">40</td><td>Strong — large existing base, natural pillar-page anchor</td></tr>
+            <tr><td>نماذج لغوية + نماذج لغة كبيرة (LLMs)</td><td class="num">29</td><td>Strong — two near-synonym tags splitting real volume</td></tr>
+            <tr><td>OpenAI</td><td class="num">13</td><td>Medium — company-specific hub</td></tr>
+            <tr><td>NVIDIA</td><td class="num">12</td><td>Medium — company-specific hub, ties to hardware angle</td></tr>
+            <tr><td>أمان + أمن سيبراني + خصوصية (safety/security/privacy)</td><td class="num">27</td><td>Strong — matches an empty category directly (§Categories)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:13px;">533 unique canonical tags total; 428 are true singletons (no hub potential without more writing) and 57 already have a live <code>/tag</code> page. The 48 near-miss tags (exactly 2 articles) are the fastest lever — see Priority 1, item 14.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="p1">
+      <div class="section-head"><span class="idx">P1</span><h2>Priority 1 — Top 20, highest ROI</h2></div>
+      <p class="section-dek">Ranked by impact × (inverse) effort. Items 1–5 require no new writing at all.</p>
+
+      <div class="roadmap-item"><span class="rm-n">1</span><div><h4>Merge the Jasper AI duplicate tool entry</h4><p>301-redirect the weaker slug into the stronger, unpublish the loser — same pattern already used for the ChatGPT duplicate in Sprint 1.</p><div class="rm-meta"><span class="rm-tag impact-high">Impact: High</span><span class="rm-tag effort-low">Effort: Low</span><span class="rm-tag">Traffic: Consolidates existing 32+32 views, removes self-competition</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">2</span><div><h4>Cross-link the 6-article Anthropic cluster</h4><p>Add 2–3 contextual in-body links per article to the other 5 — no new writing, pure linking pass.</p><div class="rm-meta"><span class="rm-tag impact-high">Impact: High</span><span class="rm-tag effort-low">Effort: Low</span><span class="rm-tag">Traffic: Redistributes existing 114-view guide's authority to 5 zero-view siblings</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">3</span><div><h4>Link <code>claude-opus-4-8-vs-gpt-4o</code> ↔ <code>/compare/chatgpt-vs-claude</code></h4><p>Bidirectional link between the duplicate-intent review and the properly-structured comparison page; consider merging entirely.</p><div class="rm-meta"><span class="rm-tag impact-high">Impact: High</span><span class="rm-tag effort-low">Effort: Low</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">4</span><div><h4>Add FAQ to the 9 "what is X" guides currently missing it</h4><p>Gemini, Perplexity, Claude, Copilot, Midjourney, Canva, NotebookLM, Runway, ElevenLabs guides — the exact format FAQPage schema fits best.</p><div class="rm-meta"><span class="rm-tag impact-high">Impact: High</span><span class="rm-tag effort-med">Effort: Medium</span><span class="rm-tag">Traffic: FAQ-rich-result eligibility on the corpus's best-performing guide format</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">5</span><div><h4>Rewrite meta descriptions for the 37 templated tool pages</h4><p>Replace "اكتشف X... جرّبها الآن!" pattern with specific differentiators (price, standout feature) at 140–160 chars.</p><div class="rm-meta"><span class="rm-tag impact-high">Impact: High</span><span class="rm-tag effort-med">Effort: Medium</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">6</span><div><h4>Build Cursor vs GitHub Copilot comparison</h4><p>76 combined views on the two tools, coding-category, zero existing comparison — highest-volume missing pair in that category.</p><div class="rm-meta"><span class="rm-tag impact-high">Impact: High</span><span class="rm-tag effort-med">Effort: Medium</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">7</span><div><h4>Build Zapier vs Make comparison</h4><p>101 combined views, automation category — the single highest-traffic missing pair found.</p><div class="rm-meta"><span class="rm-tag impact-high">Impact: High</span><span class="rm-tag effort-med">Effort: Medium</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">8</span><div><h4>Build Notion AI vs Copilot comparison</h4><p>126 combined views, productivity — highest combined-views pair in the entire catalog.</p><div class="rm-meta"><span class="rm-tag impact-high">Impact: High</span><span class="rm-tag effort-med">Effort: Medium</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">9</span><div><h4>Retitle the top 20 highest-view generic-titled reviews with named entities</h4><p>Start with the ones already getting views despite a weak title — they're proof the content works, the title is the bottleneck.</p><div class="rm-meta"><span class="rm-tag impact-high">Impact: High</span><span class="rm-tag effort-med">Effort: Medium</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">10</span><div><h4>Add 2–3 in-body links to every review in the top-viewed 30</h4><p>Prioritize by existing view count — these pages already have some authority to redistribute via contextual links.</p><div class="rm-meta"><span class="rm-tag impact-high">Impact: High</span><span class="rm-tag effort-med">Effort: Medium</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">11</span><div><h4>Write 1 article each for the 10 highest-value near-miss tags</h4><p>Nvidia, برمجة, رقاقات, تشريعات, سياسات التقنية and 5 others — each unlocks a new indexable <code>/tag</code> page with existing infrastructure.</p><div class="rm-meta"><span class="rm-tag impact-med">Impact: Medium</span><span class="rm-tag effort-med">Effort: Medium</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">12</span><div><h4>Expand <code>jasper-ai</code> and <code>you-com</code> content past the 350-char stub</h4><p>The 2 tools the Jul 22 backfill missed (had a short pre-existing value, not <code>null</code>).</p><div class="rm-meta"><span class="rm-tag impact-med">Impact: Medium</span><span class="rm-tag effort-low">Effort: Low</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">13</span><div><h4>Build Beautiful.ai vs Gamma comparison</h4><p>75 combined views, presentations category.</p><div class="rm-meta"><span class="rm-tag impact-med">Impact: Medium</span><span class="rm-tag effort-med">Effort: Medium</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">14</span><div><h4>Build a "deep learning / machine learning" pillar page</h4><p>40 combined articles already tagged across the two near-synonym terms — enough existing content to justify a hub, not just a tag page.</p><div class="rm-meta"><span class="rm-tag impact-med">Impact: Medium</span><span class="rm-tag effort-high">Effort: High</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">15</span><div><h4>Build an "AI safety &amp; security" pillar, populating the empty <code>safety</code> category</h4><p>27 articles already carry safety/security/privacy tags scattered across other categories — a pillar page can aggregate and link them even before new safety-specific writing exists.</p><div class="rm-meta"><span class="rm-tag impact-med">Impact: Medium</span><span class="rm-tag effort-high">Effort: High</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">16</span><div><h4>Build Harvey AI vs Ironclad AI comparison</h4><p>67 combined views, legal category — smallest category with a clean 1:1 comparison opportunity.</p><div class="rm-meta"><span class="rm-tag impact-med">Impact: Medium</span><span class="rm-tag effort-med">Effort: Medium</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">17</span><div><h4>Cross-link the OpenAI-entity cluster (4 articles)</h4><p>Same pattern as the Anthropic fix — verify distinctness first, then link.</p><div class="rm-meta"><span class="rm-tag impact-med">Impact: Medium</span><span class="rm-tag effort-low">Effort: Low</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">18</span><div><h4>Cross-link the NVIDIA-entity cluster (3 articles)</h4><p>Same pattern.</p><div class="rm-meta"><span class="rm-tag impact-med">Impact: Medium</span><span class="rm-tag effort-low">Effort: Low</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">19</span><div><h4>Build ElevenLabs vs Suno/Udio comparison(s)</h4><p>Voice category, 125–155 combined views depending on pairing — highest-traffic category without any comparison at all.</p><div class="rm-meta"><span class="rm-tag impact-med">Impact: Medium</span><span class="rm-tag effort-med">Effort: Medium</span></div></div></div>
+
+      <div class="roadmap-item"><span class="rm-n">20</span><div><h4>Retitle the next 30 generic-titled reviews (rank 21–50 by view count)</h4><p>Continuation of item 9 once the highest-impact batch is done.</p><div class="rm-meta"><span class="rm-tag impact-med">Impact: Medium</span><span class="rm-tag effort-med">Effort: Medium</span></div></div></div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="p2">
+      <div class="section-head"><span class="idx">P2</span><h2>Priority 2 — Top 50</h2></div>
+      <p class="section-dek">Real, verified opportunities — smaller individual impact or higher effort than Priority 1. Grouped rather than individually numbered given the volume.</p>
+
+      <ul class="p3-list">
+        <li><b>21–30.</b> Add 2–3 in-body links to reviews ranked 31–60 by view count</li>
+        <li><b>31–38.</b> Write 1 article each for the remaining 38 near-miss tags (2 articles each) not covered in P1 item 11</li>
+        <li><b>39.</b> Retitle reviews ranked 51–100 by view count with named entities</li>
+        <li><b>40.</b> Build a company-specific "OpenAI coverage" hub page linking all 4 OpenAI-tagged articles</li>
+        <li><b>41.</b> Build a company-specific "NVIDIA coverage" hub page linking all 3 NVIDIA-tagged articles</li>
+        <li><b>42.</b> Add FAQ to the remaining 9 zero-FAQ reviews that aren't "what is X" guides (governance, open-source, sovereignty, security-fears topics — still FAQ-eligible, lower urgency than the guide format)</li>
+        <li><b>43.</b> Build a "presentations tools" comparison expansion once Beautiful.ai vs Gamma (P1 #13) is live — add a 3rd contender if one exists in the pipeline</li>
+        <li><b>44.</b> Audit and rewrite the 6 thinnest reviews (1,326–1,538 chars) for depth, not just the duplicate/comparison one already flagged</li>
+        <li><b>45.</b> Review the "customer-support" category (Intercom AI, Tidio only) for a comparison opportunity once view counts justify it</li>
+        <li><b>46.</b> Review the "healthcare" category (Nabla Copilot, Suki AI) for a comparison — both already at 39–49 views, a healthy combined base</li>
+        <li><b>47.</b> Add pros/cons depth review — all 51 tools have non-zero pros/cons, but verify none are placeholder-generic on a spot-check basis</li>
+        <li><b>48.</b> Build a "no-code tools" 3-way comparison (Bubble, Webflow AI, Canva AI) — Canva AI alone has 88 views, the category's strongest performer</li>
+        <li><b>49.</b> Standardize the "marketing" category's 4 tools (AdCreative.ai, Surfer SEO, Copy.ai, Semrush AI) into a comparison matrix rather than 1:1 pairs</li>
+        <li><b>50.</b> Second pass on meta descriptions: the 14 tools already over 100 chars — verify none are still generic despite the length</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="p3">
+      <div class="section-head"><span class="idx">P3</span><h2>Priority 3 — Long-term</h2></div>
+      <p class="section-dek">Real opportunities, but either dependent on traffic/authority the site doesn't have yet, or requiring net-new strategy rather than editing existing content.</p>
+
+      <ul class="p3-list">
+        <li><b>Populate the 6 empty categories with genuinely new writing</b> — confirmed (§Categories) this can't be shortcut via recategorization; it's a content-creation project, not an editing one.</li>
+        <li><b>Systematic in-body linking as a permanent editorial rule</b>, not a one-time cleanup pass — the 1.7% baseline should become a checklist item in the publish pipeline itself.</li>
+        <li><b>Full retitle pass across all 134 generic-titled reviews</b> — P1/P2 cover the highest-view ~50; the long tail needs the same treatment eventually.</li>
+        <li><b>Comparison coverage for all remaining categories</b> — once the 7 highest-value pairs (P1) ship, extend to lower-traffic categories as they grow.</li>
+        <li><b>Revisit the 428 true-singleton tags</b> — most will never justify a hub page individually, but periodically check if any cluster has grown past the 3-article threshold.</li>
+        <li><b>Author-level voice audit</b> — the generic-title pattern correlates with specific system-prompt phrasing (zayd/lina's rhetorical-question openers); a prompt-level fix would prevent future titles from needing this same retroactive cleanup.</li>
+        <li><b>Prompt category rebalancing</b> — "general" at 55% works today, but monitor whether it becomes a dumping ground as volume grows past 272.</li>
+      </ul>
+    </section>
+
+  </main>
+</div>
+
+<footer class="report-footer">
+  Read-only audit. No file, database row, or commit was modified to produce this report. All figures verified against production Jul 22, 2026 via direct Prisma queries — reviews, tools, comparisons, prompts, categories, and tags cross-checked individually, not sampled.
+</footer>

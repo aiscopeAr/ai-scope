@@ -1,0 +1,1058 @@
+<title>Lumiq.news — Growth Audit</title>
+<meta name="description" content="Technical SEO, content strategy, and monetization audit grounded in the site's own database, GSC data, and codebase.">
+
+<style>
+  @font-face {
+    font-family: 'JetBrains Mono';
+    font-style: normal;
+    font-weight: 400 700;
+    src: local('JetBrains Mono');
+  }
+
+  :root {
+    color-scheme: light;
+    --page:        #f7f7fb;
+    --surface:     #ffffff;
+    --surface-2:   #f0f0f8;
+    --ink:         #12121a;
+    --ink-2:       #4a4a5c;
+    --muted:       #86869c;
+    --hairline:    #e3e3ee;
+    --accent:      #6366f1;
+    --accent-ink:  #4338ca;
+    --accent-wash: #eef0fe;
+    --good:        #0ca30c;
+    --good-text:   #006300;
+    --warning:     #a15c00;
+    --warning-bg:  #fdf3df;
+    --serious:     #b5502e;
+    --serious-bg:  #fbe9e2;
+    --critical:    #b91c1c;
+    --critical-bg: #fbe4e4;
+    --chart-surface: #ffffff;
+    --s1: #2a78d6; --s2: #008300; --s3: #e87ba4; --s4: #eda100;
+    --s5: #1baf7a; --s6: #eb6834; --s7: #4a3aa7; --s8: #e34948;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page:        #0a0a10;
+      --surface:     #111119;
+      --surface-2:   #17171f;
+      --ink:         #f2f2f7;
+      --ink-2:       #b8b8c8;
+      --muted:       #7d7d92;
+      --hairline:    #24242f;
+      --accent:      #8385f5;
+      --accent-ink:  #a5a6f8;
+      --accent-wash: #1a1a2e;
+      --good:        #0ca30c;
+      --good-text:   #3ddc3d;
+      --warning:     #e0ac3f;
+      --warning-bg:  #2e2410;
+      --serious:     #e2896a;
+      --serious-bg:  #2e1c14;
+      --critical:    #f16565;
+      --critical-bg: #331414;
+      --chart-surface: #111119;
+      --s1: #3987e5; --s2: #17b317; --s3: #d55181; --s4: #c98500;
+      --s5: #199e70; --s6: #d95926; --s7: #9085e9; --s8: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:        #0a0a10;
+    --surface:     #111119;
+    --surface-2:   #17171f;
+    --ink:         #f2f2f7;
+    --ink-2:       #b8b8c8;
+    --muted:       #7d7d92;
+    --hairline:    #24242f;
+    --accent:      #8385f5;
+    --accent-ink:  #a5a6f8;
+    --accent-wash: #1a1a2e;
+    --good:        #0ca30c;
+    --good-text:   #3ddc3d;
+    --warning:     #e0ac3f;
+    --warning-bg:  #2e2410;
+    --serious:     #e2896a;
+    --serious-bg:  #2e1c14;
+    --critical:    #f16565;
+    --critical-bg: #331414;
+    --chart-surface: #111119;
+    --s1: #3987e5; --s2: #17b317; --s3: #d55181; --s4: #c98500;
+    --s5: #199e70; --s6: #d95926; --s7: #9085e9; --s8: #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, "SF Mono", Menlo, monospace; }
+
+  a { color: var(--accent-ink); }
+
+  h1, h2, h3, h4 { text-wrap: balance; font-weight: 700; letter-spacing: -0.01em; }
+
+  /* ---------- Shell ---------- */
+  .shell { display: grid; grid-template-columns: 260px minmax(0,1fr); max-width: 1320px; margin: 0 auto; }
+  @media (max-width: 980px) { .shell { grid-template-columns: 1fr; } .toc { display: none; } }
+
+  .toc {
+    position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+    padding: 32px 20px 40px; border-right: 1px solid var(--hairline);
+  }
+  .toc .brand { font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .toc .title { font-size: 18px; font-weight: 700; margin-bottom: 28px; }
+  .toc nav { display: flex; flex-direction: column; gap: 2px; }
+  .toc a {
+    display: block; padding: 7px 10px; border-radius: 6px; font-size: 13.5px;
+    color: var(--ink-2); text-decoration: none; font-family: 'JetBrains Mono', monospace;
+  }
+  .toc a:hover { background: var(--surface-2); color: var(--ink); }
+  .toc .num { color: var(--muted); margin-right: 6px; }
+
+  .main { min-width: 0; padding: 0 0 120px; }
+
+  /* ---------- Cover ---------- */
+  .cover {
+    padding: 72px 56px 48px; border-bottom: 1px solid var(--hairline);
+  }
+  @media (max-width: 640px) { .cover { padding: 48px 24px 32px; } }
+  .cover .kicker {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent-ink); background: var(--accent-wash); border-radius: 999px; padding: 6px 14px; margin-bottom: 20px;
+  }
+  .cover .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .cover h1 { font-size: clamp(32px, 4vw, 46px); line-height: 1.08; margin: 0 0 16px; max-width: 20ch; }
+  .cover .sub { font-size: 17px; color: var(--ink-2); max-width: 62ch; margin: 0 0 32px; }
+  .cover .meta { display: flex; flex-wrap: wrap; gap: 28px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: var(--muted); }
+  .cover .meta b { color: var(--ink); font-weight: 600; }
+
+  /* KPI row */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; margin-top: 36px; }
+  @media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { background: var(--surface); padding: 20px 22px; }
+  .kpi .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .kpi .value { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+  .kpi .value .unit { font-size: 15px; color: var(--muted); font-weight: 500; margin-right: 4px; }
+  .kpi .delta { font-size: 12.5px; margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
+  .kpi .delta.crit { color: var(--critical); }
+  .kpi .delta.warn { color: var(--warning); }
+  .kpi .delta.good { color: var(--good-text); }
+
+  /* ---------- Sections ---------- */
+  section.block { padding: 56px; border-bottom: 1px solid var(--hairline); }
+  @media (max-width: 640px) { section.block { padding: 40px 24px; } }
+  section.block:last-of-type { border-bottom: none; }
+
+  .section-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+  .section-head .idx { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--accent-ink); font-weight: 700; }
+  .section-head h2 { font-size: 26px; margin: 0; }
+  .section-dek { color: var(--ink-2); font-size: 15px; max-width: 68ch; margin: 0 0 28px; }
+
+  h3.sub-h { font-size: 18px; margin: 32px 0 12px; }
+  h3.sub-h:first-child { margin-top: 0; }
+
+  p { max-width: 72ch; color: var(--ink-2); }
+  .prose p { margin: 0 0 14px; }
+
+  /* ---------- Cards / grids ---------- */
+  .card {
+    background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 20px 22px;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 760px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* ---------- Ranked problem list ---------- */
+  .rank-list { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
+  .rank-item {
+    display: grid; grid-template-columns: 44px 1fr auto; gap: 16px; align-items: start;
+    background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 16px 18px;
+  }
+  .rank-item .rank-n { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: var(--muted); }
+  .rank-item .rank-body h4 { margin: 0 0 5px; font-size: 15.5px; }
+  .rank-item .rank-body p { margin: 0; font-size: 13.8px; color: var(--ink-2); }
+  .sev { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 10px; border-radius: 999px; white-space: nowrap; }
+  .sev::before { content: ""; width: 7px; height: 7px; border-radius: 50%; }
+  .sev.crit { background: var(--critical-bg); color: var(--critical); }
+  .sev.crit::before { background: var(--critical); }
+  .sev.serious { background: var(--serious-bg); color: var(--serious); }
+  .sev.serious::before { background: var(--serious); }
+  .sev.warn { background: var(--warning-bg); color: var(--warning); }
+  .sev.warn::before { background: var(--warning); }
+  .sev.good { background: var(--accent-wash); color: var(--accent-ink); }
+  .sev.good::before { background: var(--accent); }
+
+  /* ---------- Tables ---------- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--hairline); border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 480px; }
+  thead th {
+    text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+    padding: 12px 16px; border-bottom: 1px solid var(--hairline); background: var(--surface-2); white-space: nowrap;
+  }
+  tbody td { padding: 11px 16px; border-bottom: 1px solid var(--hairline); color: var(--ink-2); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td:first-child { color: var(--ink); font-weight: 600; }
+  td.num, th.num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; text-align: right; }
+  tr.row-crit td:first-child { border-left: 3px solid var(--critical); }
+  tr.row-warn td:first-child { border-left: 3px solid var(--warning); }
+  tr.row-good td:first-child { border-left: 3px solid var(--good); }
+
+  /* ---------- Charts ---------- */
+  .chart-card { background: var(--chart-surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 20px 22px 16px; }
+  .chart-card .chart-title { font-size: 13.5px; font-weight: 700; margin-bottom: 2px; }
+  .chart-card .chart-sub { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; }
+  canvas { display: block; max-width: 100%; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; font-size: 12.5px; color: var(--ink-2); }
+  .legend .lg-item { display: flex; align-items: center; gap: 6px; }
+  .legend .sw { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+
+  /* ---------- Roadmap timeline ---------- */
+  .roadmap { display: flex; flex-direction: column; }
+  .rm-phase { display: grid; grid-template-columns: 140px 1fr; gap: 20px; padding: 20px 0; border-bottom: 1px solid var(--hairline); }
+  .rm-phase:last-child { border-bottom: none; }
+  .rm-phase .rm-when { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent-ink); font-weight: 700; padding-top: 2px; }
+  .rm-phase h4 { margin: 0 0 8px; font-size: 16px; }
+  .rm-phase ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 14px; }
+  .rm-phase li { margin-bottom: 5px; }
+
+  /* ---------- Template cards (prog. SEO) ---------- */
+  .tmpl-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; overflow: hidden; }
+  .tmpl-card .tmpl-head { padding: 14px 18px; background: var(--surface-2); border-bottom: 1px solid var(--hairline); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .tmpl-card .tmpl-head h4 { margin: 0; font-size: 14.5px; }
+  .tmpl-card .tmpl-count { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent-ink); background: var(--accent-wash); padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .tmpl-card .tmpl-body { padding: 14px 18px; font-size: 13.5px; color: var(--ink-2); }
+  .tmpl-card code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: var(--surface-2); padding: 1px 6px; border-radius: 4px; color: var(--accent-ink); }
+
+  /* ---------- Callouts ---------- */
+  .callout { border-radius: 10px; padding: 16px 18px; font-size: 14px; display: flex; gap: 12px; align-items: flex-start; }
+  .callout p { margin: 0; color: inherit; }
+  .callout.finding { background: var(--accent-wash); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); color: var(--ink); }
+  .callout .ico { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent-ink); }
+
+  /* ---------- Deliverable summary ---------- */
+  .final-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 860px) { .final-grid { grid-template-columns: 1fr; } }
+  .final-card h4 { display: flex; align-items: center; gap: 8px; font-size: 15px; margin: 0 0 12px; }
+  .final-card .letter { font-family: 'JetBrains Mono', monospace; width: 24px; height: 24px; border-radius: 6px; background: var(--accent); color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .final-card ol, .final-card ul { margin: 0; padding-left: 20px; font-size: 13.8px; color: var(--ink-2); }
+  .final-card li { margin-bottom: 7px; }
+
+  footer.report-footer { padding: 40px 56px; color: var(--muted); font-size: 12.5px; font-family: 'JetBrains Mono', monospace; }
+</style>
+
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">lumiq.news</div>
+    <div class="title">Growth Audit</div>
+    <nav>
+      <a href="#exec"><span class="num">00</span>Executive summary</a>
+      <a href="#technical"><span class="num">01</span>Technical SEO</a>
+      <a href="#performance"><span class="num">02</span>Search performance</a>
+      <a href="#content"><span class="num">03</span>Content strategy</a>
+      <a href="#pseo"><span class="num">04</span>Programmatic SEO</a>
+      <a href="#growth"><span class="num">05</span>Media growth</a>
+      <a href="#monetization"><span class="num">06</span>Monetization</a>
+      <a href="#authority"><span class="num">07</span>Authority building</a>
+      <a href="#competitors"><span class="num">08</span>Competitors</a>
+      <a href="#implementation"><span class="num">09</span>Implementation</a>
+      <a href="#deliverable"><span class="num">10</span>Final deliverable</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+
+    <div class="cover">
+      <span class="kicker"><span class="dot"></span>Growth Audit · Confidential</span>
+      <h1>Lumiq.news is a 559-page site getting 8 clicks a month. Here's the mechanism, ranked by leverage.</h1>
+      <p class="sub">This audit was written from direct access to the production database, the live Search Console export, and the site's own codebase — not a crawl. Every finding below is traceable to a query or a file. Where a fix was already shipped this week, it's marked and dated; where it isn't, it's on the roadmap.</p>
+      <div class="meta">
+        <span>Prepared <b>Jul 22, 2026</b></span>
+        <span>Window analyzed <b>May 26 – Jul 18, 2026</b></span>
+        <span>Method <b>DB + GSC + codebase</b></span>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi">
+          <div class="label">Published pages</div>
+          <div class="value">559<span class="unit">+</span></div>
+          <div class="delta">236 articles · 51 tools · 272 prompts</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Clicks, 8 weeks</div>
+          <div class="value">8</div>
+          <div class="delta crit">1 click / 6.5 pages published</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Avg. position</div>
+          <div class="value">~18</div>
+          <div class="delta warn">page 2 — below the fold on desktop</div>
+        </div>
+        <div class="kpi">
+          <div class="label">CTR</div>
+          <div class="value">1.07<span class="unit">%</span></div>
+          <div class="delta">vs 3–5% typical at position 10–20</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <section class="block" id="exec">
+      <div class="section-head"><span class="idx">00</span><h2>Executive summary</h2></div>
+      <p class="section-dek">The headline number — 559 pages, 750 impressions, 8 clicks — looks like a content-quality problem. It mostly isn't. It's a <b style="color:var(--ink)">distribution and crawl-graph problem</b>: for eight weeks, most of the site's own content had no path for Google or a reader to reach it, and the pages that were reachable were frequently mis-labeled, mis-categorized, or duplicated. Several of these were structural bugs, not strategy gaps — fixed this week, verified against production, not yet reflected in the GSC numbers above.</p>
+
+      <div class="rank-list">
+        <div class="rank-item">
+          <span class="rank-n">1</span>
+          <div class="rank-body"><h4>Internal link graph was broken, not thin</h4><p>203 of 227 reviews had zero inbound link path from any page on the site — <code>/reviews</code> and <code>/category/[slug]</code> capped at 24 items with no pagination link at all; <code>/prompts</code> had pagination, but as a JS <code>onClick</code> handler Googlebot can't follow. Fixed Jul 21 — real <code>&lt;a href&gt;</code> pagination now ships on all three.</p></div>
+          <span class="sev crit">Fixed, unverified in GSC</span>
+        </div>
+        <div class="rank-item">
+          <span class="rank-n">2</span>
+          <div class="rank-body"><h4>92% of articles sat in one mislabeled category</h4><p>The auto-publish cron defaulted every article to the DB's first category row regardless of topic. 210 of 227 reviews landed in "companies," and 7 of 10 categories sat empty — flattening "related articles" into effectively random picks and leaving whole topic hubs with no content. Fixed Jul 21; backfilled 152 existing reviews.</p></div>
+          <span class="sev crit">Fixed Jul 21</span>
+        </div>
+        <div class="rank-item">
+          <span class="rank-n">3</span>
+          <div class="rank-body"><h4>8 of 25 RSS sources never produced a single article</h4><p>A too-strict content-length filter and a parser bug that silently dropped every Atom-format feed's URL (Product Hunt, Simon Willison) meant a third of the news pipeline was dead — and looked healthy, because the sync timestamp updates whether or not anything was written. Fixed Jul 22; verified against the real production DB.</p></div>
+          <span class="sev crit">Fixed Jul 22</span>
+        </div>
+        <div class="rank-item">
+          <span class="rank-n">4</span>
+          <div class="rank-body"><h4>Cache directives were no-ops for six months</h4><p><code>export const revalidate = N</code> only caches <code>fetch()</code> calls — this codebase reads exclusively through Prisma. Every listing page was hitting Postgres on every request regardless of the config. Fixed Jul 21 with <code>unstable_cache</code> and tag-based invalidation on publish.</p></div>
+          <span class="sev good">Fixed Jul 21</span>
+        </div>
+        <div class="rank-item">
+          <span class="rank-n">5</span>
+          <div class="rank-body"><h4>Domain has near-zero backlink profile and zero AI-crawler visibility</h4><p><code>robots.txt</code> blocks GPTBot, CCBot, and Claude-Web outright. For a site whose subject <em>is</em> AI, that forecloses citation by the assistants most likely to reference an AI-news source. No linkable assets exist yet to earn backlinks even if crawled.</p></div>
+          <span class="sev serious">Open — see §7</span>
+        </div>
+      </div>
+
+      <div class="callout finding" style="margin-top:24px;">
+        <span class="ico">→</span>
+        <p><b>What this means for the roadmap:</b> the structural fixes are largely done. The next 90 days are about giving Google and readers a reason to <em>return</em> — publish-volume discipline, topical depth in the categories that are now populated correctly, and the first linkable assets. Section 10 lays out the sequence.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="technical">
+      <div class="section-head"><span class="idx">01</span><h2>Technical SEO audit</h2></div>
+      <p class="section-dek">Architecture, crawlability, and rendering — checked against the live site and the Next.js 16 codebase, not assumed from a generic checklist.</p>
+
+      <h3 class="sub-h">Site architecture &amp; URL structure</h3>
+      <div class="prose">
+        <p>Clean, flat, English-slug URLs under Arabic content: <code>/reviews/[slug]</code>, <code>/ai-tools/[slug]</code>, <code>/ai-tools/for/[usecase]</code>, <code>/compare/[slug]</code>, <code>/prompts/[slug]</code>, <code>/tag/[tag]</code>, <code>/category/[slug]</code>. This is a genuinely good taxonomy — it just wasn't fully wired to itself until this week.</p>
+      </div>
+
+      <div class="table-wrap" style="margin-top:16px;">
+        <table>
+          <thead><tr><th>Check</th><th>Status</th><th>Detail</th></tr></thead>
+          <tbody>
+            <tr class="row-good"><td>sitemap.xml</td><td>Healthy</td><td>658 URLs live, resubmitted and re-read by GSC same-day. Covers reviews, tools, prompts, comparisons, categories, and the 54 canonical tag pages added Jul 21.</td></tr>
+            <tr class="row-warn"><td>robots.txt</td><td>Deliberate but costly</td><td>Blocks GPTBot / CCBot / anthropic-ai / Claude-Web; allows OAI-SearchBot, Googlebot, Bingbot. Defensible against training scraping, but forecloses citation in AI-assistant answers — see §7.</td></tr>
+            <tr class="row-good"><td>Canonical tags</td><td>Correct</td><td>Self-referencing per paginated page (<code>?page=2</code> gets its own canonical, not a blanket pointer to page 1) — fixed alongside the pagination work.</td></tr>
+            <tr class="row-crit"><td>Duplicate content</td><td>1 confirmed pair</td><td><code>how-to-use-chatgpt-for-beginners</code> and <code>what-is-chatgpt-beginners-guide</code> — same topic, published a day apart by the auto-tutorial pipeline. GSC flagged the weaker one "Crawled – not indexed." 301-redirected and unpublished Jul 22.</td></tr>
+            <tr class="row-warn"><td>Structured data</td><td>Now complete</td><td><code>Article</code>/<code>SoftwareApplication</code>/<code>FAQPage</code> on reviews and tools; <code>CollectionPage</code> added Jul 22 to <code>/tag</code>, <code>/category</code>, <code>/compare</code>, <code>/prompts</code> — previously the only four page types with none.</td></tr>
+            <tr class="row-good"><td>Mobile / responsive</td><td>Healthy</td><td>Tailwind-based, RTL-native (<code>dir="rtl"</code> site-wide), no horizontal-scroll defects found.</td></tr>
+            <tr class="row-warn"><td>Core Web Vitals</td><td>One real LCP defect, fixed</td><td>Every article's hero image — the LCP element on all 236 reviews — was lazy-loaded by default. <code>priority</code> added Jul 22. Response times otherwise sub-second (measured, not estimated).</td></tr>
+            <tr class="row-crit"><td>Category taxonomy</td><td>12 tools mis-tagged</td><td>ChatGPT, Claude, Gemini, Midjourney, DALL-E 3 and 7 others sat in the generic "other" bucket — breaking <code>/ai-tools/for/[usecase]</code> discovery and the "similar tools" recommender. Recategorized Jul 22; "search" added as a missing official category.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-h">Internal linking — before / after this week</h3>
+      <div class="chart-card">
+        <div class="chart-title">Reviews reachable via an on-site link path</div>
+        <div class="chart-sub">Out of 227 published reviews, measured directly against the listing-page queries</div>
+        <canvas id="chartLinking" width="820" height="220" role="img" aria-label="Before the fix, 24 of 227 reviews were reachable via internal links. After, all 227 are reachable through paginated listing pages."></canvas>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="performance">
+      <div class="section-head"><span class="idx">02</span><h2>Search performance analysis</h2></div>
+      <p class="section-dek">Why does a 559-page site have 750 impressions and 8 clicks? Ranked by how much of the gap each bottleneck actually explains.</p>
+
+      <div class="rank-list">
+        <div class="rank-item">
+          <span class="rank-n">1</span>
+          <div class="rank-body"><h4>Indexing bottleneck — largest single factor</h4><p>GSC showed 140 "not indexed" pages against only 53 indexed as of late June; the site's sitemap was stuck at 142 URLs (vs. the 658 that exist) until it was manually resubmitted Jul 2. A site can't rank pages Google hasn't chosen to index, and it can't choose to index pages it can't reach via crawl <em>or</em> sitemap. Both were broken simultaneously.</p></div>
+          <span class="sev crit">Impact: severe</span>
+        </div>
+        <div class="rank-item">
+          <span class="rank-n">2</span>
+          <div class="rank-body"><h4>Zero topical authority — a brand-new domain</h4><p>Every metric here reflects a domain with effectively no trust signal yet: no backlinks, no brand search volume beyond the literal string "lumiq," average position ~18–26 even on pages with real content. This is expected for a domain at this age and is the single hardest bottleneck to fix quickly — it responds to time + authority-building (§7), not code.</p></div>
+          <span class="sev crit">Impact: severe</span>
+        </div>
+        <div class="rank-item">
+          <span class="rank-n">3</span>
+          <div class="rank-body"><h4>Keyword targeting was accidentally right, execution was weak</h4><p>The queries that <em>do</em> land clicks — "gemini in arabic," "gemini بالعربي" — show real demand for AI-tool content in Arabic. But <code>gemini</code> and <code>dalle-3</code>'s own pages had <code>seoTitle: null</code>, falling back to a generic template that didn't target those exact phrases. Fixed Jul 21 for 10 tools total.</p></div>
+          <span class="sev serious">Impact: moderate</span>
+        </div>
+        <div class="rank-item">
+          <span class="rank-n">4</span>
+          <div class="rank-body"><h4>AI-generated content quality — real, but narrower than it looks</h4><p>Most published content is coherent, structured, and topically correct (verified by reading actual generated articles end-to-end this week). The measurable quality problem is narrower: <b>duplicate topics</b> from an editorial-calendar-blind generator (the ChatGPT pair), and <b>10 flagship tool pages</b> (ChatGPT, Claude, Gemini among them) that never got past a 400-character auto-description. Both are fixable without touching the generation pipeline's core quality.</p></div>
+          <span class="sev warn">Impact: moderate</span>
+        </div>
+        <div class="rank-item">
+          <span class="rank-n">5</span>
+          <div class="rank-body"><h4>Backlinks — effectively zero, compounding #2</h4><p>No linkable asset exists yet (no original data, no free tool, no citable ranking). This is a downstream symptom of a young site with no distribution strategy beyond organic search, not a separate technical defect.</p></div>
+          <span class="sev serious">Impact: moderate, compounds #2</span>
+        </div>
+        <div class="rank-item">
+          <span class="rank-n">6</span>
+          <div class="rank-body"><h4>Poor internal linking — largely resolved this week</h4><p>Covered in §1. Listed here for completeness in the ranking; no longer an open bottleneck as of Jul 21–22, pending re-crawl.</p></div>
+          <span class="sev good">Resolved</span>
+        </div>
+        <div class="rank-item">
+          <span class="rank-n">7</span>
+          <div class="rank-body"><h4>Search-intent mismatch — minor, isolated</h4><p>No systemic mismatch found. The one clear case is the ChatGPT duplicate (§1) — two different intents ("what is X" vs. "how to use X") accidentally executed as two competing pages instead of one comprehensive one.</p></div>
+          <span class="sev good">Impact: minor</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="content">
+      <div class="section-head"><span class="idx">03</span><h2>Content strategy analysis</h2></div>
+      <p class="section-dek">What's actually in the database today, broken down by type and category — and what the mix should become.</p>
+
+      <div class="grid-2">
+        <div class="chart-card">
+          <div class="chart-title">Reviews by category (n=237)</div>
+          <div class="chart-sub">After the Jul 21 recategorization fix</div>
+          <canvas id="chartCategories" width="420" height="260" role="img" aria-label="ai-models 135, companies 69, ai-tools 22, tutorials 11, six categories at zero"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Publish volume, last 3 months</div>
+          <div class="chart-sub">Reviews published per calendar month</div>
+          <canvas id="chartVolume" width="420" height="260" role="img" aria-label="May 57 articles, June 110 articles, July 69 articles so far"></canvas>
+        </div>
+      </div>
+
+      <h3 class="sub-h">Increase</h3>
+      <div class="prose">
+        <p><b>Tool reviews with real depth</b> — 10 of the highest-intent pages on the site (ChatGPT, Claude, Gemini among them) just went from a 400-character stub to a full review; this pattern should be the default for every new tool, not a backfill exception. <b>Evergreen "what is / how to" guides</b> — these already capture the only clicks the site has ("gemini in arabic"); double down deliberately instead of accidentally. <b>Prompts</b> — already the single best-performing page type by CTR (7.3% vs. site average ~1%) with the least competition; under-resourced relative to its return.</p>
+      </div>
+      <h3 class="sub-h">Decrease</h3>
+      <div class="prose">
+        <p><b>Undifferentiated daily news clustering</b> — 135 articles now correctly live under "ai-models," but many are generic "Model X released" rewrites competing directly with TechCrunch and VentureBeat's speed advantage, a race this site cannot and should not try to win. Redirect that generation capacity toward analysis and evergreen assets instead of chasing same-day news.</p>
+      </div>
+      <h3 class="sub-h">Build next</h3>
+      <div class="prose">
+        <p>The empty categories are the map: <b>research &amp; papers</b>, <b>safety &amp; ethics</b>, <b>policy &amp; regulation</b>, <b>infrastructure</b> — zero articles each, despite being real, searched topics with far less competition than "ai-models." A single well-linked pillar page per empty category, then 8–10 supporting articles, would give each one topical density it currently has none of.</p>
+      </div>
+
+      <h3 class="sub-h">6-month content roadmap</h3>
+      <div class="roadmap">
+        <div class="rm-phase">
+          <div class="rm-when">Month 1–2</div>
+          <div>
+            <h4>Stop the bleeding, fix the highest-leverage pages</h4>
+            <ul>
+              <li>Full content pass on all 51 tool pages — no more null <code>contentAr</code> anywhere.</li>
+              <li>One pillar page per empty category (research, safety, policy, infrastructure) — 1,500+ words, internally linked from every related tool/review.</li>
+              <li>Audit the full 236-article corpus for duplicate topics beyond the ChatGPT pair already found.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="rm-phase">
+          <div class="rm-when">Month 3–4</div>
+          <div>
+            <h4>Build the evergreen backbone</h4>
+            <ul>
+              <li>8–10 supporting articles per newly-seeded category, targeting long-tail "how to" and "what is" queries specifically.</li>
+              <li>Expand comparisons from 4 to 20+ — comparison pages carry the highest commercial intent and the clearest monetization path (affiliate).</li>
+              <li>Launch a weekly "state of AI in Arabic" roundup — a recurring, linkable, subscribable format.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="rm-phase">
+          <div class="rm-when">Month 5–6</div>
+          <div>
+            <h4>Scale programmatic + earn first links</h4>
+            <ul>
+              <li>Ship the use-case × industry matrix from §4 — the first real programmatic SEO surface.</li>
+              <li>Publish the first original data asset (see §7) as deliberate link bait.</li>
+              <li>Re-audit GSC: expect indexing to have caught up: target 300+ indexed pages, 500+ clicks/month.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="pseo">
+      <div class="section-head"><span class="idx">04</span><h2>Programmatic SEO strategy</h2></div>
+      <p class="section-dek">559 → 10,000+ pages is a real ceiling for this niche, but only if each template has a genuine, non-interchangeable reason to exist. The schema already supports most of this — it's mostly unused capacity, not new infrastructure.</p>
+
+      <div class="grid-3">
+        <div class="tmpl-card">
+          <div class="tmpl-head"><h4>AI tool × use case</h4><span class="tmpl-count">~900 pages</span></div>
+          <div class="tmpl-body">51 tools × ~18 use cases already defined in <code>lib/tool-categories.ts</code>. Template: "Best AI tools for {use case}" listing pages — <code>/ai-tools/for/[usecase]</code> already exists; the ceiling is tool count, not code.</div>
+        </div>
+        <div class="tmpl-card">
+          <div class="tmpl-head"><h4>Tool alternatives</h4><span class="tmpl-count">~250 pages</span></div>
+          <div class="tmpl-body">"{Tool} alternatives" and "{Tool A} vs {Tool B}" — high commercial intent, direct affiliate-monetization fit. Comparison schema already exists (<code>Comparison</code> model); only 4 of a realistic ~250 pairs are built.</div>
+        </div>
+        <div class="tmpl-card">
+          <div class="tmpl-head"><h4>Industry × AI solution</h4><span class="tmpl-count">~150 pages</span></div>
+          <div class="tmpl-body">"AI tools for {industry}" (healthcare, legal, finance — categories already exist in the schema). Needs one curated intro paragraph per industry plus a filtered tool grid — mostly templating, minimal new generation.</div>
+        </div>
+        <div class="tmpl-card">
+          <div class="tmpl-head"><h4>Prompt × tool</h4><span class="tmpl-count">~1,500 pages</span></div>
+          <div class="tmpl-body">The prompt library already links prompts to tools (<code>toolId</code> FK). Systematic "Best {tool} prompts for {task}" pages are close to free given the existing 272-prompt base and its 7.3% CTR track record.</div>
+        </div>
+        <div class="tmpl-card">
+          <div class="tmpl-head"><h4>Tag hubs</h4><span class="tmpl-count">54 pages, live</span></div>
+          <div class="tmpl-body">Shipped Jul 21 — 533 raw tags deduplicated (Arabic definite-article variants merged) down to 54 pages with real depth (3+ articles each). The pattern to replicate: never publish a hub thinner than 3 real items.</div>
+        </div>
+        <div class="tmpl-card">
+          <div class="tmpl-head"><h4>Tutorials (evergreen)</h4><span class="tmpl-count">~200 pages</span></div>
+          <div class="tmpl-body">Already has a dedicated author persona ("team") and category. Currently only 11 published against a template that should be the site's highest-volume evergreen category, not its smallest.</div>
+        </div>
+      </div>
+
+      <div class="callout finding" style="margin-top:24px;">
+        <span class="ico">⚠</span>
+        <p><b>The anti-spam constraint that makes or breaks this:</b> every one of today's real problems — the duplicate ChatGPT pair, the 12 mis-tagged tools, the empty categories — came from generating pages <em>without checking what already exists</em>. Programmatic scale without a pre-publish duplicate/coverage check is exactly how a 10,000-page plan turns into a doorway-page penalty. The one piece of infrastructure this needs before scaling: a topic-coverage check against existing slugs/tags at generation time, not after.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="growth">
+      <div class="section-head"><span class="idx">05</span><h2>AI media growth strategy</h2></div>
+      <p class="section-dek">What comparable AI-media sites have that Lumiq doesn't yet — ranked by how directly each one converts to organic distribution.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Gap</th><th>Why it matters here</th><th>Priority</th></tr></thead>
+          <tbody>
+            <tr class="row-crit"><td>Email newsletter</td><td>The site already has an inline signup component (<code>NewsletterInline</code>) but no evidence of a scheduled send cadence. This is the cheapest owned-distribution channel available and currently unused.</td><td class="num">Highest</td></tr>
+            <tr class="row-warn"><td>Social distribution loop</td><td>A Telegram link exists on-site; social-post drafting exists in the pipeline (<code>SocialPost</code> model) but with zero configured accounts found in the data. The infrastructure is built and idle.</td><td class="num">High</td></tr>
+            <tr class="row-warn"><td>Community / comments</td><td>No user-generated content anywhere on the site. Competitor tool directories (Futurepedia, There's An AI For That) use user ratings/reviews as a second content layer that compounds without editorial cost.</td><td class="num">Medium</td></tr>
+            <tr class="row-good"><td>Tool submission flow</td><td>Not present. A public "submit your AI tool" form is standard in this niche and a low-cost way to both crowdsource content and build outbound relationships with tool vendors (§6 affiliate angle).</td><td class="num">Medium</td></tr>
+            <tr class="row-good"><td>Rich media (video/audio)</td><td>Zero video or audio content found. Out of scope for the next 90 days, but worth flagging as a gap vs. The Rundown AI's newsletter-first, multi-format approach.</td><td class="num">Low, later</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="monetization">
+      <div class="section-head"><span class="idx">06</span><h2>Monetization strategy</h2></div>
+      <p class="section-dek">Realistic, staged to actual traffic milestones — not the traffic the site wishes it had.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Monthly visitors</th><th>Primary revenue</th><th>Realistic monthly revenue</th><th>What has to be true first</th></tr></thead>
+          <tbody>
+            <tr><td>10,000</td><td>AdSense (display)</td><td class="num">$30–90</td><td>Indexing backlog cleared; MENA AI-content RPMs are low but non-zero.</td></tr>
+            <tr><td>50,000</td><td>AdSense + first affiliate</td><td class="num">$300–800</td><td>20+ comparison pages live with affiliate links (tool referral programs); AdSense approval stable.</td></tr>
+            <tr><td>100,000</td><td>Affiliate-led + sponsored placements</td><td class="num">$1,500–4,000</td><td>Newsletter list large enough (5–10K subs) to sell a sponsored slot; direct tool-vendor relationships from the submission flow in §5.</td></tr>
+            <tr><td>500,000</td><td>Direct ad sales + premium tier</td><td class="num">$8,000–20,000</td><td>Recognized authority in Arabic AI media; a paid tier (prompt packs, early access, ad-free) becomes viable once the free tier has real retention.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:14px; font-size:13.5px; color:var(--muted);">Ranges assume MENA-region CPMs (materially lower than US/EU) and are deliberately conservative given the current 8-click baseline — treat the low end as the planning number.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="authority">
+      <div class="section-head"><span class="idx">07</span><h2>Authority-building strategy</h2></div>
+      <p class="section-dek">Zero backlinks today. These are the assets worth building specifically because this site can build them and a generic news rewrite can't.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4 style="margin-top:0;">Linkable assets to build</h4>
+          <p style="font-size:14px;">An "AI tools in Arabic — support tracker" — the site already flags <code>arabicSupport</code> per tool in its own schema; publishing this as a standalone, regularly-updated dataset is a citable resource nothing else in the niche has in Arabic. A "State of Arabic AI content" report, published quarterly, using the site's own GSC/traffic data as the hook.</p>
+        </div>
+        <div class="card">
+          <h4 style="margin-top:0;">Reconsider the AI-crawler block</h4>
+          <p style="font-size:14px;"><code>robots.txt</code> currently blocks GPTBot, CCBot, and Claude-Web. For most publishers that's the right call against training scraping — but it also means ChatGPT browsing and Claude's web search can never cite Lumiq as a source. Worth a deliberate choice, not a default: keep blocking training crawlers, consider allowing live-browsing agents specifically.</p>
+        </div>
+      </div>
+
+      <h3 class="sub-h">Digital PR &amp; partnerships</h3>
+      <div class="prose">
+        <p>MENA tech publication guest posts and co-citation swaps; Arabic-language developer communities (Discord/Telegram AI groups) as the first non-search distribution channel while search authority is still building; AI tool vendors directly — the site already reviews their tools, so a "verified review" partnership costs nothing to propose and gives vendors a reason to link back.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="competitors">
+      <div class="section-head"><span class="idx">08</span><h2>Competitor analysis</h2></div>
+      <p class="section-dek">What each does better, and the specific gap Lumiq can exploit rather than compete on volume.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Competitor</th><th>What they do better</th><th>Lumiq's opening</th></tr></thead>
+          <tbody>
+            <tr><td>The Rundown AI</td><td>Daily newsletter as the primary product, not an afterthought; huge English-language subscriber base.</td><td>No credible Arabic-language equivalent exists yet — the newsletter infrastructure is already half-built here (§5).</td></tr>
+            <tr><td>Futurepedia</td><td>User-submitted tool directory at scale, community ratings compound content for free.</td><td>Same directory mechanic, first-mover in Arabic, plus the existing prompt-library integration Futurepedia doesn't have.</td></tr>
+            <tr><td>There's An AI For That</td><td>Extremely fast tool cataloguing, minimal editorial overhead per tool.</td><td>Depth over speed — full <code>contentAr</code> reviews (now standard practice here) beat a one-line listing for anyone actually evaluating a tool.</td></tr>
+            <tr><td>TechCrunch AI / VentureBeat</td><td>Breaking-news speed and existing domain authority no new site can out-race.</td><td>Don't compete on speed — the "decrease" call in §3. Compete on Arabic-native analysis, not translation.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="implementation">
+      <div class="section-head"><span class="idx">09</span><h2>Technical implementation plan</h2></div>
+      <p class="section-dek">Stack-specific — this is Next.js 16 on Vercel, Prisma/Postgres, OpenAI + Replicate for generation. Recommendations build on what's there, not a rip-and-replace.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4 style="margin-top:0;">Already correct, keep as-is</h4>
+          <ul style="font-size:14px; color:var(--ink-2); padding-left:18px;">
+            <li><code>unstable_cache</code> + tag-based invalidation, shipped Jul 21 — the right primitive for a Prisma-backed app on this Next.js version.</li>
+            <li>ISR via <code>generateStaticParams</code> on article pages — genuinely fast, verified directly (sub-second response times measured).</li>
+            <li>The review/tool/prompt schema is already relational enough to support the §4 programmatic templates without new tables.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4 style="margin-top:0;">Add next</h4>
+          <ul style="font-size:14px; color:var(--ink-2); padding-left:18px;">
+            <li>A <code>SourceRun</code>-style outcome log (shipped Jul 22 for RSS ingestion) extended to every cron stage — cluster, process, publish — so a silently-broken stage is visible within a day, not a month.</li>
+            <li>A pre-publish duplicate-topic check (embedding similarity against existing slugs) before the programmatic scale-up in §4.</li>
+            <li>A scheduled newsletter-send job — the template/component exists; the cron doesn't yet.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="deliverable">
+      <div class="section-head"><span class="idx">10</span><h2>Final deliverable</h2></div>
+      <p class="section-dek">The synthesis — what's actually limiting growth, what to do this week, and what success looks like if the plan is executed.</p>
+
+      <div class="final-grid">
+        <div class="final-card card">
+          <h4><span class="letter">A</span>Top 10 problems limiting growth</h4>
+          <ol>
+            <li>Sitemap was stuck at 142 of 658 real URLs until Jul 2 — self-inflicted indexing ceiling.</li>
+            <li>203/227 reviews had no internal link path — fixed Jul 21, re-crawl pending.</li>
+            <li>92% of articles mis-categorized into one bucket — fixed Jul 21.</li>
+            <li>8/25 RSS sources silently dead — fixed Jul 22.</li>
+            <li>Cache config was a no-op for six months — fixed Jul 21.</li>
+            <li>10 flagship tool pages (ChatGPT, Claude, Gemini) had near-empty content — fixed Jul 22.</li>
+            <li>Zero backlinks, zero linkable assets exist yet.</li>
+            <li>AI crawlers blocked outright — forecloses assistant-citation distribution.</li>
+            <li>Newsletter and social infrastructure built but unused.</li>
+            <li>No duplicate-detection before publish — already caused one confirmed content collision.</li>
+          </ol>
+        </div>
+        <div class="final-card card">
+          <h4><span class="letter">B</span>Top 10 actions, immediate</h4>
+          <ol>
+            <li>Request re-indexing on the top 20 highest-impression pages in GSC directly.</li>
+            <li>Confirm the Jul 21–22 fixes are live in production (deploy check, not assumed).</li>
+            <li>Audit the full 236-article corpus for duplicate topics beyond the ChatGPT pair.</li>
+            <li>Write one pillar page for each of the 4 empty categories this month.</li>
+            <li>Turn on the newsletter send cadence — infrastructure already exists.</li>
+            <li>Configure at least one <code>SocialAccount</code> and verify the auto-draft pipeline fires.</li>
+            <li>Build 5 new comparison pages targeting the tools already getting impressions (Gemini, Zapier).</li>
+            <li>Decide the GPTBot/CCBot policy deliberately — don't leave it as an unexamined default.</li>
+            <li>Add the pre-publish duplicate check before generating any more programmatic pages.</li>
+            <li>Re-pull GSC in 2 weeks specifically to check whether the indexing fixes moved the needle.</li>
+          </ol>
+        </div>
+      </div>
+
+      <h3 class="sub-h">C · 90-day execution plan</h3>
+      <div class="roadmap">
+        <div class="rm-phase">
+          <div class="rm-when">Days 1–30</div>
+          <div><ul>
+            <li>Verify all Jul 21–22 fixes in production; re-submit sitemap; request indexing on top pages.</li>
+            <li>Ship 4 category pillar pages; backfill remaining thin tool pages beyond the first 10.</li>
+            <li>Launch newsletter send #1; configure one social channel end-to-end.</li>
+          </ul></div>
+        </div>
+        <div class="rm-phase">
+          <div class="rm-when">Days 31–60</div>
+          <div><ul>
+            <li>Ship 10 new comparison pages; add the tool-submission form.</li>
+            <li>Build the pre-publish duplicate-check job.</li>
+            <li>Re-pull GSC; expect indexed-page count to have moved meaningfully off 53.</li>
+          </ul></div>
+        </div>
+        <div class="rm-phase">
+          <div class="rm-when">Days 61–90</div>
+          <div><ul>
+            <li>Launch the first programmatic template (tool × use-case) at small scale (~100 pages), quality-gated.</li>
+            <li>Publish the first linkable data asset (Arabic AI-tool support tracker).</li>
+            <li>Formal 90-day retro against the Section 2 bottleneck ranking — re-rank what's still open.</li>
+          </ul></div>
+        </div>
+      </div>
+
+      <h3 class="sub-h">E · Expected traffic scenario if executed</h3>
+      <div class="chart-card">
+        <div class="chart-title">Projected organic clicks/month — conservative case</div>
+        <div class="chart-sub">Indexed baseline recovers first (months 1–2), then compounds with content + authority work</div>
+        <canvas id="chartProjection" width="820" height="260" role="img" aria-label="From 8 clicks per month today, projected to roughly 150 by month 3, 800 by month 6, and 3000 by month 9 under sustained execution"></canvas>
+      </div>
+      <p style="font-size:13px; color:var(--muted); margin-top:8px;">This is a planning scenario, not a guarantee — the two variables that will move it most are how fast Google re-indexes the fixed link graph, and whether the pillar-page + comparison-page cadence in the roadmap actually ships on schedule.</p>
+    </section>
+
+  </main>
+</div>
+
+<footer class="report-footer">
+  Compiled from direct production-database queries, the site's own Search Console export (captured Jul 18, 2026), and the Next.js codebase — not a third-party crawl. Figures are point-in-time; re-verify before acting on anything dated more than a few weeks ago.
+</footer>
+
+<script>
+(function () {
+  var isDark = function () {
+    var root = document.documentElement;
+    if (root.getAttribute('data-theme') === 'dark') return true;
+    if (root.getAttribute('data-theme') === 'light') return false;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  };
+
+  function tok(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function dpr(canvas) {
+    var ratio = window.devicePixelRatio || 1;
+    var w = canvas.width, h = canvas.height;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    canvas.width = w * ratio;
+    canvas.height = h * ratio;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(ratio, ratio);
+    return { ctx: ctx, w: w, h: h };
+  }
+
+  function drawGrid(ctx, x0, y0, w, h, steps, gridColor) {
+    ctx.strokeStyle = gridColor;
+    ctx.lineWidth = 1;
+    for (var i = 0; i <= steps; i++) {
+      var y = y0 + h - (h / steps) * i;
+      ctx.beginPath();
+      ctx.moveTo(x0, Math.round(y) + 0.5);
+      ctx.lineTo(x0 + w, Math.round(y) + 0.5);
+      ctx.stroke();
+    }
+  }
+
+  // ---------- Chart 1: internal linking before/after (grouped bar) ----------
+  function chartLinking() {
+    var canvas = document.getElementById('chartLinking');
+    if (!canvas) return;
+    var d = dpr(canvas), ctx = d.ctx, W = d.w, H = d.h;
+    ctx.clearRect(0, 0, W, H);
+
+    var muted = tok('--muted'), grid = tok('--hairline'), ink = tok('--ink'), ink2 = tok('--ink-2');
+    var s1 = tok('--s8'); // red — "before", the problem state
+    var s2 = tok('--s5'); // green/aqua — "after", resolved state
+
+    var padL = 46, padB = 34, padT = 14, padR = 20;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var max = 227;
+    var steps = 4;
+
+    drawGrid(ctx, padL, padT, plotW, plotH, steps, grid);
+
+    ctx.fillStyle = muted;
+    ctx.font = '11px -apple-system, "Segoe UI", sans-serif';
+    ctx.textAlign = 'right';
+    for (var i = 0; i <= steps; i++) {
+      var val = Math.round((max / steps) * i);
+      var y = padT + plotH - (plotH / steps) * i;
+      ctx.fillText(val, padL - 10, y + 3);
+    }
+
+    var groups = [
+      { label: 'Before (Jul 20)', values: [24, 227], names: ['Reachable', 'Total'] },
+      { label: 'After (Jul 21+)', values: [227, 227], names: ['Reachable', 'Total'] }
+    ];
+
+    var groupW = plotW / groups.length;
+    var barW = 46, gap = 10;
+
+    groups.forEach(function (g, gi) {
+      var gx = padL + groupW * gi + groupW / 2;
+      var bars = [
+        { v: g.values[1], color: grid, label: g.names[1] }, // total, ghost bar
+        { v: g.values[0], color: gi === 0 ? s1 : s2, label: g.names[0] }
+      ];
+      var totalW = barW * 2 + gap;
+      var startX = gx - totalW / 2;
+
+      bars.forEach(function (b, bi) {
+        var bh = (b.v / max) * plotH;
+        var bx = startX + bi * (barW + gap);
+        var by = padT + plotH - bh;
+        ctx.fillStyle = bi === 0 ? tok('--surface-2') : b.color;
+        var r = 4;
+        ctx.beginPath();
+        ctx.moveTo(bx, by + r);
+        ctx.arcTo(bx, by, bx + r, by, r);
+        ctx.arcTo(bx + barW, by, bx + barW, by + r, r);
+        ctx.lineTo(bx + barW, padT + plotH);
+        ctx.lineTo(bx, padT + plotH);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = ink;
+        ctx.font = 'bold 13px -apple-system, "Segoe UI", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(b.v, bx + barW / 2, by - 8);
+      });
+
+      ctx.fillStyle = ink2;
+      ctx.font = '12px -apple-system, "Segoe UI", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(g.label, gx, H - 10);
+    });
+  }
+
+  // ---------- Chart 2: category distribution (horizontal bar) ----------
+  function chartCategories() {
+    var canvas = document.getElementById('chartCategories');
+    if (!canvas) return;
+    var d = dpr(canvas), ctx = d.ctx, W = d.w, H = d.h;
+    ctx.clearRect(0, 0, W, H);
+
+    var muted = tok('--muted'), ink = tok('--ink'), ink2 = tok('--ink-2'), grid = tok('--hairline');
+    var colors = [tok('--s1'), tok('--s7'), tok('--s5'), tok('--s4'), tok('--muted'), tok('--muted')];
+
+    var data = [
+      { label: 'ai-models', v: 135 },
+      { label: 'companies', v: 69 },
+      { label: 'ai-tools', v: 22 },
+      { label: 'tutorials', v: 11 },
+      { label: 'ai-policy', v: 0 },
+      { label: 'research', v: 0 }
+    ];
+    var max = 135;
+    var padL = 90, padR = 46, padT = 8, padB = 8;
+    var plotW = W - padL - padR;
+    var rowH = (H - padT - padB) / data.length;
+    var barH = 18;
+
+    data.forEach(function (row, i) {
+      var y = padT + rowH * i + rowH / 2;
+      ctx.fillStyle = ink2;
+      ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(row.label, padL - 12, y + 4);
+
+      var bw = row.v === 0 ? 3 : Math.max(3, (row.v / max) * plotW);
+      var bx = padL, by = y - barH / 2;
+      ctx.fillStyle = row.v === 0 ? grid : colors[i];
+      var r = 4;
+      ctx.beginPath();
+      ctx.moveTo(bx, by);
+      ctx.lineTo(bx + bw - r, by);
+      ctx.arcTo(bx + bw, by, bx + bw, by + r, r);
+      ctx.arcTo(bx + bw, by + barH, bx + bw - r, by + barH, r);
+      ctx.lineTo(bx, by + barH);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = ink;
+      ctx.font = 'bold 12.5px -apple-system, "Segoe UI", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(row.v, bx + bw + 10, y + 4);
+    });
+  }
+
+  // ---------- Chart 3: publish volume by month ----------
+  function chartVolume() {
+    var canvas = document.getElementById('chartVolume');
+    if (!canvas) return;
+    var d = dpr(canvas), ctx = d.ctx, W = d.w, H = d.h;
+    ctx.clearRect(0, 0, W, H);
+
+    var muted = tok('--muted'), ink = tok('--ink'), ink2 = tok('--ink-2'), grid = tok('--hairline');
+    var accent = tok('--s1');
+
+    var data = [
+      { label: 'May', v: 57 },
+      { label: 'Jun', v: 110 },
+      { label: 'Jul*', v: 69 }
+    ];
+    var max = 120;
+    var padL = 40, padR = 20, padT = 20, padB = 34;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var steps = 4;
+
+    drawGrid(ctx, padL, padT, plotW, plotH, steps, grid);
+    ctx.fillStyle = muted;
+    ctx.font = '11px -apple-system, "Segoe UI", sans-serif';
+    ctx.textAlign = 'right';
+    for (var i = 0; i <= steps; i++) {
+      var val = Math.round((max / steps) * i);
+      var y = padT + plotH - (plotH / steps) * i;
+      ctx.fillText(val, padL - 10, y + 3);
+    }
+
+    var colW = plotW / data.length;
+    var barW = 56;
+
+    data.forEach(function (row, i) {
+      var cx = padL + colW * i + colW / 2;
+      var bh = (row.v / max) * plotH;
+      var bx = cx - barW / 2, by = padT + plotH - bh;
+      ctx.fillStyle = accent;
+      var r = 4;
+      ctx.beginPath();
+      ctx.moveTo(bx, by + r);
+      ctx.arcTo(bx, by, bx + r, by, r);
+      ctx.arcTo(bx + barW, by, bx + barW, by + r, r);
+      ctx.lineTo(bx + barW, padT + plotH);
+      ctx.lineTo(bx, padT + plotH);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = ink;
+      ctx.font = 'bold 13px -apple-system, "Segoe UI", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(row.v, cx, by - 8);
+
+      ctx.fillStyle = ink2;
+      ctx.font = '12px -apple-system, "Segoe UI", sans-serif';
+      ctx.fillText(row.label, cx, H - 10);
+    });
+    ctx.fillStyle = muted;
+    ctx.font = '10.5px -apple-system, "Segoe UI", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('*partial month', padL, padT - 6);
+  }
+
+  // ---------- Chart 4: traffic projection (line, area) ----------
+  function chartProjection() {
+    var canvas = document.getElementById('chartProjection');
+    if (!canvas) return;
+    var d = dpr(canvas), ctx = d.ctx, W = d.w, H = d.h;
+    ctx.clearRect(0, 0, W, H);
+
+    var muted = tok('--muted'), ink = tok('--ink'), ink2 = tok('--ink-2'), grid = tok('--hairline');
+    var accent = tok('--s1');
+
+    var months = ['Now', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9'];
+    var values = [8, 20, 60, 150, 280, 450, 800, 1400, 2200, 3000];
+    var max = 3000;
+
+    var padL = 54, padR = 20, padT = 20, padB = 34;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var steps = 5;
+
+    drawGrid(ctx, padL, padT, plotW, plotH, steps, grid);
+    ctx.fillStyle = muted;
+    ctx.font = '11px -apple-system, "Segoe UI", sans-serif';
+    ctx.textAlign = 'right';
+    for (var i = 0; i <= steps; i++) {
+      var val = Math.round((max / steps) * i);
+      var y = padT + plotH - (plotH / steps) * i;
+      ctx.fillText(val >= 1000 ? (val / 1000) + 'K' : val, padL - 10, y + 3);
+    }
+
+    function pt(i) {
+      var x = padL + (plotW / (months.length - 1)) * i;
+      var y = padT + plotH - (values[i] / max) * plotH;
+      return [x, y];
+    }
+
+    // area fill
+    ctx.beginPath();
+    var p0 = pt(0);
+    ctx.moveTo(p0[0], padT + plotH);
+    ctx.lineTo(p0[0], p0[1]);
+    for (var i = 1; i < months.length; i++) {
+      var p = pt(i);
+      ctx.lineTo(p[0], p[1]);
+    }
+    var pLast = pt(months.length - 1);
+    ctx.lineTo(pLast[0], padT + plotH);
+    ctx.closePath();
+    ctx.fillStyle = accent;
+    ctx.globalAlpha = 0.1;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // line
+    ctx.beginPath();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = accent;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    for (var i = 0; i < months.length; i++) {
+      var p = pt(i);
+      if (i === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
+    }
+    ctx.stroke();
+
+    // end marker + label
+    var pe = pt(months.length - 1);
+    ctx.beginPath();
+    ctx.arc(pe[0], pe[1], 5, 0, Math.PI * 2);
+    ctx.fillStyle = tok('--chart-surface');
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(pe[0], pe[1], 4, 0, Math.PI * 2);
+    ctx.fillStyle = accent;
+    ctx.fill();
+
+    ctx.fillStyle = ink;
+    ctx.font = 'bold 13px -apple-system, "Segoe UI", sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('~3,000', pe[0] - 10, pe[1] - 12);
+
+    // start marker
+    ctx.beginPath();
+    ctx.arc(p0[0], p0[1], 5, 0, Math.PI * 2);
+    ctx.fillStyle = tok('--chart-surface');
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(p0[0], p0[1], 4, 0, Math.PI * 2);
+    ctx.fillStyle = accent;
+    ctx.fill();
+    ctx.textAlign = 'left';
+    ctx.fillText('8', p0[0] + 10, p0[1] - 12);
+
+    ctx.fillStyle = ink2;
+    ctx.font = '11.5px -apple-system, "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    for (var i = 0; i < months.length; i++) {
+      var p = pt(i);
+      ctx.fillText(months[i], p[0], H - 10);
+    }
+  }
+
+  function renderAll() {
+    chartLinking();
+    chartCategories();
+    chartVolume();
+    chartProjection();
+  }
+
+  renderAll();
+  window.addEventListener('resize', function () {
+    clearTimeout(window.__rzt);
+    window.__rzt = setTimeout(renderAll, 150);
+  });
+
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', renderAll);
+  }
+  new MutationObserver(renderAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+})();
+</script>

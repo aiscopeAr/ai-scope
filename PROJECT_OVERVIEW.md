@@ -370,6 +370,8 @@ SITE_TWITTER  = "@AIScope_ar"
 - `Article` schema.org ב-JSON-LD
 - `canonical` + `alternates`
 
+**מעקב ביצועים:** דשבורד לוקאלי לנתוני Google Search Console נמצא ב-`docs/seo/` (ראו `docs/seo/README.md`) — עוקב אחרי קליקים/הופעות/CTR/מיקום לאורך זמן דרך תמונות מצב (snapshots) שנוספות ידנית בכל פעם שמייצאים CSV חדש מ-Search Console.
+
 ---
 
 ## מבנה תיקיות
@@ -405,7 +407,8 @@ AIScope/
 ├── scripts/
 │   └── backfill-images.mjs
 ├── docs/
-│   └── authors-how-they-work.md
+│   ├── authors-how-they-work.md
+│   └── seo/             ← דוח GSC לוקאלי (ראו docs/seo/README.md)
 ├── vercel.json          ← cron schedule
 └── next.config.ts       ← image domains
 ```

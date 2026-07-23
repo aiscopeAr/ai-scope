@@ -1,0 +1,483 @@
+<title>How Lumiq Works — System Reference</title>
+<meta name="description" content="The complete, accurate pipeline — from RSS ingestion to published article — as it exists in the codebase today.">
+
+<style>
+  @font-face {
+    font-family: 'JetBrains Mono';
+    font-style: normal;
+    font-weight: 400 700;
+    src: local('JetBrains Mono');
+  }
+
+  :root {
+    color-scheme: light;
+    --page:        #f7f7fb;
+    --surface:     #ffffff;
+    --surface-2:   #f0f0f8;
+    --ink:         #12121a;
+    --ink-2:       #4a4a5c;
+    --muted:       #86869c;
+    --hairline:    #e3e3ee;
+    --accent:      #6366f1;
+    --accent-ink:  #4338ca;
+    --accent-wash: #eef0fe;
+    --code-bg:     #14141c;
+    --code-ink:    #e3e3f0;
+    --s1: #2a78d6; --s2: #008300; --s3: #e87ba4; --s4: #eda100;
+    --s5: #1baf7a; --s6: #eb6834; --s7: #4a3aa7; --s8: #e34948;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page:        #0a0a10;
+      --surface:     #111119;
+      --surface-2:   #17171f;
+      --ink:         #f2f2f7;
+      --ink-2:       #b8b8c8;
+      --muted:       #7d7d92;
+      --hairline:    #24242f;
+      --accent:      #8385f5;
+      --accent-ink:  #a5a6f8;
+      --accent-wash: #1a1a2e;
+      --code-bg:     #0a0a10;
+      --code-ink:    #d8d8e8;
+      --s1: #3987e5; --s2: #17b317; --s3: #d55181; --s4: #c98500;
+      --s5: #199e70; --s6: #d95926; --s7: #9085e9; --s8: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:        #0a0a10;
+    --surface:     #111119;
+    --surface-2:   #17171f;
+    --ink:         #f2f2f7;
+    --ink-2:       #b8b8c8;
+    --muted:       #7d7d92;
+    --hairline:    #24242f;
+    --accent:      #8385f5;
+    --accent-ink:  #a5a6f8;
+    --accent-wash: #1a1a2e;
+    --code-bg:     #0a0a10;
+    --code-ink:    #d8d8e8;
+    --s1: #3987e5; --s2: #17b317; --s3: #d55181; --s4: #c98500;
+    --s5: #199e70; --s6: #d95926; --s7: #9085e9; --s8: #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+  }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, "SF Mono", Menlo, monospace; }
+  code {
+    font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.86em;
+    background: var(--surface-2); padding: 2px 6px; border-radius: 4px; color: var(--accent-ink);
+  }
+  h1, h2, h3, h4 { text-wrap: balance; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+  p { color: var(--ink-2); max-width: 74ch; }
+  a { color: var(--accent-ink); }
+
+  .shell { display: grid; grid-template-columns: 250px minmax(0,1fr); max-width: 1280px; margin: 0 auto; }
+  @media (max-width: 980px) { .shell { grid-template-columns: 1fr; } .toc { display: none; } }
+
+  .toc { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; padding: 32px 18px 40px; border-right: 1px solid var(--hairline); }
+  .toc .brand { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .toc .title { font-size: 17px; font-weight: 700; margin-bottom: 24px; }
+  .toc nav { display: flex; flex-direction: column; gap: 2px; }
+  .toc a { display: block; padding: 6px 10px; border-radius: 6px; font-size: 13px; color: var(--ink-2); text-decoration: none; font-family: 'JetBrains Mono', monospace; }
+  .toc a:hover { background: var(--surface-2); color: var(--ink); }
+  .toc .stage-dot { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 8px; }
+
+  .main { min-width: 0; padding-bottom: 100px; }
+
+  .cover { padding: 64px 52px 40px; border-bottom: 1px solid var(--hairline); }
+  @media (max-width: 640px) { .cover { padding: 44px 22px 28px; } }
+  .cover .kicker { display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); background: var(--accent-wash); border-radius: 999px; padding: 5px 13px; margin-bottom: 18px; }
+  .cover .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .cover h1 { font-size: clamp(28px, 3.6vw, 40px); line-height: 1.1; margin-bottom: 14px; max-width: 22ch; }
+  .cover .sub { font-size: 16.5px; max-width: 64ch; margin: 0 0 24px; }
+  .cover .stack-line { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .stack-chip { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--surface-2); border: 1px solid var(--hairline); color: var(--ink-2); padding: 4px 10px; border-radius: 6px; }
+
+  section.block { padding: 48px 52px; border-bottom: 1px solid var(--hairline); }
+  @media (max-width: 640px) { section.block { padding: 36px 22px; } }
+  section.block:last-of-type { border-bottom: none; }
+
+  .section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .section-head .stage-badge { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; color: white; flex: none; }
+  .section-head h2 { font-size: 23px; }
+  .section-dek { margin: 6px 0 26px; font-size: 14.5px; }
+
+  /* pipeline diagram */
+  .pipeline-wrap { overflow-x: auto; padding: 8px 0 4px; }
+  .pipeline { display: flex; align-items: stretch; gap: 0; min-width: 900px; }
+  .pnode { flex: 1; background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 14px 14px 12px; position: relative; }
+  .pnode .stage-num { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .pnode h4 { font-size: 13.5px; margin: 4px 0 6px; }
+  .pnode .pnode-cron { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent-ink); }
+  .pnode .pnode-bar { height: 3px; border-radius: 2px; margin-bottom: 8px; }
+  .parrow { flex: none; display: flex; align-items: center; justify-content: center; width: 28px; color: var(--muted); font-size: 18px; }
+
+  /* stage detail card */
+  .stage-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 22px 24px; }
+  .kv-grid { display: grid; grid-template-columns: 140px 1fr; gap: 8px 16px; font-size: 13.8px; margin: 16px 0; }
+  .kv-grid dt { color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; padding-top: 2px; }
+  .kv-grid dd { margin: 0; color: var(--ink-2); }
+
+  .code-block { background: var(--code-bg); color: var(--code-ink); border-radius: 8px; padding: 14px 18px; font-family: 'JetBrains Mono', monospace; font-size: 12.8px; line-height: 1.7; overflow-x: auto; }
+  .code-block .c1 { color: #8b8ba0; }
+  .code-block .c2 { color: #9fd88a; }
+
+  .file-list { list-style: none; margin: 14px 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .file-list li { font-family: 'JetBrains Mono', monospace; font-size: 12.8px; display: flex; align-items: baseline; gap: 10px; }
+  .file-list li .fp { color: var(--accent-ink); }
+  .file-list li .fd { color: var(--muted); font-family: -apple-system, sans-serif; font-size: 13px; }
+
+  .step-list { counter-reset: step; margin: 18px 0; padding: 0; list-style: none; }
+  .step-list li { counter-increment: step; position: relative; padding: 0 0 18px 34px; border-left: 2px solid var(--hairline); margin-left: 13px; }
+  .step-list li:last-child { border-color: transparent; padding-bottom: 0; }
+  .step-list li::before {
+    content: counter(step); position: absolute; left: -13px; top: 0;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent);
+    color: var(--accent-ink); font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-list h4 { font-size: 14.5px; margin-bottom: 4px; }
+  .step-list p { font-size: 13.8px; margin: 0; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .callout { border-radius: 10px; padding: 14px 18px; font-size: 13.8px; display: flex; gap: 10px; align-items: flex-start; background: var(--accent-wash); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); }
+  .callout p { margin: 0; color: var(--ink); }
+  .callout .ico { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent-ink); flex: none; }
+
+  .status-live { color: var(--s5); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+  .status-idle { color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--hairline); border-radius: 10px; margin: 16px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 480px; }
+  thead th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--hairline); background: var(--surface-2); white-space: nowrap; }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid var(--hairline); color: var(--ink-2); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--ink); font-weight: 600; font-size: 12.8px; }
+  td.num { font-variant-numeric: tabular-nums; text-align: right; font-family: 'JetBrains Mono', monospace; }
+
+  footer.report-footer { padding: 32px 52px; color: var(--muted); font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+</style>
+
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">lumiq.news</div>
+    <div class="title">How It Works</div>
+    <nav>
+      <a href="#overview"><span class="stage-dot" style="background:var(--muted)"></span>Overview</a>
+      <a href="#s1"><span class="stage-dot" style="background:var(--s1)"></span>1. Fetch news</a>
+      <a href="#s2"><span class="stage-dot" style="background:var(--s7)"></span>2. Cluster</a>
+      <a href="#s3"><span class="stage-dot" style="background:var(--s3)"></span>3. Write (AI)</a>
+      <a href="#s4"><span class="stage-dot" style="background:var(--s6)"></span>4. Publish</a>
+      <a href="#s5"><span class="stage-dot" style="background:var(--s5)"></span>5. Serve &amp; cache</a>
+      <a href="#s6"><span class="stage-dot" style="background:var(--s4)"></span>6. SEO layer</a>
+      <a href="#other"><span class="stage-dot" style="background:var(--s8)"></span>Other crons</a>
+      <a href="#data"><span class="stage-dot" style="background:var(--accent)"></span>Data model</a>
+      <a href="#authors"><span class="stage-dot" style="background:var(--s2)"></span>The 4 authors</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="cover">
+      <span class="kicker"><span class="dot"></span>System reference · Jul 22, 2026</span>
+      <h1>How Lumiq actually works, end to end</h1>
+      <p class="sub">Not a diagram of the intended design — this is the pipeline as it exists in the codebase today, verified this week by running each stage against the real production database. Six automated stages turn an RSS feed into a published, cached, indexed Arabic article with no human in the loop by default.</p>
+      <div class="stack-line">
+        <span class="stack-chip">Next.js 16.2.6</span>
+        <span class="stack-chip">Vercel</span>
+        <span class="stack-chip">Postgres + pgvector</span>
+        <span class="stack-chip">Prisma 6</span>
+        <span class="stack-chip">GPT-4o / 4o-mini</span>
+        <span class="stack-chip">Replicate (flux-schnell)</span>
+        <span class="stack-chip">NextAuth</span>
+      </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <section class="block" id="overview">
+      <div class="section-head"><span class="stage-badge" style="background:var(--muted)">⟶</span><h2>The pipeline at a glance</h2></div>
+      <p class="section-dek">Four sequential crons carry a story from raw RSS to published page. Two more (cache invalidation, image generation) run inline inside those stages rather than on their own schedule.</p>
+
+      <div class="pipeline-wrap">
+        <div class="pipeline">
+          <div class="pnode">
+            <div class="pnode-bar" style="background:var(--s1)"></div>
+            <div class="stage-num">Stage 1 · 06:00 UTC</div>
+            <h4>Fetch news</h4>
+            <div class="pnode-cron">/api/cron/fetch-news</div>
+          </div>
+          <div class="parrow">→</div>
+          <div class="pnode">
+            <div class="pnode-bar" style="background:var(--s7)"></div>
+            <div class="stage-num">Stage 2 · 06:30 UTC</div>
+            <h4>Cluster by topic</h4>
+            <div class="pnode-cron">/api/cron/cluster-news</div>
+          </div>
+          <div class="parrow">→</div>
+          <div class="pnode">
+            <div class="pnode-bar" style="background:var(--s3)"></div>
+            <div class="stage-num">Stage 3 · 07:00 UTC</div>
+            <h4>Write the article</h4>
+            <div class="pnode-cron">/api/cron/process-review</div>
+          </div>
+          <div class="parrow">→</div>
+          <div class="pnode">
+            <div class="pnode-bar" style="background:var(--s6)"></div>
+            <div class="stage-num">Stage 4 · 09:00 UTC</div>
+            <h4>Publish</h4>
+            <div class="pnode-cron">/api/cron/publish-review</div>
+          </div>
+          <div class="parrow">→</div>
+          <div class="pnode">
+            <div class="pnode-bar" style="background:var(--s5)"></div>
+            <div class="stage-num">Live</div>
+            <h4>Served + cached</h4>
+            <div class="pnode-cron">lumiq.news/reviews/…</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top:20px;">
+        <span class="ico">→</span>
+        <p>A news item entering the pipeline at 06:00 can be a live, indexed page by 09:00 the same day — with zero human review by default. An admin queue exists to intercept any stage manually, but nothing requires it.</p>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section class="block" id="s1">
+      <div class="section-head"><span class="stage-badge" style="background:var(--s1)">1</span><h2>Fetch news</h2></div>
+      <p class="section-dek">Reads every enabled RSS/Atom source, keeps only AI-relevant items with enough real content, and queues them as raw material.</p>
+
+      <div class="stage-card">
+        <dl class="kv-grid">
+          <dt>Schedule</dt><dd><code>0 6 * * *</code> — daily, 06:00 UTC</dd>
+          <dt>Entry point</dt><dd><code>app/api/cron/fetch-news/route.ts</code></dd>
+          <dt>Core logic</dt><dd><code>lib/rss.ts</code> — <code>fetchRssFeed()</code></dd>
+          <dt>Writes to</dt><dd><code>NewsItem</code> (status: <code>pending</code>), <code>SourceRun</code> (outcome log)</dd>
+          <dt>Sources today</dt><dd>20 active feeds, priority-ranked 1–10</dd>
+        </dl>
+
+        <ol class="step-list">
+          <li><h4>Pull every enabled <code>Source</code>, highest priority first</h4><p>Each source carries an RSS URL, a priority weight, and a <code>lastSyncedAt</code> timestamp — updated whether or not anything useful was found.</p></li>
+          <li><h4>Parse RSS 2.0 <em>or</em> Atom</h4><p>Handles both <code>&lt;description&gt;</code>/<code>&lt;content:encoded&gt;</code> (RSS) and <code>&lt;summary&gt;</code>/<code>&lt;content&gt;</code> (Atom) — including Atom's attribute-only <code>&lt;link href="…"/&gt;</code>, which earlier silently dropped every item from Atom feeds until this week's fix.</p></li>
+          <li><h4>Drop anything under 100 characters of real content</h4><p>A minimum-length gate on the parsed description filters out feeds that are pure link-lists with no article text (a few sources — Hugging Face, TLDR — never clear this and were removed rather than force-fit).</p></li>
+          <li><h4>Keyword-filter for AI relevance</h4><p>Title + description tested against an AI-topic regex (<code>ai|llm|gpt|claude|gemini|openai|neural|transformer…</code>) before it's allowed into the queue — a general-tech source like TechCrunch or Ars Technica only contributes its AI-relevant subset.</p></li>
+          <li><h4>Deduplicate by source URL, cap at 10 new items per source per run</h4><p><code>enqueueNewsItem()</code> checks the URL against existing <code>NewsItem</code> rows before inserting — the same article from the same source can never double-enter the queue.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section class="block" id="s2">
+      <div class="section-head"><span class="stage-badge" style="background:var(--s7)">2</span><h2>Cluster by topic</h2></div>
+      <p class="section-dek">GPT-4o-mini groups same-topic items across sources into a single cluster, so five outlets covering the same launch become one article, not five.</p>
+
+      <div class="stage-card">
+        <dl class="kv-grid">
+          <dt>Schedule</dt><dd><code>30 6 * * *</code> — daily, 06:30 UTC</dd>
+          <dt>Entry point</dt><dd><code>app/api/cron/cluster-news/route.ts</code></dd>
+          <dt>Model</dt><dd><code>gpt-4o-mini</code>, <code>temperature: 0.3</code>, JSON-mode response</dd>
+          <dt>Writes to</dt><dd><code>ReviewQueue</code> (status: <code>pending</code>), links <code>NewsItem</code> rows to it</dd>
+          <dt>Minimum size</dt><dd>2 items — a lone item is marked <code>skipped</code>, not force-published solo</dd>
+        </dl>
+
+        <p style="margin-top:4px;">Up to 40 pending <code>NewsItem</code>s go into one prompt as an indexed headline list. The model returns clusters with a topic phrase, a category guess, and the source indices belonging to each — the same call that assigns the author (see §<a href="#authors">The 4 authors</a>).</p>
+
+        <div class="code-block" style="margin-top:14px;">
+<span class="c1">// the exact JSON contract the model returns</span><br>
+{<br>
+&nbsp;&nbsp;"clusters": [<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{ "topic": <span class="c2">"Gemini 3.5 Flash release"</span>, "category": <span class="c2">"ai-models"</span>, "indices": [0, 3, 7] }<br>
+&nbsp;&nbsp;]<br>
+}
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section class="block" id="s3">
+      <div class="section-head"><span class="stage-badge" style="background:var(--s3)">3</span><h2>Write the article (AI)</h2></div>
+      <p class="section-dek">The heaviest stage — turns a topic and its source cluster into a full Arabic article, in the voice of one of four fixed author personas, with its own accumulated memory.</p>
+
+      <div class="stage-card">
+        <dl class="kv-grid">
+          <dt>Schedule</dt><dd><code>0 7 * * *</code> — daily, 07:00 UTC, <code>maxDuration: 300s</code></dd>
+          <dt>Entry point</dt><dd><code>app/api/cron/process-review/route.ts</code></dd>
+          <dt>Core logic</dt><dd><code>lib/review-openai.ts</code> — <code>writeReview()</code></dd>
+          <dt>Image gen</dt><dd><code>lib/images.ts</code> → Replicate <code>flux-schnell</code>, generated in this same stage</dd>
+          <dt>Writes to</dt><dd><code>ReviewQueue</code> (status → <code>processed</code>, full draft fields filled)</dd>
+        </dl>
+
+        <ol class="step-list">
+          <li><h4>Resolve the author</h4><p>Uses the cluster's category hint (<code>pickAuthor()</code>) unless one of the four personas was already forced upstream.</p></li>
+          <li><h4>Retrieve that author's memory</h4><p>Two layers: <code>findSimilarReviews()</code> — up to 4 semantically-similar past articles <em>by the same author</em>, via pgvector cosine similarity on a 1536-dim OpenAI embedding — plus an accumulated "voice memory" block (<code>lib/author-memory.ts</code>) built from prior extraction passes. Both get folded into the prompt as context, not just instructions.</p></li>
+          <li><h4>Call GPT-4o with the author's fixed system prompt</h4><p>Each of the 4 personas (see <a href="#authors">below</a>) has its own hard-coded voice, opening pattern, and closing-question style — not a shared template with a name swapped in.</p></li>
+          <li><h4>Classifier gate: is this actually AI-related?</h4><p>The model itself returns <code>isAiRelated</code>; if false, the cluster is marked <code>rejected</code> and never reaches publish — a second filter beyond the keyword regex in stage 1.</p></li>
+          <li><h4>Generate the hero image immediately</h4><p>Deliberately done here, inside the 300-second budget, rather than in the 60-second publish stage — so image generation failure never blocks the actual publish step later.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section class="block" id="s4">
+      <div class="section-head"><span class="stage-badge" style="background:var(--s6)">4</span><h2>Publish</h2></div>
+      <p class="section-dek">Moves a written draft from the queue into the live <code>Review</code> table — the only stage that decides which category a piece lands in and the only one rate-limited per day.</p>
+
+      <div class="stage-card">
+        <dl class="kv-grid">
+          <dt>Schedule</dt><dd><code>0 9 * * *</code> — daily, 09:00 UTC</dd>
+          <dt>Entry point</dt><dd><code>app/api/cron/publish-review/route.ts</code></dd>
+          <dt>Core logic</dt><dd><code>lib/review-queue.ts</code> — <code>approveReview()</code></dd>
+          <dt>Daily cap</dt><dd><code>SETTING_KEYS.DAILY_PUBLISH_LIMIT</code> — default <b>10</b>/day, admin-adjustable</dd>
+          <dt>Writes to</dt><dd><code>Review</code> (published), <code>SyndicationPost</code>, <code>SocialPost</code></dd>
+        </dl>
+
+        <ol class="step-list">
+          <li><h4>Pick a real <code>Category</code> row by author, not the DB's first row</h4><p>Each author maps to specific category slugs (<code>categorySlugCandidatesForAuthor()</code>) — zayd → ai-models/research, lina → companies/ai-policy, tariq → ai-tools, team → tutorials. Before this week's fix, every auto-published article defaulted to whichever category was created first in the database, regardless of topic.</p></li>
+          <li><h4>Create the <code>Review</code> row, mark it published</h4><p>Slug, title, content, sources (JSON array of the original news items), SEO fields — all copied over from the queue draft as-is.</p></li>
+          <li><h4>Fire the best-effort side effects — none of them block publish</h4><p>Four independent, individually-caught async calls: embed the new article into pgvector (feeds stage 3's memory retrieval for future articles), extract author-memory signal from it, cross-post to a partner WordPress site if configured, draft social posts for any enabled <code>SocialAccount</code>.</p></li>
+          <li><h4>Invalidate the cache immediately</h4><p><code>revalidateNow()</code> on the <code>reviews</code> and <code>categories</code> tags, plus <code>revalidatePath</code> on the homepage and the article's own URL — so the new piece appears in listings within the same request cycle instead of waiting out a cache window.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section class="block" id="s5">
+      <div class="section-head"><span class="stage-badge" style="background:var(--s5)">5</span><h2>Serve &amp; cache</h2></div>
+      <p class="section-dek">Where a request actually gets answered from — and the one piece of this system that looked right for months while quietly doing nothing.</p>
+
+      <div class="callout">
+        <span class="ico">⚠</span>
+        <p><b>The load-bearing fact about this stack:</b> Next's <code>export const revalidate = N</code> only caches <code>fetch()</code> calls. This codebase reads exclusively through Prisma. Every listing page carrying that config was re-querying Postgres on <em>every</em> request regardless of what the number said — fixed this week by wrapping the actual data-fetching functions in <code>unstable_cache</code> with explicit tags, everywhere it matters.</p>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Route</th><th>Mechanism</th><th>Window</th></tr></thead>
+          <tbody>
+            <tr><td>/reviews/[slug]</td><td>Static (generateStaticParams) + ISR</td><td class="num">3,600s</td></tr>
+            <tr><td>/reviews, /category, /tag, /ai-tools, /prompts</td><td>unstable_cache (tagged)</td><td class="num">300s + on-publish invalidation</td></tr>
+            <tr><td>/ai-tools/[slug]</td><td>unstable_cache — read path only, viewCount write stays uncached</td><td class="num">300s</td></tr>
+            <tr><td>/ (homepage)</td><td>ISR</td><td class="num">60s</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:13px;">The <code>viewCount</code> increment on a tool page is deliberately kept <em>outside</em> the cached function — caching that call too would mean the counter only ticks once per cache window instead of on every real view.</p>
+    </section>
+
+    <!-- ================================================================ -->
+    <section class="block" id="s6">
+      <div class="section-head"><span class="stage-badge" style="background:var(--s4)">6</span><h2>SEO layer</h2></div>
+      <p class="section-dek">What makes a published page findable — sitemap, structured data, and the internal link graph that ties everything together.</p>
+
+      <div class="grid-2">
+        <div class="stage-card">
+          <h4 style="margin-bottom:10px;">Discovery surfaces</h4>
+          <ul class="file-list">
+            <li><span class="fp">app/sitemap.ts</span><span class="fd">658 URLs — reviews, tools, prompts, comparisons, categories, 54 tag hubs</span></li>
+            <li><span class="fp">app/robots.ts</span><span class="fd">allows Googlebot/Bingbot; blocks GPTBot/CCBot/Claude-Web</span></li>
+            <li><span class="fp">app/rss.xml, /news-sitemap.xml</span><span class="fd">secondary submission channels</span></li>
+          </ul>
+        </div>
+        <div class="stage-card">
+          <h4 style="margin-bottom:10px;">Structured data (JSON-LD)</h4>
+          <ul class="file-list">
+            <li><span class="fp">Article</span><span class="fd">reviews, compare pages</span></li>
+            <li><span class="fp">SoftwareApplication</span><span class="fd">tool pages</span></li>
+            <li><span class="fp">FAQPage</span><span class="fd">reviews and tools with FAQ content</span></li>
+            <li><span class="fp">CollectionPage</span><span class="fd">tag, category, prompts, ai-tools listings</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="stage-card" style="margin-top:16px;">
+        <h4 style="margin-bottom:8px;">Internal link graph</h4>
+        <p>Every listing page (<code>/reviews</code>, <code>/category/[slug]</code>, <code>/tag/[tag]</code>) now paginates with real <code>&lt;a href&gt;</code> links rather than JS-only click handlers — the single biggest fix to crawlability this month, since 203 of 227 reviews had no link path to them at all before it. Tool pages recommend by matching <code>toolCategory</code>; articles recommend by matching tag or category.</p>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section class="block" id="other">
+      <div class="section-head"><span class="stage-badge" style="background:var(--s8)">+</span><h2>The other crons</h2></div>
+      <p class="section-dek">Not part of the news-to-article spine, but running on their own schedules against the same database.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Cron</th><th>Schedule</th><th>Does</th></tr></thead>
+          <tbody>
+            <tr><td>ingest-tools</td><td class="num">08:00 daily</td><td>Pulls new tools from Product Hunt's API, drafts Arabic content, saves unpublished for review.</td></tr>
+            <tr><td>generate-prompts</td><td class="num">03:00 daily</td><td>Writes 5 new prompts (3 tool-linked + 2 general) into the 272-strong library.</td></tr>
+            <tr><td>social-queue</td><td class="num">09:30 daily</td><td>Sends any approved <code>SocialPost</code> drafts to their configured platform.</td></tr>
+            <tr><td>trending</td><td class="num">00:00 daily</td><td>Recomputes trending rankings from view counts.</td></tr>
+            <tr><td>daily-stats</td><td class="num">01:00 daily</td><td>Rolls up the day's metrics.</td></tr>
+            <tr><td>weekly-report</td><td class="num">08:00 Mondays</td><td>Sends a weekly summary.</td></tr>
+            <tr><td>monthly-tutorial</td><td class="num">10:00, 1st of month</td><td>The "team" author's dedicated evergreen-guide generator.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section class="block" id="data">
+      <div class="section-head"><span class="stage-badge" style="background:var(--accent)">◆</span><h2>Data model — the tables that matter</h2></div>
+      <p class="section-dek">Postgres via Prisma, with pgvector for the memory/similarity layer.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Model</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>Source</td><td>20 active RSS feeds — url, priority, lastSyncedAt</td></tr>
+            <tr><td>NewsItem</td><td>Raw fetched item — pending → clustered → skipped</td></tr>
+            <tr><td>ReviewQueue</td><td>A topic cluster moving through pending → processing → processed → approved/rejected/failed</td></tr>
+            <tr><td>Review</td><td>The live, published article — 236 rows today</td></tr>
+            <tr><td>SourceRun</td><td>Per-run outcome log (added this week) — fetched/added/skipped/error per source, so a silently-dead feed is visible</td></tr>
+            <tr><td>AITool</td><td>51 published tool profiles — descriptionAr, contentAr, pricing, toolCategory</td></tr>
+            <tr><td>Prompt</td><td>272 published prompts, optionally linked to an AITool</td></tr>
+            <tr><td>Comparison</td><td>4 head-to-head tool comparisons</td></tr>
+            <tr><td>SyndicationPost</td><td>Cross-post status per review per external target (e.g. a partner WordPress site)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <section class="block" id="authors">
+      <div class="section-head"><span class="stage-badge" style="background:var(--s2)">✎</span><h2>The 4 authors</h2></div>
+      <p class="section-dek">Not four names for one voice — four fixed system prompts, each with its own opening pattern, evidentiary style, and closing question. Defined in <code>lib/authors.ts</code>.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Author</th><th>Covers</th><th>Voice</th><th>Published</th></tr></thead>
+          <tbody>
+            <tr><td>Zayd (زيد)</td><td>ai-models, research</td><td>Skeptical analyst — opens on a technical detail, demands benchmarks</td><td class="num">135</td></tr>
+            <tr><td>Lina (لينا)</td><td>companies, ai-policy</td><td>Investigative correspondent — connects to the region, closes on "what happens in a year?"</td><td class="num">69</td></tr>
+            <tr><td>Tariq (طارق)</td><td>ai-tools</td><td>Data-first reviewer — opens on a surprising number, ends with a direct recommendation</td><td class="num">22</td></tr>
+            <tr><td>Team (طاقم لوميك)</td><td>tutorials</td><td>Step-by-step guide voice — evergreen, no dates, ends in an FAQ block</td><td class="num">10</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout" style="margin-top:16px;">
+        <span class="ico">→</span>
+        <p>Each author also gets a "memory" — up to 4 of their own past articles on similar topics, retrieved by embedding similarity, folded into every new prompt. This is why the same author's coverage develops continuity over time rather than reading like independent one-off pieces.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="report-footer">
+  Reflects the codebase and production database as verified Jul 21–22, 2026. Cron schedules read directly from <code>vercel.json</code>; category/author mapping from <code>lib/authors.ts</code>; cache mechanism traced through <code>lib/cache.ts</code> and <code>lib/review-queue.ts</code>.
+</footer>

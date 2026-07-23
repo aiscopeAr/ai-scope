@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, truncate } from "@/lib/seo";
+import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
 import PromptBodyTabs from "@/components/PromptBodyTabs";
 import ArticleTracker from "@/components/ArticleTracker";
 
@@ -92,9 +93,16 @@ export default async function PromptPage({ params }: Props) {
     url: absoluteUrl(`/prompts/${prompt.slug}`),
   };
 
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "الرئيسية", href: "/" },
+    { name: "مكتبة البرومبتس", href: "/prompts" },
+    { name: prompt.titleAr },
+  ]);
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
       <ArticleTracker slug={prompt.slug} category={prompt.category} />
       <main className="min-h-screen" dir="rtl">

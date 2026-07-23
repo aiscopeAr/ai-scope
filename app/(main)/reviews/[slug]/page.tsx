@@ -16,6 +16,9 @@ import RelatedArticles from "@/components/RelatedArticles";
 import ArticleTracker from "@/components/ArticleTracker";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_TWITTER_HANDLE, truncate, absoluteUrl } from "@/lib/seo";
 import { tagToSlug, normalizeTag, buildTagSummaries } from "@/lib/tags";
+import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
+import { INLINE_LINK_TOKEN, loadLinkableSlugSets, type LinkableSlugSets } from "@/lib/internal-links";
+import { renderWithInternalLinks } from "@/components/InternalLink";
 
 export const revalidate = 3600; // re-render at most once per hour
 
@@ -117,6 +120,8 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
     getLinkableTagSet(),
   ]);
 
+  const linkableSlugs: LinkableSlugSets = await loadLinkableSlugSets(prisma, linkableTags);
+
   const author = AUTHORS[review.authorSlug as AuthorSlug];
   const reviewUrl = absoluteUrl(`/reviews/${slug}`);
   const wordCount = review.content.trim().split(/\s+/).length;
@@ -132,9 +137,10 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
     catch { return []; }
   })();
 
-  // Render inline Markdown (bold, italic, inline-code) inside a paragraph
+  // Render inline Markdown (bold, italic, inline-code) plus editorial
+  // [[type:slug|label]] internal links inside a paragraph
   function renderInline(text: string): React.ReactNode[] {
-    const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+    const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|\[\[[^\]]+\|[^\]]+\]\])/g);
     return parts.map((part, i) => {
       if (part.startsWith("**") && part.endsWith("**"))
         return <strong key={i}>{part.slice(2, -2)}</strong>;
@@ -142,6 +148,10 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
         return <em key={i}>{part.slice(1, -1)}</em>;
       if (part.startsWith("`") && part.endsWith("`"))
         return <code key={i} className="rounded bg-slate-100 px-1 py-0.5 text-sm font-mono">{part.slice(1, -1)}</code>;
+      if (INLINE_LINK_TOKEN.test(part)) {
+        INLINE_LINK_TOKEN.lastIndex = 0; // stateful /g regex — reset before reuse
+        return <React.Fragment key={i}>{renderWithInternalLinks(part, linkableSlugs)}</React.Fragment>;
+      }
       return part;
     });
   }
@@ -189,10 +199,17 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
     })),
   } : null;
 
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "الرئيسية", href: "/" },
+    { name: review.category.nameAr, href: `/category/${review.category.slug}` },
+    { name: review.titleAr },
+  ]);
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
       {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <ViewTracker slug={review.slug} />
       <ArticleTracker slug={review.slug} category={review.category?.slug} />
       <ReadingProgress />

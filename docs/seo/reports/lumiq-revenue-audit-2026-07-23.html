@@ -1,0 +1,452 @@
+<title>Lumiq Commercial Intent & Revenue Audit</title>
+<meta name="description" content="Read-only revenue audit: every published page scored by commercial intent, traffic potential, ad/affiliate potential, and decision stage.">
+
+<style>
+  @font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 400 700; src: local('JetBrains Mono'); }
+
+  :root {
+    color-scheme: light;
+    --page: #f7f7fb; --surface: #ffffff; --surface-2: #f0f0f8;
+    --ink: #12121a; --ink-2: #4a4a5c; --muted: #86869c; --hairline: #e3e3ee;
+    --accent: #6366f1; --accent-ink: #4338ca; --accent-wash: #eef0fe;
+    --good: #0ca30c; --good-bg: #e9f7e9; --good-text: #006300;
+    --rev-1: #e4e6fb; --rev-1-ink: #6a6ed6;
+    --rev-2: #c2c6f5; --rev-2-ink: #4d51c9;
+    --rev-3: #9298ee; --rev-3-ink: #ffffff;
+    --rev-4: #565de0; --rev-4-ink: #ffffff;
+    --evidence-bg: #f0f0f8; --evidence-ink: #4a4a5c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0a0a10; --surface: #111119; --surface-2: #17171f;
+      --ink: #f2f2f7; --ink-2: #b8b8c8; --muted: #7d7d92; --hairline: #24242f;
+      --accent: #8385f5; --accent-ink: #a5a6f8; --accent-wash: #1a1a2e;
+      --good: #0ca30c; --good-bg: #12251a; --good-text: #3ddc3d;
+      --rev-1: #23233a; --rev-1-ink: #8b8ee8;
+      --rev-2: #2e2f57; --rev-2-ink: #a3a6f2;
+      --rev-3: #4548a8; --rev-3-ink: #e6e7fc;
+      --rev-4: #6265d6; --rev-4-ink: #ffffff;
+      --evidence-bg: #17171f; --evidence-ink: #b8b8c8;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0a0a10; --surface: #111119; --surface-2: #17171f;
+    --ink: #f2f2f7; --ink-2: #b8b8c8; --muted: #7d7d92; --hairline: #24242f;
+    --accent: #8385f5; --accent-ink: #a5a6f8; --accent-wash: #1a1a2e;
+    --good: #0ca30c; --good-bg: #12251a; --good-text: #3ddc3d;
+    --rev-1: #23233a; --rev-1-ink: #8b8ee8;
+    --rev-2: #2e2f57; --rev-2-ink: #a3a6f2;
+    --rev-3: #4548a8; --rev-3-ink: #e6e7fc;
+    --rev-4: #6265d6; --rev-4-ink: #ffffff;
+    --evidence-bg: #17171f; --evidence-ink: #b8b8c8;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--page); color: var(--ink); font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif; font-size: 15.5px; line-height: 1.65; }
+  code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.86em; background: var(--surface-2); padding: 2px 6px; border-radius: 4px; color: var(--accent-ink); }
+  h1, h2, h3, h4 { text-wrap: balance; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+  p { color: var(--ink-2); max-width: 76ch; }
+  a { color: var(--accent-ink); }
+
+  .shell { display: grid; grid-template-columns: 250px minmax(0,1fr); max-width: 1360px; margin: 0 auto; }
+  @media (max-width: 980px) { .shell { grid-template-columns: 1fr; } .toc { display: none; } }
+  .toc { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; padding: 32px 18px 40px; border-right: 1px solid var(--hairline); }
+  .toc .brand { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .toc .title { font-size: 17px; font-weight: 700; margin-bottom: 24px; }
+  .toc nav { display: flex; flex-direction: column; gap: 2px; }
+  .toc a { display: block; padding: 6px 10px; border-radius: 6px; font-size: 12.6px; color: var(--ink-2); text-decoration: none; font-family: 'JetBrains Mono', monospace; }
+  .toc a:hover { background: var(--surface-2); color: var(--ink); }
+
+  .main { min-width: 0; padding-bottom: 100px; }
+
+  .cover { padding: 60px 52px 36px; border-bottom: 1px solid var(--hairline); }
+  @media (max-width: 640px) { .cover { padding: 40px 20px 28px; } }
+  .cover .kicker { display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); background: var(--accent-wash); border-radius: 999px; padding: 5px 13px; margin-bottom: 18px; }
+  .cover .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .cover h1 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.15; margin-bottom: 12px; max-width: 30ch; }
+  .cover .sub { font-size: 15.5px; max-width: 68ch; margin: 0 0 20px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; margin-top: 24px; }
+  @media (max-width: 860px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 480px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { background: var(--surface); padding: 14px 14px; }
+  .kpi .label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px; }
+  .kpi .value { font-size: 21px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+
+  section.block { padding: 44px 52px; border-bottom: 1px solid var(--hairline); }
+  @media (max-width: 640px) { section.block { padding: 34px 20px; } }
+  section.block:last-of-type { border-bottom: none; }
+  .section-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .section-head .idx { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent-ink); font-weight: 700; }
+  .section-head h2 { font-size: 22px; }
+  .section-dek { margin: 6px 0 24px; font-size: 14px; }
+  h3.sub-h { font-size: 16.5px; margin: 28px 0 12px; }
+  h3.sub-h:first-child { margin-top: 0; }
+
+  .evidence { display: inline-flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--evidence-bg); color: var(--evidence-ink); padding: 2px 8px; border-radius: 5px; }
+  .evidence::before { content: "◆"; font-size: 8px; color: var(--accent); }
+
+  /* Intent tier legend + grid */
+  .tier-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }
+  @media (max-width: 860px) { .tier-grid { grid-template-columns: repeat(2, 1fr); } }
+  .tier-card { border-radius: 10px; padding: 14px 16px; border: 1px solid var(--hairline); }
+  .tier-card .tier-name { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .tier-card .tier-count { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tier-card .tier-desc { font-size: 12px; color: var(--ink-2); margin-top: 4px; }
+  .tier-card.t4 { background: var(--rev-4); } .tier-card.t4 .tier-name, .tier-card.t4 .tier-count { color: var(--rev-4-ink); } .tier-card.t4 .tier-desc { color: var(--rev-4-ink); opacity: .85; }
+  .tier-card.t3 { background: var(--rev-3); } .tier-card.t3 .tier-name, .tier-card.t3 .tier-count { color: var(--rev-3-ink); } .tier-card.t3 .tier-desc { color: var(--rev-3-ink); opacity: .85; }
+  .tier-card.t2 { background: var(--rev-2); } .tier-card.t2 .tier-name, .tier-card.t2 .tier-count { color: var(--rev-2-ink); } .tier-card.t2 .tier-desc { color: var(--ink-2); }
+  .tier-card.t1 { background: var(--rev-1); } .tier-card.t1 .tier-name, .tier-card.t1 .tier-count { color: var(--rev-1-ink); } .tier-card.t1 .tier-desc { color: var(--ink-2); }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--hairline); border-radius: 10px; margin: 14px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 640px; }
+  thead th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 9px 12px; border-bottom: 1px solid var(--hairline); background: var(--surface-2); white-space: nowrap; }
+  tbody td { padding: 8px 12px; border-bottom: 1px solid var(--hairline); color: var(--ink-2); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td:first-child { color: var(--ink); font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12.3px; }
+  td.num, th.num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  td.center { text-align: center; }
+
+  .score-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 20px; padding: 0 6px; border-radius: 5px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700; }
+  .score-pill.s-hi { background: var(--rev-4); color: var(--rev-4-ink); }
+  .score-pill.s-med { background: var(--rev-3); color: var(--rev-3-ink); }
+  .score-pill.s-low { background: var(--rev-2); color: var(--rev-2-ink); }
+  .score-pill.s-min { background: var(--rev-1); color: var(--rev-1-ink); }
+
+  .stage-tag { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; padding: 2px 7px; border-radius: 4px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+
+  /* Top 50 ranked cards */
+  .rank-card {
+    display: grid; grid-template-columns: 40px 1fr auto; gap: 14px; align-items: start;
+    background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px;
+    padding: 14px 16px; margin-bottom: 8px;
+  }
+  @media (max-width: 700px) { .rank-card { grid-template-columns: 30px 1fr; } .rank-card .rank-scores { grid-column: 1 / -1; margin-top: 8px; } }
+  .rank-card .rank-n { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: var(--muted); padding-top: 2px; }
+  .rank-card h4 { font-size: 14px; margin: 0 0 3px; }
+  .rank-card .rank-type { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent-ink); background: var(--accent-wash); padding: 1px 6px; border-radius: 4px; margin-inline-end: 6px; }
+  .rank-card p { font-size: 12.6px; margin: 6px 0 0; color: var(--ink-2); }
+  .rank-scores { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .rank-scores .mini { text-align: center; }
+  .rank-scores .mini .mlabel { font-size: 8.5px; text-transform: uppercase; color: var(--muted); letter-spacing: .03em; display: block; margin-bottom: 2px; }
+
+  .finding { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 16px 20px; margin: 12px 0; }
+  .finding-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .finding-head h4 { font-size: 14.5px; }
+  .finding p { font-size: 13.5px; margin: 8px 0 0; }
+
+  .callout { border-radius: 10px; padding: 14px 18px; font-size: 13.5px; display: flex; gap: 10px; align-items: flex-start; background: var(--accent-wash); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); }
+  .callout p { margin: 0; color: var(--ink); }
+  .callout .ico { font-family: 'JetBrains Mono', monospace; font-weight: 700; flex: none; }
+
+  .win-list { columns: 2; column-gap: 28px; }
+  @media (max-width: 700px) { .win-list { columns: 1; } }
+  .win-list li { break-inside: avoid; margin-bottom: 10px; font-size: 13.3px; color: var(--ink-2); }
+  .win-list li b { color: var(--ink); }
+
+  .roi-table td, .roi-table th { text-align: center; }
+  .roi-table td:first-child, .roi-table th:first-child { text-align: left; }
+
+  footer.report-footer { padding: 30px 52px; color: var(--muted); font-size: 11.5px; font-family: 'JetBrains Mono', monospace; }
+</style>
+
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">lumiq.news</div>
+    <div class="title">Revenue Audit</div>
+    <nav>
+      <a href="#overview">Overview</a>
+      <a href="#tiers">Intent Tiers</a>
+      <a href="#top50">Top 50 Pages</a>
+      <a href="#quick-wins">Quick Wins</a>
+      <a href="#long-term">Long-term Wins</a>
+      <a href="#roi">Expected ROI</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="cover">
+      <span class="kicker"><span class="dot"></span>Revenue Sprint 1 · Read-only · Jul 23, 2026</span>
+      <h1>Commercial intent &amp; revenue audit — every published page scored</h1>
+      <p class="sub">All 563 published pages (236 reviews, 51 tools, 4 comparisons, 272 prompts) classified by commercial intent and scored across 5 dimensions using real production data — view counts, pricing fields, existing comparison links. No code or database changes were made; this is a planning document only.</p>
+
+      <div class="kpis">
+        <div class="kpi"><div class="label">Pages audited</div><div class="value">563</div></div>
+        <div class="kpi"><div class="label">High intent</div><div class="value">55</div></div>
+        <div class="kpi"><div class="label">Tools w/ pricing</div><div class="value">49/51</div></div>
+        <div class="kpi"><div class="label">Comparisons</div><div class="value">4</div></div>
+        <div class="kpi"><div class="label">Tool views (total)</div><div class="value">2,229</div></div>
+        <div class="kpi"><div class="label">Prompt views (total)</div><div class="value">3,201</div></div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <section class="block" id="overview">
+      <div class="section-head"><span class="idx">00</span><h2>Where the money actually is, before the detail</h2></div>
+      <p class="section-dek">Three facts drive every recommendation in this report.</p>
+
+      <div class="finding">
+        <div class="finding-head"><h4>The catalog is monetizable; almost none of it is monetized</h4></div>
+        <p>51 AI Tool pages already display pricing (35 freemium, 14 paid, 2 free) and an outbound "visit website" CTA — the exact structure an affiliate link slots into with zero UX change. None currently carry an affiliate tag; the CTA points at each tool's raw homepage.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>Comparisons are the highest-intent format on the site and the most under-built</h4></div>
+        <p>Only 4 comparison pages exist against 51 tools with dozens of plausible pairs. A visitor reading "X vs Y" is at the bottom of the decision funnel — this is the single highest-value page type per page built, and there are only 4 of them.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>Prompts drive the most traffic but carry the least direct commercial value</h4></div>
+        <p>272 prompts pull 3,201 total views (the highest engagement of any content type) but are pure utility — no transaction sits at the end of using a prompt. Their value is as a top-of-funnel feeder: 159/272 already link to a specific tool, meaning the funnel exists but ends at an unmonetized "visit website" link.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="tiers">
+      <div class="section-head"><span class="idx">01</span><h2>Commercial intent tiers</h2></div>
+      <p class="section-dek">Every published page grouped into one of four tiers, based on whether the page's purpose is to help a reader choose/buy something, or simply to inform.</p>
+
+      <div class="tier-grid">
+        <div class="tier-card t4">
+          <div class="tier-name">High intent</div>
+          <div class="tier-count">55</div>
+          <div class="tier-desc">4 comparisons + 51 tool pages — reader is actively evaluating a purchase</div>
+        </div>
+        <div class="tier-card t3">
+          <div class="tier-name">Medium intent</div>
+          <div class="tier-count">272</div>
+          <div class="tier-desc">Prompts — utility-driven, tool-adjacent, pre-purchase research behavior</div>
+        </div>
+        <div class="tier-card t2">
+          <div class="tier-name">Low intent</div>
+          <div class="tier-count">30</div>
+          <div class="tier-desc">"What is X" / "how to use X" guide reviews — tool-curious but not yet comparing</div>
+        </div>
+        <div class="tier-card t1">
+          <div class="tier-name">Informational only</div>
+          <div class="tier-count">206</div>
+          <div class="tier-desc">News/analysis reviews (companies, policy, research) — no purchase decision attached</div>
+        </div>
+      </div>
+
+      <h3 class="sub-h">Scoring methodology</h3>
+      <p style="font-size:13.5px;">Each page below is scored 1–10 on <b>Commercial Intent</b> (does this page sit near a buying decision), <b>Traffic Potential</b> (current views + topical demand), <b>Ad Revenue Potential</b> (pageview-driven, works for any tier), <b>Affiliate Potential</b> (only nonzero where a real, named commercial product is the page's subject), and tagged with a <b>User Decision Stage</b> (Awareness / Consideration / Decision / Retention). Scores are derived from real fields already in the database — pricing tier, monthly price, existing comparison links, view counts — not estimated from scratch.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="top50">
+      <div class="section-head"><span class="idx">02</span><h2>Top 50 revenue pages</h2></div>
+      <p class="section-dek">Ranked by a composite of Commercial Intent × Traffic Potential × Affiliate Potential. The 4 comparisons lead because they combine the highest possible intent score with an existing, if small, audience.</p>
+
+      <h3 class="sub-h">Tier 1 — Comparisons (ranks 1–4)</h3>
+      <div class="rank-card">
+        <span class="rank-n">1</span>
+        <div><h4><span class="rank-type">Compare</span>chatgpt-vs-claude</h4><p>The two most-viewed writing tools on the site (ChatGPT 83v, Claude 35v) in direct comparison — textbook Decision-stage content. Highest affiliate-readiness: both tools have live pricing shown.</p></div>
+        <div class="rank-scores">
+          <div class="mini"><span class="mlabel">Intent</span><span class="score-pill s-hi">10</span></div>
+          <div class="mini"><span class="mlabel">Traffic</span><span class="score-pill s-med">6</span></div>
+          <div class="mini"><span class="mlabel">Ad</span><span class="score-pill s-low">4</span></div>
+          <div class="mini"><span class="mlabel">Affiliate</span><span class="score-pill s-hi">9</span></div>
+        </div>
+      </div>
+      <div class="rank-card">
+        <span class="rank-n">2</span>
+        <div><h4><span class="rank-type">Compare</span>midjourney-vs-dalle3</h4><p>Both sides are top-15 tools by views (DALL-E 3 is #2 site-wide at 110v). Image-generation buyers are typically evaluating a paid subscription, the strongest affiliate-commission category.</p></div>
+        <div class="rank-scores">
+          <div class="mini"><span class="mlabel">Intent</span><span class="score-pill s-hi">10</span></div>
+          <div class="mini"><span class="mlabel">Traffic</span><span class="score-pill s-med">7</span></div>
+          <div class="mini"><span class="mlabel">Ad</span><span class="score-pill s-low">4</span></div>
+          <div class="mini"><span class="mlabel">Affiliate</span><span class="score-pill s-hi">9</span></div>
+        </div>
+      </div>
+      <div class="rank-card">
+        <span class="rank-n">3</span>
+        <div><h4><span class="rank-type">Compare</span>github-copilot-vs-cursor</h4><p>Coding-tool buyers skew professional/B2B — highest willingness-to-pay segment on the site. Cursor's $20/mo plan is a real, named price point to anchor a future affiliate CTA against.</p></div>
+        <div class="rank-scores">
+          <div class="mini"><span class="mlabel">Intent</span><span class="score-pill s-hi">10</span></div>
+          <div class="mini"><span class="mlabel">Traffic</span><span class="score-pill s-low">5</span></div>
+          <div class="mini"><span class="mlabel">Ad</span><span class="score-pill s-low">3</span></div>
+          <div class="mini"><span class="mlabel">Affiliate</span><span class="score-pill s-hi">9</span></div>
+        </div>
+      </div>
+      <div class="rank-card">
+        <span class="rank-n">4</span>
+        <div><h4><span class="rank-type">Compare</span>perplexity-vs-you-com</h4><p>Both search tools carry visible pricing (You.com $15/mo). Smallest audience of the 4 comparisons but same structural affiliate-readiness.</p></div>
+        <div class="rank-scores">
+          <div class="mini"><span class="mlabel">Intent</span><span class="score-pill s-hi">9</span></div>
+          <div class="mini"><span class="mlabel">Traffic</span><span class="score-pill s-low">4</span></div>
+          <div class="mini"><span class="mlabel">Ad</span><span class="score-pill s-low">3</span></div>
+          <div class="mini"><span class="mlabel">Affiliate</span><span class="score-pill s-hi">8</span></div>
+        </div>
+      </div>
+
+      <h3 class="sub-h">Tier 2 — Top-viewed AI Tool pages (ranks 5–34)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Tool</th><th class="num">Views</th><th>Pricing</th><th class="center">Intent</th><th class="center">Traffic</th><th class="center">Ad</th><th class="center">Affiliate</th><th>Stage</th></tr></thead>
+          <tbody>
+            <tr><td class="num">5</td><td>gemini</td><td class="num">112</td><td>Freemium</td><td class="center"><span class="score-pill s-hi">8</span></td><td class="center"><span class="score-pill s-hi">9</span></td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Consideration</span></td></tr>
+            <tr><td class="num">6</td><td>dalle-3</td><td class="num">110</td><td>Freemium</td><td class="center"><span class="score-pill s-hi">8</span></td><td class="center"><span class="score-pill s-hi">9</span></td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Consideration</span></td></tr>
+            <tr><td class="num">7</td><td>elevenlabs</td><td class="num">93</td><td>Freemium</td><td class="center"><span class="score-pill s-hi">8</span></td><td class="center"><span class="score-pill s-hi">8</span></td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Consideration</span></td></tr>
+            <tr><td class="num">8</td><td>notion-ai</td><td class="num">93</td><td>Freemium</td><td class="center"><span class="score-pill s-hi">8</span></td><td class="center"><span class="score-pill s-hi">8</span></td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Consideration</span></td></tr>
+            <tr><td class="num">9</td><td>canva-ai-review</td><td class="num">88</td><td>Freemium · $15/mo</td><td class="center"><span class="score-pill s-hi">9</span></td><td class="center"><span class="score-pill s-hi">8</span></td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-hi">7</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">10</td><td>chatgpt</td><td class="num">83</td><td>Freemium</td><td class="center"><span class="score-pill s-hi">8</span></td><td class="center"><span class="score-pill s-hi">8</span></td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Consideration</span></td></tr>
+            <tr><td class="num">11</td><td>adcreative-ai</td><td class="num">64</td><td>Paid · $29/mo</td><td class="center"><span class="score-pill s-hi">9</span></td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-hi">8</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">12</td><td>zapier-automation-tool</td><td class="num">63</td><td>Freemium · $20/mo</td><td class="center"><span class="score-pill s-hi">9</span></td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-hi">8</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">13</td><td>nabla-copilot</td><td class="num">49</td><td>Freemium</td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-low">3</span></td><td><span class="stage-tag">Consideration</span></td></tr>
+            <tr><td class="num">14</td><td>khanmigo-ai-tutor</td><td class="num">46</td><td>Freemium · $4/mo</td><td class="center"><span class="score-pill s-med">7</span></td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-med">5</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">15</td><td>perplexity-ai</td><td class="num">43</td><td>Freemium</td><td class="center"><span class="score-pill s-med">7</span></td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-med">5</span></td><td><span class="stage-tag">Consideration</span></td></tr>
+            <tr><td class="num">16</td><td>gamma-ai-presentations</td><td class="num">42</td><td>Freemium · $10/mo</td><td class="center"><span class="score-pill s-med">7</span></td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">17</td><td>cursor-ai-code-editor</td><td class="num">41</td><td>Freemium · $20/mo</td><td class="center"><span class="score-pill s-hi">8</span></td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-hi">7</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">18</td><td>tidio-ai-chatbot-support</td><td class="num">40</td><td>Freemium · $29/mo</td><td class="center"><span class="score-pill s-med">7</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">19</td><td>make-automation-platform</td><td class="num">40</td><td>Freemium · $9/mo</td><td class="center"><span class="score-pill s-med">7</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">20</td><td>runway</td><td class="num">39</td><td>Freemium</td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-low">4</span></td><td><span class="stage-tag">Consideration</span></td></tr>
+            <tr><td class="num">21</td><td>webflow-ai-tool-review</td><td class="num">39</td><td>Freemium · $14/mo</td><td class="center"><span class="score-pill s-med">7</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">22</td><td>bubble-no-code-app-development</td><td class="num">39</td><td>Freemium · $29/mo</td><td class="center"><span class="score-pill s-med">7</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">23</td><td>suki-ai-assistant</td><td class="num">39</td><td>Paid</td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-low">4</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">24</td><td>replit-ai-tool-review</td><td class="num">39</td><td>Freemium · $7/mo</td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-med">5</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">25</td><td>adobe-firefly-review</td><td class="num">38</td><td>Freemium</td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-low">4</span></td><td><span class="stage-tag">Consideration</span></td></tr>
+            <tr><td class="num">26</td><td>you-com</td><td class="num">37</td><td>Freemium · $15/mo</td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-med">5</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">27</td><td>grammarly-arabic-writing-assistant</td><td class="num">37</td><td>Freemium · $12/mo</td><td class="center"><span class="score-pill s-med">7</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">28</td><td>midjourney</td><td class="num">37</td><td>Paid</td><td class="center"><span class="score-pill s-med">7</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">29</td><td>semrush-ai-seo-tool</td><td class="num">37</td><td>Paid · $120/mo</td><td class="center"><span class="score-pill s-hi">8</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-hi">8</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">30</td><td>grok-ai-assistant</td><td class="num">36</td><td>Freemium · $16/mo</td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-med">5</span></td><td><span class="stage-tag">Consideration</span></td></tr>
+            <tr><td class="num">31</td><td>intercom-ai-customer-support</td><td class="num">36</td><td>Paid · $39/mo</td><td class="center"><span class="score-pill s-med">7</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">32</td><td>github-copilot</td><td class="num">36</td><td>Freemium</td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-low">4</span></td><td><span class="stage-tag">Consideration</span></td></tr>
+            <tr><td class="num">33</td><td>surfer-seo-review</td><td class="num">35</td><td>Paid · $89/mo</td><td class="center"><span class="score-pill s-hi">8</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-low">2</span></td><td class="center"><span class="score-pill s-hi">8</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">34</td><td>claude</td><td class="num">35</td><td>Freemium</td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-low">4</span></td><td><span class="stage-tag">Consideration</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-h">Tier 3 — Highest-value guide reviews + top prompts (ranks 35–50)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Page</th><th>Type</th><th class="num">Views</th><th class="center">Intent</th><th class="center">Traffic</th><th class="center">Ad</th><th class="center">Affiliate</th><th>Stage</th></tr></thead>
+          <tbody>
+            <tr><td class="num">35</td><td>what-is-claude-ai-anthropic-guide</td><td>Guide</td><td class="num">114</td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-hi">9</span></td><td class="center"><span class="score-pill s-hi">7</span></td><td class="center"><span class="score-pill s-low">3</span></td><td><span class="stage-tag">Awareness</span></td></tr>
+            <tr><td class="num">36</td><td>social-media-content-calendar</td><td>Prompt</td><td class="num">86</td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-hi">7</span></td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-min">1</span></td><td><span class="stage-tag">Retention</span></td></tr>
+            <tr><td class="num">37</td><td>midjourney-prompt-master</td><td>Prompt</td><td class="num">78</td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-hi">7</span></td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-low">2</span></td><td><span class="stage-tag">Retention</span></td></tr>
+            <tr><td class="num">38</td><td>professional-email-writer</td><td>Prompt</td><td class="num">76</td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-hi">7</span></td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-min">1</span></td><td><span class="stage-tag">Retention</span></td></tr>
+            <tr><td class="num">39</td><td>chatgpt-system-prompt-optimizer</td><td>Prompt</td><td class="num">70</td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-min">1</span></td><td><span class="stage-tag">Retention</span></td></tr>
+            <tr><td class="num">40</td><td>code-reviewer-debugger</td><td>Prompt</td><td class="num">68</td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-min">1</span></td><td><span class="stage-tag">Retention</span></td></tr>
+            <tr><td class="num">41</td><td>business-plan-generator</td><td>Prompt</td><td class="num">67</td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-med">5</span></td><td class="center"><span class="score-pill s-low">2</span></td><td><span class="stage-tag">Consideration</span></td></tr>
+            <tr><td class="num">42</td><td>ironclad-ai-contract-management</td><td>Tool</td><td class="num">34</td><td class="center"><span class="score-pill s-hi">8</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-low">2</span></td><td class="center"><span class="score-pill s-hi">8</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">43</td><td>leonardo-ai-image-platform</td><td>Tool</td><td class="num">34</td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-low">2</span></td><td class="center"><span class="score-pill s-med">5</span></td><td><span class="stage-tag">Consideration</span></td></tr>
+            <tr><td class="num">44</td><td>harvey-ai-legal-tool</td><td>Tool</td><td class="num">33</td><td class="center"><span class="score-pill s-hi">8</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-low">2</span></td><td class="center"><span class="score-pill s-hi">8</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">45</td><td>reclaim-ai-calendar-assistant</td><td>Tool</td><td class="num">33</td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-low">2</span></td><td class="center"><span class="score-pill s-med">5</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">46</td><td>beautiful-ai-ai-presentation-tool</td><td>Tool</td><td class="num">33</td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-low">2</span></td><td class="center"><span class="score-pill s-med">5</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">47</td><td>copy-ai-review</td><td>Tool</td><td class="num">32</td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-low">3</span></td><td class="center"><span class="score-pill s-low">2</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">48</td><td>jasper-ai / jasper-ai-writing-tool</td><td>Tool (dup)</td><td class="num">32+32</td><td class="center"><span class="score-pill s-med">6</span></td><td class="center"><span class="score-pill s-low">4</span></td><td class="center"><span class="score-pill s-low">2</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">49</td><td>kensho-ai-financial-analysis</td><td>Tool</td><td class="num">29</td><td class="center"><span class="score-pill s-hi">7</span></td><td class="center"><span class="score-pill s-low">2</span></td><td class="center"><span class="score-pill s-low">2</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Decision</span></td></tr>
+            <tr><td class="num">50</td><td>bloomberg-gpt</td><td>Tool</td><td class="num">28</td><td class="center"><span class="score-pill s-hi">7</span></td><td class="center"><span class="score-pill s-low">2</span></td><td class="center"><span class="score-pill s-low">2</span></td><td class="center"><span class="score-pill s-med">6</span></td><td><span class="stage-tag">Decision</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <span class="ico">→</span>
+        <p><b>Why guide reviews and prompts sit lower despite higher traffic:</b> the Claude guide (rank 35) has more raw views than every tool page except Gemini and DALL-E 3, and the top prompts out-view most tools entirely — but neither format sits at a purchase decision. Their revenue role is <b>funneling</b>, not <b>converting</b>: they should route readers into the Tier 1/2 pages above via CTA and internal links, not carry their own affiliate placement.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="recommendations">
+      <div class="section-head"><span class="idx">03</span><h2>Per-tier monetization recommendations</h2></div>
+      <p class="section-dek">Grouped by content type since the same recommendation applies across each tier, rather than repeated 50 times.</p>
+
+      <h3 class="sub-h">Comparisons (4 pages)</h3>
+      <ul class="win-list">
+        <li><b>CTA:</b> replace the plain "read more" pattern with a dual "Try [Tool A] / Try [Tool B]" button pair at the point the reader sees the verdict.</li>
+        <li><b>Related tools/comparisons:</b> both sides' tool pages already link back via Sprint 3's InternalLink system — extend this so every tool page that has 2+ plausible comparisons surfaces a "compare with" module.</li>
+        <li><b>Future affiliate placement:</b> the existing verdict/score section is the natural anchor — no layout change needed, just an affiliate href swapped into the existing "visit website" link once a program is signed.</li>
+        <li><b>Future sponsor placement:</b> a single sponsor-neutral "also consider" slot below the verdict, clearly labeled, would not compromise the comparison's credibility if kept editorially independent of the verdict itself.</li>
+      </ul>
+
+      <h3 class="sub-h">AI Tool pages (51 pages)</h3>
+      <ul class="win-list">
+        <li><b>CTA:</b> the current "visit website" button is generic across all 51 pages — a pricing-aware CTA ("ابدأ مجاناً" for freemium vs. "اشترك الآن" for paid) would match user intent more precisely without adding new UI.</li>
+        <li><b>Related comparisons:</b> 46 of 51 tools have zero linked comparison (confirmed in the Sprint 2 audit) — this is the single most direct revenue lever available, since a comparison page is a stronger affiliate placement than a solo review.</li>
+        <li><b>Related prompts:</b> 159 of 272 prompts already link to a specific tool via `toolId` — the reverse link (tool page → "prompts you can use with this tool") is not yet surfaced on the tool page itself.</li>
+        <li><b>Future affiliate placement:</b> the existing outbound website link is the exact slot; swapping in a tracked affiliate URL per tool (once programs exist) requires zero layout change.</li>
+        <li><b>Future sponsor placement:</b> an "editor's pick" or "sponsored alternative" badge already has precedent in the existing `editorPick`/`featured` badge system — a sponsored variant could reuse that visual language.</li>
+      </ul>
+
+      <h3 class="sub-h">Prompts (272 pages)</h3>
+      <ul class="win-list">
+        <li><b>CTA:</b> prompts linked to a tool (159/272) could carry a "run this prompt in [Tool]" button pointing at that tool's page, turning a copy-paste utility into a funnel step.</li>
+        <li><b>Related tools:</b> the 113 prompts with no `toolId` are mostly genuinely tool-agnostic (confirmed in the Sprint 2 audit) — no forced tool-tagging needed there.</li>
+        <li><b>Ad revenue:</b> prompts are the highest-traffic content type (3,201 total views) and the best candidate for a standard display-ad slot, since there's no comparison-shopping context to protect.</li>
+        <li><b>Affiliate potential:</b> structurally low — a prompt itself isn't a product. Value is indirect, via the tool link.</li>
+      </ul>
+
+      <h3 class="sub-h">Guide reviews — "what is X" (8 pages)</h3>
+      <ul class="win-list">
+        <li><b>CTA:</b> each guide already links to its paired tool page (added in Sprint 4) — a stronger visual CTA card at the end of the guide, rather than an inline text link, would convert more of the guide's Awareness-stage traffic into a Consideration-stage tool-page visit.</li>
+        <li><b>Related comparisons:</b> the Claude, Midjourney guides now link to their comparisons (Sprint 4) — extend the same pattern to the Gemini, Perplexity, ElevenLabs guides once a comparison exists for those tools.</li>
+        <li><b>Ad revenue:</b> the Claude guide alone (114 views, the single highest-viewed page site-wide) is the strongest ad-revenue candidate in the entire content library purely on traffic.</li>
+      </ul>
+
+      <h3 class="sub-h">Informational reviews — companies/policy/research (206 pages)</h3>
+      <ul class="win-list">
+        <li><b>CTA:</b> none recommended — forcing a commercial CTA onto a geopolitics or research article would harm credibility and UX for no realistic conversion gain.</li>
+        <li><b>Ad revenue:</b> standard display ads only (already implemented via `AdSlot` components) — this tier's entire revenue role is ad impressions, not conversion.</li>
+        <li><b>Affiliate/sponsor:</b> not recommended for this tier under any circumstance — these are news/analysis pieces where a product placement would read as compromised editorial.</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="quick-wins">
+      <div class="section-head"><span class="idx">04</span><h2>Quick wins</h2></div>
+      <p class="section-dek">Achievable without new code architecture — content/data changes only, following the same safe-edit pattern already used in Growth Sprint 4.</p>
+      <ul class="win-list">
+        <li><b>Build 3–5 new comparison pages</b> for the highest-combined-view pairs already identified in Sprint 2 (Zapier vs Make, Notion AI vs Copilot, Cursor vs GitHub Copilot already exists) — each new comparison instantly becomes a Tier-1 page by this report's own ranking.</li>
+        <li><b>Merge the jasper-ai duplicate</b> (rank 48) — two pages splitting one product's traffic and future affiliate value.</li>
+        <li><b>Add "related comparison" links</b> to the 46 tool pages that have none — pure internal-linking work, same system built in Sprint 3.</li>
+        <li><b>Surface prompt↔tool cross-links</b> on tool pages (159 prompts already have the data) — no schema change, just a template addition.</li>
+        <li><b>Add pricing-aware CTA copy</b> on the 14 paid + 35 freemium tool pages — a copy change, not a redesign.</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="long-term">
+      <div class="section-head"><span class="idx">05</span><h2>Long-term wins</h2></div>
+      <p class="section-dek">Require external setup (affiliate program applications, sponsor relationships) before implementation — sequencing, not blockers.</p>
+      <ul class="win-list">
+        <li><b>Apply to affiliate programs</b> for the highest-affiliate-score tools first: AdCreative.ai, Zapier, Semrush AI, Surfer SEO, Harvey AI, Ironclad — all paid/high-price tools already reviewed with existing outbound links ready to swap.</li>
+        <li><b>Grow the comparison catalog toward 15–20 pages</b>, prioritized by the category-pair table in Sprint 2's audit — comparisons compound in value as more exist, since cross-linking between them increases dwell time and page depth per session.</li>
+        <li><b>Sponsor package for the Tools directory</b>, once traffic grows enough to make a "featured placement" commercially meaningful — the `editorPick`/`featured` flags already exist as the display mechanism.</li>
+        <li><b>Prompt-to-tool funnel instrumentation</b> — once affiliate links exist on tool pages, measure whether prompt-driven traffic converts better than guide-driven traffic, since prompts currently carry the most total engagement of any content type.</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="roi">
+      <div class="section-head"><span class="idx">06</span><h2>Expected ROI</h2></div>
+      <p class="section-dek">Directional, not projected — this is a pre-revenue site (2,229 tool-page views and 3,201 prompt views to date) with no ad or affiliate infrastructure live yet. ROI here means "which lever is worth building first," not a revenue forecast.</p>
+
+      <div class="table-wrap">
+        <table class="roi-table">
+          <thead><tr><th>Lever</th><th>Setup effort</th><th>Revenue ceiling</th><th>Time to first dollar</th></tr></thead>
+          <tbody>
+            <tr><td>Display ads on existing pages</td><td>Low — already implemented</td><td>Low per-page, scales with total traffic</td><td>Immediate</td></tr>
+            <tr><td>Affiliate links on 51 tool pages</td><td>Medium — requires program approval per tool</td><td>Highest per-conversion value</td><td>Weeks (approval-gated)</td></tr>
+            <tr><td>New comparison pages (quick win)</td><td>Low — content only, no new code</td><td>Compounds — each page is reusable affiliate real estate</td><td>Immediate once written</td></tr>
+            <tr><td>Sponsor placements</td><td>High — requires sales relationship + traffic minimum</td><td>Highest ceiling, least predictable</td><td>Months</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <span class="ico">→</span>
+        <p><b>Recommended sequencing:</b> ship the Quick Wins (new comparisons, dedup, cross-links) first since they require zero external dependency and directly raise this report's own intent/affiliate scores for existing pages. Affiliate program applications can run in parallel — approval timelines are the true bottleneck, not content readiness.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="report-footer">
+  Read-only audit. No file, database row, or commit was modified to produce this report. All figures verified against production Jul 23, 2026 via direct Prisma queries — every page's pricing, view count, and comparison links checked individually.
+</footer>

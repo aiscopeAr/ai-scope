@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR } from "@/lib/seo";
 import { normalizeTag, reviewHasTag, slugToTag } from "@/lib/tags";
 import { CACHE_TAGS, DEFAULT_REVALIDATE_SECONDS } from "@/lib/cache";
+import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
 import ReviewCard from "@/components/ReviewCard";
 import Pagination from "@/components/Pagination";
 import AdSlot from "@/components/AdSlot";
@@ -99,9 +100,16 @@ export default async function TagPage({
     inLanguage: "ar",
   };
 
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "الرئيسية", href: "/" },
+    { name: "التقارير", href: "/reviews" },
+    { name: `#${label}` },
+  ]);
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
         <nav className="mb-6 flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
           <Link href="/" className="link-muted transition-colors">الرئيسية</Link>
