@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/toast";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Eye, X } from "lucide-react";
 
 type Platform = "twitter" | "instagram" | "telegram" | "facebook" | "tiktok";
-type PostStatus = "pending" | "approved" | "sent" | "failed" | "skipped";
+type PostStatus = "pending" | "approved" | "sending" | "sent" | "failed" | "skipped";
 
 interface SocialAccount {
   id: string;
@@ -24,6 +24,30 @@ interface SocialPost {
   errorMsg: string | null;
   createdAt: string;
   article: { titleAr: string; slug: string } | null;
+}
+
+interface TelegramPreview {
+  template: string;
+  templateLabel: string;
+  caption: string;
+  hashtags: string[];
+  articleUrl: string;
+  imageUrl: string | null;
+}
+
+interface TelegramPerformance {
+  summary: {
+    drafted: number;
+    sent: number;
+    failed: number;
+    awaitingRetry: number;
+    sending: number;
+    successRate: number | null;
+    retryRate: number | null;
+    mostRecentSuccess: { sentAt: string } | null;
+    mostRecentFailure: { errorMsg: string | null; createdAt: string } | null;
+  };
+  telegramSessions: { sessions: number; range: string } | null;
 }
 
 const PLATFORM_LABELS: Record<Platform, string> = {
@@ -45,6 +69,7 @@ const PLATFORM_COLORS: Record<Platform, string> = {
 const STATUS_COLORS: Record<PostStatus, string> = {
   pending: "bg-yellow-100 text-yellow-700",
   approved: "bg-green-100 text-green-700",
+  sending: "bg-blue-100 text-blue-700",
   sent: "bg-emerald-100 text-emerald-700",
   failed: "bg-red-100 text-red-700",
   skipped: "bg-gray-100 text-gray-500",
@@ -87,6 +112,20 @@ export default function SocialPage() {
   const [saving, setSaving] = useState(false);
   const [postFilter, setPostFilter] = useState<PostStatus | "all">("all");
   const [sending, setSending] = useState(false);
+  const [previewingId, setPreviewingId] = useState<string | null>(null);
+  const [previewData, setPreviewData] = useState<TelegramPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [telegramPerf, setTelegramPerf] = useState<TelegramPerformance | null>(null);
+
+  async function loadTelegramPerformance() {
+    try {
+      const res = await fetch("/api/admin/social/telegram-performance");
+      if (!res.ok) return;
+      setTelegramPerf(await res.json());
+    } catch {
+      // best-effort — the rest of the page still functions without this panel
+    }
+  }
 
   async function loadAccounts() {
     setLoadingAccounts(true);
@@ -117,6 +156,7 @@ export default function SocialPage() {
   useEffect(() => {
     void loadAccounts();
     void loadPosts();
+    void loadTelegramPerformance();
   }, []);
 
   async function toggleAccount(id: string, enabled: boolean) {
@@ -198,6 +238,37 @@ export default function SocialPage() {
     await loadPosts();
   }
 
+  async function retryPost(id: string) {
+    await fetch(`/api/admin/social/posts/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "approved" }),
+    });
+    toast("تمت إعادة جدولة المنشور للإرسال");
+    await loadPosts();
+  }
+
+  async function openPreview(id: string) {
+    setPreviewingId(id);
+    setPreviewLoading(true);
+    setPreviewData(null);
+    try {
+      const res = await fetch(`/api/admin/social/posts/${id}/preview`);
+      if (!res.ok) throw new Error(await res.text());
+      setPreviewData(await res.json());
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "تعذّرت المعاينة", "error");
+      setPreviewingId(null);
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
+  function closePreview() {
+    setPreviewingId(null);
+    setPreviewData(null);
+  }
+
   const filteredPosts = postFilter === "all" ? posts : posts.filter((p) => p.status === postFilter);
   const pendingCount = posts.filter((p) => p.status === "pending").length;
   const sentCount = posts.filter((p) => p.status === "sent").length;
@@ -242,6 +313,67 @@ export default function SocialPage() {
           <div className="text-slate-500 text-sm">منشورات أُرسلت</div>
         </div>
       </div>
+
+      {/* Telegram performance summary */}
+      {telegramPerf && (
+        <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+          <h2 className="text-sm font-semibold text-slate-700 mb-3">أداء تيليغرام</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
+            <div>
+              <div className="text-lg font-bold text-slate-800">{telegramPerf.summary.drafted}</div>
+              <div className="text-[11px] text-slate-500">تمت صياغتها</div>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-emerald-600">{telegramPerf.summary.sent}</div>
+              <div className="text-[11px] text-slate-500">أُرسلت</div>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-red-600">{telegramPerf.summary.failed}</div>
+              <div className="text-[11px] text-slate-500">فشلت</div>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-amber-600">{telegramPerf.summary.awaitingRetry}</div>
+              <div className="text-[11px] text-slate-500">بانتظار إعادة المحاولة</div>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-blue-600">{telegramPerf.summary.sending}</div>
+              <div className="text-[11px] text-slate-500">قيد الإرسال الآن</div>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-slate-800">
+                {telegramPerf.summary.successRate !== null ? `${Math.round(telegramPerf.summary.successRate * 100)}%` : "—"}
+              </div>
+              <div className="text-[11px] text-slate-500">معدل النجاح</div>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-slate-800">
+                {telegramPerf.summary.retryRate !== null ? `${Math.round(telegramPerf.summary.retryRate * 100)}%` : "—"}
+              </div>
+              <div className="text-[11px] text-slate-500">معدل إعادة المحاولة</div>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-slate-500 border-t border-slate-100 pt-3">
+            <span>
+              آخر إرسال ناجح:{" "}
+              {telegramPerf.summary.mostRecentSuccess
+                ? new Date(telegramPerf.summary.mostRecentSuccess.sentAt).toLocaleString("ar")
+                : "لا يوجد"}
+            </span>
+            <span>
+              آخر فشل:{" "}
+              {telegramPerf.summary.mostRecentFailure
+                ? new Date(telegramPerf.summary.mostRecentFailure.createdAt).toLocaleString("ar")
+                : "لا يوجد"}
+            </span>
+            {telegramPerf.telegramSessions && (
+              <span>
+                جلسات من تيليغرام (آخر {telegramPerf.telegramSessions.range === "28daysAgo" ? "28 يوماً" : telegramPerf.telegramSessions.range}):{" "}
+                {telegramPerf.telegramSessions.sessions}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Accounts */}
       <div>
@@ -330,28 +462,108 @@ export default function SocialPage() {
                       <p className="text-xs text-red-500 mt-1">{post.errorMsg}</p>
                     )}
                   </div>
-                  {post.status === "pending" && (
-                    <div className="flex gap-1 shrink-0">
+                  <div className="flex gap-1 shrink-0">
+                    {post.platform === "telegram" && (
                       <button
-                        onClick={() => approvePost(post.id)}
-                        className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-lg hover:bg-emerald-200"
+                        onClick={() => openPreview(post.id)}
+                        className="flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-lg hover:bg-blue-200"
                       >
-                        موافقة
+                        <Eye className="h-3 w-3" /> معاينة
                       </button>
+                    )}
+                    {post.status === "pending" && (
+                      <>
+                        <button
+                          onClick={() => approvePost(post.id)}
+                          className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-lg hover:bg-emerald-200"
+                        >
+                          موافقة
+                        </button>
+                        <button
+                          onClick={() => skipPost(post.id)}
+                          className="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-lg hover:bg-slate-200"
+                        >
+                          تخطي
+                        </button>
+                      </>
+                    )}
+                    {post.status === "failed" && (
                       <button
-                        onClick={() => skipPost(post.id)}
-                        className="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-lg hover:bg-slate-200"
+                        onClick={() => retryPost(post.id)}
+                        className="bg-indigo-100 text-indigo-700 text-xs px-2 py-1 rounded-lg hover:bg-indigo-200"
                       >
-                        تخطي
+                        إعادة المحاولة
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Telegram Preview Modal — shows the exact production formatter output;
+          never sends a real Telegram message. */}
+      {previewingId && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4 max-h-[85vh] overflow-y-auto" dir="rtl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-800">معاينة رسالة تيليغرام</h3>
+              <button onClick={closePreview} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {previewLoading ? (
+              <div className="flex items-center justify-center py-8 text-slate-400 text-sm gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> جاري التحميل...
+              </div>
+            ) : previewData ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 block mb-1">نوع القالب المستخدم</label>
+                  <span className="inline-block bg-indigo-100 text-indigo-700 text-xs px-2 py-1 rounded-full font-medium">
+                    {previewData.templateLabel} ({previewData.template})
+                  </span>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 block mb-1">النص النهائي (بعد الحماية HTML)</label>
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm whitespace-pre-line text-slate-800">
+                    {previewData.caption}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 block mb-1">الرابط النهائي (مع UTM)</label>
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-mono text-slate-600 break-all">
+                    {previewData.articleUrl}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 block mb-1">
+                    الصورة المتوقع أن يعرضها تيليغرام (معاينة الرابط)
+                  </label>
+                  {previewData.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- admin-only preview thumbnail from an arbitrary external host
+                    <img
+                      src={previewData.imageUrl}
+                      alt="معاينة الصورة"
+                      className="rounded-lg border border-slate-200 max-h-40 object-cover"
+                    />
+                  ) : (
+                    <p className="text-xs text-slate-400">لا توجد صورة للمقال — سيعرض تيليغرام معاينة نصية بدون صورة</p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400">تعذّر تحميل المعاينة</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Add Account Modal */}
       {showAddAccount && (

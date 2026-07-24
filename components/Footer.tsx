@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { track } from "@vercel/analytics";
+import { TELEGRAM_CHANNEL_URL, TELEGRAM_CTA_CLICK_EVENT } from "@/lib/telegram-cta";
 
 export default function Footer() {
   return (
@@ -125,9 +127,10 @@ export default function Footer() {
             </p>
           </div>
           <a
-            href="https://t.me/lumiq_news"
+            href={TELEGRAM_CHANNEL_URL}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => track(TELEGRAM_CTA_CLICK_EVENT, { placement: "footer" })}
             className="shrink-0 rounded-[6px] px-4 py-2 text-sm font-bold text-white transition hover:opacity-90"
             style={{ backgroundColor: "#0088cc" }}
           >

@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumiq — Telegram Publishing System Audit</title>
+<meta name="description" content="Forensic architecture audit of the article-to-Telegram publishing pipeline: components, sequence, error handling, technical debt, and production risks.">
+
+<style>
+  @font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 400 700; src: local('JetBrains Mono'); }
+
+  :root {
+    color-scheme: light;
+    --page: #f7f7fb; --surface: #ffffff; --surface-2: #f0f0f8;
+    --ink: #12121a; --ink-2: #4a4a5c; --muted: #86869c; --hairline: #e3e3ee;
+    --accent: #6366f1; --accent-ink: #4338ca; --accent-wash: #eef0fe;
+    --ok-bg: #e6f7e9; --ok-ink: #157a37; --ok-border: #a8e0b5;
+    --warn-bg: #fdf3df; --warn-ink: #a15c00; --warn-border: #f0d090;
+    --crit-bg: #fbe7e7; --crit-ink: #b3261e; --crit-border: #f0b0ac;
+    --dead-bg: #f0f0f8; --dead-ink: #6a6a80; --dead-border: #d4d4e4;
+    --code-bg: #17172a; --code-ink: #e3e3f0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0a0a10; --surface: #111119; --surface-2: #17171f;
+      --ink: #f2f2f7; --ink-2: #b8b8c8; --muted: #7d7d92; --hairline: #24242f;
+      --accent: #8385f5; --accent-ink: #a5a6f8; --accent-wash: #1a1a2e;
+      --ok-bg: #0f2416; --ok-ink: #4bd97a; --ok-border: #1a5c33;
+      --warn-bg: #2e2410; --warn-ink: #e0ac3f; --warn-border: #5c4610;
+      --crit-bg: #2e1412; --crit-ink: #f27b73; --crit-border: #6b241e;
+      --dead-bg: #17171f; --dead-ink: #86869c; --dead-border: #2c2c3a;
+      --code-bg: #0d0d16; --code-ink: #d8d8e8;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0a0a10; --surface: #111119; --surface-2: #17171f;
+    --ink: #f2f2f7; --ink-2: #b8b8c8; --muted: #7d7d92; --hairline: #24242f;
+    --accent: #8385f5; --accent-ink: #a5a6f8; --accent-wash: #1a1a2e;
+    --ok-bg: #0f2416; --ok-ink: #4bd97a; --ok-border: #1a5c33;
+    --warn-bg: #2e2410; --warn-ink: #e0ac3f; --warn-border: #5c4610;
+    --crit-bg: #2e1412; --crit-ink: #f27b73; --crit-border: #6b241e;
+    --dead-bg: #17171f; --dead-ink: #86869c; --dead-border: #2c2c3a;
+    --code-bg: #0d0d16; --code-ink: #d8d8e8;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--page); color: var(--ink); font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif; font-size: 15px; line-height: 1.65; }
+  code, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  code { font-size: 0.86em; background: var(--surface-2); padding: 2px 6px; border-radius: 4px; color: var(--accent-ink); }
+  h1, h2, h3, h4 { text-wrap: balance; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+  p { color: var(--ink-2); max-width: 74ch; }
+  a { color: var(--accent-ink); }
+
+  .shell { display: grid; grid-template-columns: 250px minmax(0,1fr); max-width: 1320px; margin: 0 auto; }
+  @media (max-width: 980px) { .shell { grid-template-columns: 1fr; } .toc { display: none; } }
+  .toc { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; padding: 32px 18px 40px; border-right: 1px solid var(--hairline); }
+  .toc .brand { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .toc .title { font-size: 16px; font-weight: 700; margin-bottom: 24px; }
+  .toc nav { display: flex; flex-direction: column; gap: 1px; }
+  .toc a { display: block; padding: 5px 10px; border-radius: 6px; font-size: 12.2px; color: var(--ink-2); text-decoration: none; font-family: 'JetBrains Mono', monospace; }
+  .toc a:hover { background: var(--surface-2); color: var(--ink); }
+
+  .main { min-width: 0; padding-bottom: 100px; }
+
+  .cover { padding: 56px 48px 32px; border-bottom: 1px solid var(--hairline); }
+  @media (max-width: 640px) { .cover { padding: 36px 18px 24px; } }
+  .cover .kicker { display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); background: var(--accent-wash); border-radius: 999px; padding: 5px 13px; margin-bottom: 18px; }
+  .cover .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .cover h1 { font-size: clamp(24px, 3vw, 33px); line-height: 1.15; margin-bottom: 12px; max-width: 34ch; }
+  .cover .sub { font-size: 14.5px; max-width: 74ch; margin: 0 0 20px; }
+  .audit-flag { display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: var(--warn-ink); background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 8px; padding: 8px 14px; margin-top: 4px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; margin-top: 22px; }
+  @media (max-width: 860px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 480px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { background: var(--surface); padding: 13px 13px; }
+  .kpi .label { font-size: 10.2px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px; }
+  .kpi .value { font-size: 19px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+
+  section.block { padding: 40px 48px; border-bottom: 1px solid var(--hairline); }
+  @media (max-width: 640px) { section.block { padding: 30px 18px; } }
+  section.block:last-of-type { border-bottom: none; }
+  .section-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .section-head .idx { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent-ink); font-weight: 700; }
+  .section-head h2 { font-size: 21px; }
+  .section-dek { margin: 6px 0 20px; font-size: 13.6px; }
+
+  /* Sequence diagram */
+  .seq { display: flex; flex-direction: column; gap: 0; margin: 20px 0; }
+  .seq-step { display: grid; grid-template-columns: 32px 1fr; gap: 16px; position: relative; padding-bottom: 26px; }
+  .seq-step:last-child { padding-bottom: 0; }
+  .seq-step::before { content: ""; position: absolute; left: 15px; top: 32px; bottom: 0; width: 2px; background: var(--hairline); }
+  .seq-step:last-child::before { display: none; }
+  .seq-num { width: 32px; height: 32px; border-radius: 50%; background: var(--accent-wash); color: var(--accent-ink); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; flex: none; z-index: 1; }
+  .seq-body { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 14px 18px; }
+  .seq-body .who { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent-ink); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .seq-body h4 { font-size: 14.5px; margin-bottom: 5px; }
+  .seq-body p { font-size: 13px; margin: 0; }
+  .seq-body .code-line { margin-top: 8px; font-size: 12px; background: var(--code-bg); color: var(--code-ink); padding: 8px 12px; border-radius: 6px; overflow-x: auto; }
+  .seq-gap { display: flex; align-items: center; gap: 10px; padding: 8px 0 8px 48px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--muted); }
+  .seq-gap .line { flex: 1; height: 1px; background: repeating-linear-gradient(90deg, var(--hairline) 0 6px, transparent 6px 10px); }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--hairline); border-radius: 10px; margin: 14px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.6px; min-width: 640px; }
+  thead th { text-align: left; font-size: 9.8px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 9px 12px; border-bottom: 1px solid var(--hairline); background: var(--surface-2); white-space: nowrap; }
+  tbody td { padding: 8px 12px; border-bottom: 1px solid var(--hairline); color: var(--ink-2); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--surface-2); }
+  td.path { font-family: 'JetBrains Mono', monospace; font-size: 11.6px; color: var(--ink); white-space: nowrap; }
+
+  .status-chip { display: inline-flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .status-chip.live { background: var(--ok-bg); color: var(--ok-ink); }
+  .status-chip.dead { background: var(--dead-bg); color: var(--dead-ink); }
+  .status-chip.partial { background: var(--warn-bg); color: var(--warn-ink); }
+
+  .finding { border: 1px solid var(--hairline); border-radius: 10px; padding: 16px 20px; margin: 12px 0; background: var(--surface); }
+  .finding-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .finding-head h4 { font-size: 14.5px; }
+  .finding p { font-size: 13px; margin: 6px 0 0; }
+  .finding.critical { border-color: var(--crit-border); }
+  .finding.critical .finding-head h4 { color: var(--crit-ink); }
+  .sev-chip { display: inline-flex; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+  .sev-chip.critical { background: var(--crit-bg); color: var(--crit-ink); border: 1px solid var(--crit-border); }
+  .sev-chip.high { background: var(--warn-bg); color: var(--warn-ink); border: 1px solid var(--warn-border); }
+  .sev-chip.medium { background: var(--dead-bg); color: var(--dead-ink); border: 1px solid var(--dead-border); }
+
+  .evidence { display: block; font-family: 'JetBrains Mono', monospace; font-size: 11.4px; background: var(--code-bg); color: var(--code-ink); padding: 10px 14px; border-radius: 8px; margin-top: 8px; overflow-x: auto; white-space: pre; }
+  .cite { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  .strengths-grid, .cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 14px 0; }
+  @media (max-width: 760px) { .strengths-grid, .cols-2 { grid-template-columns: 1fr; } }
+  .col-card { border: 1px solid var(--hairline); border-radius: 10px; padding: 16px 20px; background: var(--surface); }
+  .col-card h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px; }
+  .col-card.good h4 { color: var(--ok-ink); }
+  .col-card.bad h4 { color: var(--crit-ink); }
+  .col-card ul { margin: 0; padding-inline-start: 18px; }
+  .col-card li { font-size: 13px; color: var(--ink-2); margin-bottom: 8px; }
+
+  .verdict-box { border-radius: 12px; padding: 20px 24px; background: var(--accent-wash); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); margin-top: 18px; }
+  .verdict-box .label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-ink); font-weight: 700; margin-bottom: 8px; }
+  .verdict-box p { color: var(--ink); margin: 0; font-size: 14px; }
+
+  .rec-list { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
+  .rec-item { display: grid; grid-template-columns: 28px 1fr; gap: 14px; border: 1px solid var(--hairline); border-radius: 10px; padding: 13px 18px; background: var(--surface); }
+  .rec-num { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent-ink); font-size: 14px; }
+  .rec-item h4 { font-size: 14px; margin-bottom: 4px; }
+  .rec-item p { font-size: 13px; margin: 0; }
+
+  footer.report-footer { padding: 28px 48px; color: var(--muted); font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">lumiq.news</div>
+    <div class="title">Telegram Audit</div>
+    <nav>
+      <a href="#summary">Executive Summary</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#sequence">Sequence Diagram</a>
+      <a href="#components">Components</a>
+      <a href="#message-gen">Message Generation</a>
+      <a href="#properties">Publishing Properties</a>
+      <a href="#errors">Error Handling</a>
+      <a href="#strengths">Strengths &amp; Weaknesses</a>
+      <a href="#debt">Technical Debt</a>
+      <a href="#risks">Production Risks</a>
+      <a href="#scalability">Scalability</a>
+      <a href="#recommendations">Recommendations</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="cover">
+      <span class="kicker"><span class="dot"></span>Read-Only Architecture Audit · Jul 24, 2026</span>
+      <h1>Telegram Publishing System — full technical audit</h1>
+      <p class="sub">A forensic trace of every component between "article published" and "message posted to Telegram" — cron triggers, database models, message generation, error handling, and extensibility. No code was changed to produce this report.</p>
+      <div class="audit-flag">⎔ AUDIT ONLY — zero files modified, zero database writes</div>
+
+      <div class="kpis">
+        <div class="kpi"><div class="label">Live triggers</div><div class="value">2 crons + 1 manual</div></div>
+        <div class="kpi"><div class="label">Send opportunities/day</div><div class="value">1</div></div>
+        <div class="kpi"><div class="label">Retry mechanism</div><div class="value">None</div></div>
+        <div class="kpi"><div class="label">Duplicate-send guard</div><div class="value">Partial</div></div>
+        <div class="kpi"><div class="label">Critical findings</div><div class="value">3</div></div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <section class="block" id="summary">
+      <div class="section-head"><span class="idx">00</span><h2>Executive Summary</h2></div>
+      <p class="section-dek">The Telegram pipeline works, runs once daily, and is built on a genuinely reusable multi-platform provider abstraction. But the parts specific to Telegram itself — caption formatting, retry safety, and drafting — carry real, previously-undetected defects.</p>
+
+      <div class="finding critical">
+        <div class="finding-head"><h4>The Telegram message is likely rendering broken formatting today</h4><span class="sev-chip critical">Critical</span></div>
+        <p>The caption template wraps the title in Markdown asterisks (<code>*{title}*</code>), but the API call sets <code>parse_mode: "HTML"</code> — Telegram's HTML parser does not interpret <code>*text*</code> as bold. Every Telegram post since this code shipped has likely shown literal asterisk characters around the title instead of bold text.</p>
+      </div>
+
+      <div class="finding critical">
+        <div class="finding-head"><h4>A crash between "Telegram accepts the message" and "DB marks it sent" causes a real duplicate post</h4><span class="sev-chip critical">Critical</span></div>
+        <p>The send call and the status update are two independent operations with no transaction. If the process is interrupted in between — a timeout, a cold-start kill — the post stays <code>approved</code> and gets sent again on the next cron run. There is no idempotency key and no unique constraint guarding against it (unlike <code>SyndicationPost</code>, which does have one).</p>
+      </div>
+
+      <div class="finding critical">
+        <div class="finding-head"><h4>A failed send has no path back to success</h4><span class="sev-chip critical">Critical</span></div>
+        <p><code>failed</code> is a terminal status. Nothing re-queues it, no admin action exists to retry it, and there's no distinction between a permanent failure (bad credentials) and a transient one (rate limit, network blip) — both land in the same dead end.</p>
+      </div>
+
+      <p>Beyond these three, the system has one Telegram-posting opportunity per day (09:30 UTC, 30 minutes after articles publish), sends text-only messages relying entirely on Telegram's own link-preview unfurling for the image, uses fully static hashtags never derived from the article's actual tags, and only supports the <code>Review</code> content type — Tools, Comparisons, and Prompts have no Telegram path at all. The underlying provider abstraction (5 platforms already registered: Telegram, Twitter, Facebook, Instagram, TikTok) is a genuine strength that would support new channels cleanly — the caption-authoring layer sitting on top of it is the part that isn't ready.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="architecture">
+      <div class="section-head"><span class="idx">01</span><h2>Current publishing architecture</h2></div>
+      <p class="section-dek">Two separate crons, thirty minutes apart, connected only by a database row.</p>
+
+      <div class="cols-2">
+        <div class="col-card">
+          <h4>Stage 1 — Drafting</h4>
+          <p style="font-size:13px; margin:0 0 8px;">Runs <em>inside</em> the article auto-publish cron, not as a Telegram-specific job.</p>
+          <p style="font-size:13px; margin:0;"><code>/api/cron/publish-review</code> (09:00 UTC) → <code>approveReview()</code> → for every enabled <code>SocialAccount</code>, builds a caption and inserts a <code>SocialPost</code> row with <code>status: "approved"</code> already set — auto-approved, no human review step.</p>
+        </div>
+        <div class="col-card">
+          <h4>Stage 2 — Sending</h4>
+          <p style="font-size:13px; margin:0 0 8px;">A separate cron, 30 minutes later, that actually calls the Telegram Bot API.</p>
+          <p style="font-size:13px; margin:0;"><code>/api/cron/social-queue</code> (09:30 UTC) → pulls up to 10 <code>approved</code> posts → builds the UTM-tagged URL → calls the matching provider's <code>send()</code> → flips status to <code>sent</code> or <code>failed</code>.</p>
+        </div>
+      </div>
+
+      <p style="margin-top:16px;">There is no queue, worker pool, or scheduler beyond Vercel's cron primitive — <code>SocialPost.status</code> in Postgres <em>is</em> the queue. Credentials are entirely database-driven (<code>SocialAccount.credentials</code>, a JSON-stringified blob), not environment variables — no <code>TELEGRAM_BOT_TOKEN</code> exists anywhere in the codebase.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="sequence">
+      <div class="section-head"><span class="idx">02</span><h2>Sequence diagram — publish to Telegram message</h2></div>
+      <p class="section-dek">Every step, in order, with the exact function and file responsible.</p>
+
+      <div class="seq">
+        <div class="seq-step">
+          <div class="seq-num">1</div>
+          <div class="seq-body">
+            <div class="who">Vercel Cron · 09:00 UTC</div>
+            <h4>Article auto-publishes</h4>
+            <p><code>GET /api/cron/publish-review</code> promotes a reviewed <code>ReviewQueue</code> item to a live <code>Review</code> row.</p>
+          </div>
+        </div>
+        <div class="seq-step">
+          <div class="seq-num">2</div>
+          <div class="seq-body">
+            <div class="who">lib/review-queue.ts</div>
+            <h4>approveReview() drafts social posts</h4>
+            <p>Fetches every <code>enabled</code> <code>SocialAccount</code>, builds a caption per platform via <code>buildCaption()</code>, and bulk-inserts <code>SocialPost</code> rows — already <code>status: "approved"</code>, no manual review gate.</p>
+            <div class="code-line mono">status: "approved", // auto-approve so the cron sends them immediately</div>
+          </div>
+        </div>
+        <div class="seq-gap"><span>⏱ 30-minute gap — nothing runs</span><span class="line"></span></div>
+        <div class="seq-step">
+          <div class="seq-num">3</div>
+          <div class="seq-body">
+            <div class="who">Vercel Cron · 09:30 UTC</div>
+            <h4>social-queue cron wakes up</h4>
+            <p><code>GET /api/cron/social-queue</code> — checked against <code>CRON_SECRET</code> Bearer token (fails <em>open</em> if the secret is ever unset). Pulls up to 10 rows where <code>status = "approved"</code>, oldest first.</p>
+          </div>
+        </div>
+        <div class="seq-step">
+          <div class="seq-num">4</div>
+          <div class="seq-body">
+            <div class="who">app/api/cron/social-queue/route.ts</div>
+            <h4>Builds the UTM-tagged article URL</h4>
+            <p>Re-derives the URL from scratch (the draft-time URL from Stage 2 is discarded) — appends <code>utm_source</code>/<code>utm_medium=social</code>/<code>utm_campaign=daily_post</code>.</p>
+          </div>
+        </div>
+        <div class="seq-step">
+          <div class="seq-num">5</div>
+          <div class="seq-body">
+            <div class="who">lib/social/index.ts</div>
+            <h4>getProvider("telegram") resolves the sender</h4>
+            <p>Provider registry lookup — this is the one genuinely reusable abstraction in the pipeline.</p>
+          </div>
+        </div>
+        <div class="seq-step">
+          <div class="seq-num">6</div>
+          <div class="seq-body">
+            <div class="who">lib/social/providers/telegram.ts</div>
+            <h4>Message sent to Telegram Bot API</h4>
+            <p>Strips any stray URLs from the caption, re-appends the UTM URL, calls <code>sendMessage</code> with <code>parse_mode: "HTML"</code> and link-preview enabled — the OG image reaches Telegram only via its own unfurling of the article page, never an explicit upload.</p>
+          </div>
+        </div>
+        <div class="seq-step">
+          <div class="seq-num">7</div>
+          <div class="seq-body">
+            <div class="who">app/api/cron/social-queue/route.ts</div>
+            <h4>Status flips to sent or failed</h4>
+            <p>Separate, non-transactional write. This is the exact gap where a crash mid-flight produces a duplicate send on the next run.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="components">
+      <div class="section-head"><span class="idx">03</span><h2>Components involved</h2></div>
+      <p class="section-dek">Every file that participates, with its actual live/dead/partial status confirmed by trace, not assumption.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Component</th><th>Path</th><th>Status</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>Drafting logic</td><td class="path">lib/review-queue.ts</td><td><span class="status-chip live">● Live</span></td><td>buildCaption() + SocialPost creation inside approveReview()</td></tr>
+            <tr><td>Provider registry</td><td class="path">lib/social/index.ts</td><td><span class="status-chip live">● Live</span></td><td>getProvider(platform) lookup</td></tr>
+            <tr><td>Telegram sender</td><td class="path">lib/social/providers/telegram.ts</td><td><span class="status-chip live">● Live</span></td><td>Bot API sendMessage call</td></tr>
+            <tr><td>4 sibling providers</td><td class="path">lib/social/providers/{twitter,facebook,instagram,tiktok}.ts</td><td><span class="status-chip live">● Live</span></td><td>Same interface, same registry</td></tr>
+            <tr><td>Sending cron</td><td class="path">app/api/cron/social-queue/route.ts</td><td><span class="status-chip live">● Live</span></td><td>The actual trigger that calls Telegram</td></tr>
+            <tr><td>Manual "send now"</td><td class="path">app/api/admin/pipeline/run/route.ts</td><td><span class="status-chip live">● Live</span></td><td>Admin-triggered re-entry into the same cron route</td></tr>
+            <tr><td>Admin UI</td><td class="path">app/admin/social/page.tsx</td><td><span class="status-chip live">● Live</span></td><td>Account/post management, send-now button</td></tr>
+            <tr><td>AI caption generator</td><td class="path">lib/social/generate.ts</td><td><span class="status-chip dead">✕ Dead</span></td><td>GPT-4o-mini per-platform captions — never imported anywhere</td></tr>
+            <tr><td>GitHub Actions trigger</td><td class="path">.github/workflows/disabled/social-queue.yml</td><td><span class="status-chip dead">✕ Dead</span></td><td>Hourly trigger, superseded by Vercel cron 2026-06-02</td></tr>
+            <tr><td>Standalone send script</td><td class="path">scripts/send-approved-posts.ts</td><td><span class="status-chip partial">◐ Stale duplicate</span></td><td>Reimplements the cron route's logic independently; only Telegram works, others log "not implemented"</td></tr>
+            <tr><td>Diagnostic scripts</td><td class="path">scripts/check-social-deep.ts, check-pending-posts.ts</td><td><span class="status-chip dead">✕ Dead</span></td><td>Reference schema fields that no longer exist (accessToken, scheduledFor)</td></tr>
+            <tr><td>Fix-up script</td><td class="path">scripts/fix-pending-posts.ts</td><td><span class="status-chip partial">◐ Orphaned</span></td><td>One-off remediation for a bug fixed 2026-06-01 (auto-approve on creation)</td></tr>
+            <tr><td>DB models</td><td class="path">prisma/schema.prisma</td><td><span class="status-chip live">● Live</span></td><td>SocialAccount, SocialPost (Review-only FK)</td></tr>
+            <tr><td>Documentation</td><td class="path">PROJECT_OVERVIEW.md</td><td><span class="status-chip dead">✕ Stale</span></td><td>Describes a pre-migration architecture (Article/ArticleQueue, GitHub Actions, generateAllCaptions) that no longer matches the code</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="font-size:15px; margin:22px 0 8px;">Cron schedule (verbatim, vercel.json)</h3>
+      <div class="evidence">{ "path": "/api/cron/publish-review", "schedule": "0 9 * * *"  }   ← drafts SocialPost rows
+{ "path": "/api/cron/social-queue",   "schedule": "30 9 * * *" }   ← sends to Telegram, 30 min later</div>
+
+      <h3 style="font-size:15px; margin:22px 0 8px;">Database schema (verbatim)</h3>
+      <div class="evidence">model SocialAccount {
+  id          String       @id @default(cuid())
+  platform    String       // untyped string, not a Prisma enum
+  enabled     Boolean      @default(false)
+  credentials String       @db.Text  // JSON blob — botToken, chatId for Telegram
+  posts       SocialPost[]
+}
+
+model SocialPost {
+  id        String        @id @default(cuid())
+  reviewId  String                        // hard FK to Review only — no Tool/Comparison/Prompt path
+  accountId String
+  platform  String
+  caption   String        @db.Text
+  status    String        @default("pending")  // pending -> approved -> sent | failed | skipped
+  sentAt    DateTime?
+  errorMsg  String?
+
+  // NOTE: no @@unique([reviewId, platform]) — contrast with SyndicationPost below,
+  // which explicitly prevents duplicate sends. SocialPost has no such guard.
+}
+
+model SyndicationPost {              // separate subsystem (WordPress cross-posting), shown for contrast
+  target       String                // e.g. "wordpress:sonara"
+  @@unique([reviewId, target])       // ← the duplicate-prevention SocialPost lacks
+}</div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="message-gen">
+      <div class="section-head"><span class="idx">04</span><h2>Message generation — exactly how the Telegram text is built</h2></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Field</th><th>Source</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Title</td><td class="path">item.titleAr ?? item.topic</td><td>From the ReviewQueue draft, wrapped in Markdown asterisks for "bold" — see formatting bug below</td></tr>
+            <tr><td>Description</td><td class="path">item.summaryAr.slice(0, 200)</td><td>Hard character truncation, not sentence-aware</td></tr>
+            <tr><td>Image</td><td>Telegram link-preview unfurling only</td><td>disable_web_page_preview: false — Telegram fetches the article page's own OG image; the code never uploads or references Review.imageUrl directly for Telegram (it is fetched and passed in the payload, but the Telegram provider never reads it — that plumbing only serves Instagram, which shares the same call site)</td></tr>
+            <tr><td>OpenGraph image</td><td>Indirect only</td><td>No explicit code reuses the OG image; whatever the public review page renders is what Telegram's unfurler picks up</td></tr>
+            <tr><td>Hashtags</td><td class="path">Static string literal</td><td><code>#ذكاء_اصطناعي #AI</code> — hardcoded, never derived from Review.tags despite tags being fully populated on the model. Telegram's branch in buildCaption() has zero hashtags at all</td></tr>
+            <tr><td>URL</td><td class="path">social-queue/route.ts:44-46</td><td>Rebuilt from scratch at send time; a second, UTM-less version is separately built at draft time and discarded</td></tr>
+            <tr><td>UTM parameters</td><td class="path">utm_source / utm_medium=social / utm_campaign=daily_post</td><td>Constructed independently in 2 places (cron route + send-approved-posts.ts) — copy-pasted, not shared</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><h4>Two competing caption-building implementations exist</h4><span class="sev-chip medium">Medium</span></div>
+        <p>The one actually used, <code>buildCaption()</code> in <code>lib/review-queue.ts</code>, is a plain hardcoded if/else. A second, more sophisticated GPT-4o-mini-based generator (<code>lib/social/generate.ts</code>, using per-platform <code>PLATFORM_HINTS</code> for style/length/hashtag count) is fully implemented but never called from any reachable path — dead code that the project's own documentation incorrectly describes as active.</p>
+        <span class="evidence">function buildCaption(platform: string, title: string, summary: string, url: string): string {
+  if (platform === "telegram") {
+    return `📰 *${title}*\n\n${summary}\n\n🔗 ${url}`;   // Markdown asterisks
+  }
+  ...
+}
+// telegram.ts:
+body: JSON.stringify({ chat_id, text, parse_mode: "HTML", ... })   // HTML parse mode — mismatch</span>
+      </div>
+
+      <p><strong>Content-type coverage:</strong> the entire pipeline only handles the <code>Review</code> model. <code>SocialPost.reviewId</code> is a hard, non-nullable foreign key — there is no equivalent drafting path for AITool, Comparison, or Prompt content. Only one template exists, and it is Review-only.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="properties">
+      <div class="section-head"><span class="idx">05</span><h2>Publishing properties</h2></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Property</th><th>Answer</th><th>Evidence</th></tr></thead>
+          <tbody>
+            <tr><td>Immediate?</td><td>No</td><td>Drafted at 09:00 UTC, sent at 09:30 UTC — a fixed 30-minute delay by cron scheduling, not a deliberate queue-delay design</td></tr>
+            <tr><td>Queued?</td><td>Yes, informally</td><td><code>SocialPost.status = "approved"</code> in Postgres <em>is</em> the queue — no dedicated queue infrastructure (SQS/BullMQ/etc.)</td></tr>
+            <tr><td>Scheduled?</td><td>Once daily only</td><td>Two crons 30 min apart — one Telegram-send opportunity per day, not hourly (contrary to stale docs)</td></tr>
+            <tr><td>Retryable?</td><td>No</td><td>No retry logic anywhere in the traced code; <code>failed</code> is terminal with no automatic recovery path</td></tr>
+            <tr><td>Transactional?</td><td>No</td><td>send() and the status-update are two independent Prisma calls, no <code>$transaction</code> wrapping them</td></tr>
+            <tr><td>Idempotent?</td><td>Partially</td><td>Already-<code>sent</code> posts are never re-selected (good) — but a crash between send and status-update is unguarded (no unique constraint, no idempotency key sent to Telegram)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="errors">
+      <div class="section-head"><span class="idx">06</span><h2>Error handling</h2></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Failure mode</th><th>What actually happens</th></tr></thead>
+          <tbody>
+            <tr><td>Telegram API rejects the request</td><td><code>!res.ok</code> throws a plain Error with the response body text; caught by the per-post try/catch, post marked <code>failed</code> with the raw error message stored in <code>errorMsg</code>. No retry.</td></tr>
+            <tr><td>Rate limit (HTTP 429)</td><td>Treated identically to any other failure — no read of Telegram's <code>retry_after</code> field, no backoff. Marked <code>failed</code> permanently on the first 429.</td></tr>
+            <tr><td>Network failure</td><td><code>fetch()</code> rejection propagates to the same catch block — same terminal <code>failed</code> outcome, no distinction from an application-level error.</td></tr>
+            <tr><td>Bot blocked / chat not found</td><td>Telegram returns a non-2xx response, handled the same as any other API error — no special detection or account-disable logic.</td></tr>
+            <tr><td>Image unavailable</td><td>Not applicable to failure handling — the code never explicitly fetches/uploads an image for Telegram in the first place (see §04); an unreachable OG image would just mean Telegram's own unfurler shows no preview, silently, with no error surfaced anywhere in this pipeline.</td></tr>
+            <tr><td>One post's failure blocking others</td><td>Does not happen — the per-post try/catch means one failure doesn't stop the batch of up to 10 from continuing.</td></tr>
+            <tr><td>Silent swallowing</td><td>The social-drafting block itself (Stage 1) is wrapped in a bare <code>catch {}</code> with no logging — if drafting fails, nothing is recorded anywhere, and the article publish succeeds normally with zero visibility into the miss.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="strengths">
+      <div class="section-head"><span class="idx">07</span><h2>Current strengths &amp; weaknesses</h2></div>
+
+      <div class="strengths-grid">
+        <div class="col-card good">
+          <h4>✓ Strengths</h4>
+          <ul>
+            <li>Real provider abstraction — <code>SocialProvider</code> interface + registry already supports 5 platforms with a uniform contract</li>
+            <li>Untyped string platform columns mean adding a provider needs no schema migration</li>
+            <li>Publish itself is never blocked by social-drafting failures — all side effects (embedding, memory extraction, WordPress syndication, social drafting) are deliberately best-effort</li>
+            <li>Auto-approval removes a manual bottleneck that previously caused posts to get stuck (a real, since-fixed bug — evidence in orphaned diagnostic scripts)</li>
+            <li>Batch processing caps at 10 posts per run, bounding worst-case cron duration</li>
+          </ul>
+        </div>
+        <div class="col-card bad">
+          <h4>✕ Weaknesses</h4>
+          <ul>
+            <li>Caption authoring is not abstracted — hardcoded if/else per platform, unlike the clean sending layer</li>
+            <li>No retry, no dead-letter recovery, no rate-limit awareness</li>
+            <li>No transactional safety around the one place a duplicate-send is actually possible</li>
+            <li>Static hashtags ignore real tag data already sitting on the Review model</li>
+            <li>Text-only messages depend entirely on Telegram's own unreliable link-unfurling for imagery</li>
+            <li>Single content type supported (Review) despite Tools/Comparisons/Prompts existing as first-class published content</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="debt">
+      <div class="section-head"><span class="idx">08</span><h2>Technical debt</h2></div>
+
+      <div class="finding">
+        <div class="finding-head"><h4>Dead code: lib/social/generate.ts</h4><span class="sev-chip medium">Medium</span></div>
+        <p>Fully implemented GPT-4o-mini caption generator, never called from any reachable path. Documented in PROJECT_OVERVIEW.md as if it were the live implementation — it is not.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>Stale documentation actively misleads about the current architecture</h4><span class="sev-chip high">High</span></div>
+        <p>PROJECT_OVERVIEW.md describes models (Article/ArticleQueue) and a trigger mechanism (hourly GitHub Actions) that were replaced by the current Review/ReviewQueue schema and the Vercel-cron-only setup (commit <code>e4404bb</code>, 2026-06-02). A future engineer trusting this doc would build against a system that no longer exists.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>Two orphaned diagnostic scripts reference non-existent schema fields</h4><span class="sev-chip medium">Medium</span></div>
+        <p><code>scripts/check-social-deep.ts</code> and <code>check-pending-posts.ts</code> reference <code>acc.accessToken</code> and <code>post.scheduledFor</code> — neither field exists on the current schema. Leftover from investigating a bug (posts stuck in <code>pending</code>) that was fixed on 2026-06-01 by auto-approving on creation.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>scripts/send-approved-posts.ts duplicates the cron route's logic independently</h4><span class="sev-chip medium">Medium</span></div>
+        <p>Reimplements Telegram-sending and UTM construction rather than importing shared helpers. It is also functionally stale — it only implements Telegram and explicitly logs "not implemented yet" for every other platform, while the real cron route already handles all 5 generically.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>Three different hardcoded fallback domains across the pipeline</h4><span class="sev-chip medium">Medium</span></div>
+        <p><code>https://ai-news-ar.vercel.app</code> (lib/review-queue.ts, pre-rebrand), <code>https://lumiq.news</code> (social-queue route), <code>https://www.lumiq.news</code> (send-approved-posts.ts) — leftover from the AI Scope → Lumiq rebrand not being fully propagated.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>Stray non-English internal comment</h4><span class="sev-chip medium">Medium</span></div>
+        <p>lib/review-queue.ts:185 carries a Hebrew-language code comment ("extract memory from the new article — will improve the next writing") alongside otherwise English/Arabic-only code — a minor consistency issue worth a maintainer's attention, not a functional risk.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="risks">
+      <div class="section-head"><span class="idx">09</span><h2>Production risks</h2></div>
+
+      <div class="finding critical">
+        <div class="finding-head"><h4>Broken bold formatting has likely shipped in every Telegram post since this code went live</h4><span class="sev-chip critical">Critical</span></div>
+        <p>Not a hypothetical — this is a straightforward parse_mode/syntax mismatch that would visibly show literal asterisk characters around the title in every message actually sent to the channel.</p>
+      </div>
+      <div class="finding critical">
+        <div class="finding-head"><h4>A cron timeout or cold-start crash mid-send produces a real duplicate post to the public channel</h4><span class="sev-chip critical">Critical</span></div>
+        <p>With <code>maxDuration = 60</code> and sequential (non-parallel) processing of up to 10 posts, a slow Telegram response increases the odds of hitting this exact window. There is no way to detect or prevent it after the fact — no unique constraint, no idempotency key.</p>
+      </div>
+      <div class="finding critical">
+        <div class="finding-head"><h4>The cron auth check fails open</h4><span class="sev-chip critical">Critical</span></div>
+        <p><code>verifyCronSecret()</code> returns <code>true</code> (authorized) if <code>CRON_SECRET</code> is ever unset in the environment — an unset env var silently disables the auth check entirely rather than blocking the route.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>A single Telegram failure is invisible beyond the admin panel</h4><span class="sev-chip high">High</span></div>
+        <p>No alerting, no external monitoring hook — a failed post sits as a row with <code>status: "failed"</code> that nobody is notified about unless someone opens the admin UI.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>Silent failure in the drafting step</h4><span class="sev-chip high">High</span></div>
+        <p>The bare <code>catch {}</code> around social-post drafting in <code>approveReview()</code> means a drafting failure leaves zero trace — not even a log line — while the article itself publishes successfully, creating an invisible gap between "article live" and "social post exists at all."</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="scalability">
+      <div class="section-head"><span class="idx">10</span><h2>Scalability assessment — can this support new channels?</h2></div>
+      <p class="section-dek">Yes for sending, no for authoring — the architecture is half-ready.</p>
+
+      <p><strong>What would extend cleanly without redesign:</strong> the <code>SocialProvider</code> interface and <code>getProvider()</code> registry are already platform-agnostic. Adding Discord, Bluesky, or WhatsApp Channels means writing one new provider file matching the existing <code>send(payload, credentials)</code> contract and registering it — no schema migration needed, since <code>platform</code> is an untyped string column on both <code>SocialAccount</code> and <code>SocialPost</code>.</p>
+
+      <p><strong>What would NOT extend cleanly:</strong> <code>buildCaption()</code> is a single function with hardcoded <code>if (platform === "x")</code> branches living in <code>lib/review-queue.ts</code> — a file whose primary job is the review-approval workflow, not social publishing. A 6th platform means editing this central conditional rather than adding an isolated module, and the branches already show real per-platform divergence (Twitter gets hashtags and a 280-char clip; Telegram gets neither hashtags nor a length limit; everything else falls to a generic catch-all). The dead <code>lib/social/generate.ts</code> is actually the more scalable design for this specific layer (per-platform <code>PLATFORM_HINTS</code>, no hardcoded conditionals) — reviving and wiring it in, rather than writing a new system, is the natural path forward if it's ever prioritized.</p>
+
+      <p><strong>What is structurally Review-only regardless of platform:</strong> <code>SocialPost.reviewId</code> is a hard, non-nullable foreign key. Extending social publishing to Tools, Comparisons, or Prompts — regardless of which channels are involved — needs either a nullable/polymorphic reference or parallel foreign keys, a real schema decision, not a code-only change.</p>
+
+      <div class="verdict-box">
+        <div class="label">Bottom line</div>
+        <p>The sending layer scales to new channels with near-zero friction. The authoring layer and the content-type coverage do not, and both would need deliberate design work — not a redesign of what exists, but a genuine extension of it.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="recommendations">
+      <div class="section-head"><span class="idx">11</span><h2>Recommendations</h2></div>
+      <p class="section-dek">Ordered by how directly each one addresses a Critical or High finding above. No implementation was done — these are documented options for a future sprint.</p>
+
+      <div class="rec-list">
+        <div class="rec-item">
+          <div class="rec-num">1</div>
+          <div><h4>Fix the parse_mode/formatting mismatch</h4><p>Either switch the Telegram caption template to HTML tags (<code>&lt;b&gt;</code>) to match the existing <code>parse_mode: "HTML"</code>, or switch <code>parse_mode</code> to <code>"Markdown"</code>/<code>"MarkdownV2"</code> to match the existing asterisk syntax — either resolves the visible formatting defect with a one-line change.</p></div>
+        </div>
+        <div class="rec-item">
+          <div class="rec-num">2</div>
+          <div><h4>Close the duplicate-send window</h4><p>Wrap the send + status-update in a single <code>prisma.$transaction</code>, or mark the post as <code>sending</code> before the API call and check that guard on the next cron pass — either removes the crash-window risk.</p></div>
+        </div>
+        <div class="rec-item">
+          <div class="rec-num">3</div>
+          <div><h4>Make the cron-secret check fail closed</h4><p>An unset <code>CRON_SECRET</code> should reject the request, not silently authorize it.</p></div>
+        </div>
+        <div class="rec-item">
+          <div class="rec-num">4</div>
+          <div><h4>Add a bounded retry with backoff for transient failures</h4><p>Distinguish rate-limiting (HTTP 429, honor Telegram's <code>retry_after</code>) and network errors from permanent failures (bad credentials, bot blocked) — only the latter should be terminal.</p></div>
+        </div>
+        <div class="rec-item">
+          <div class="rec-num">5</div>
+          <div><h4>Retire or fix the orphaned scripts and stale documentation</h4><p><code>check-social-deep.ts</code>, <code>check-pending-posts.ts</code>, <code>fix-pending-posts.ts</code>, and the relevant sections of <code>PROJECT_OVERVIEW.md</code> all describe a system that no longer exists.</p></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="report-footer">
+  Read-only forensic audit of the Telegram publishing pipeline, Jul 24, 2026. Every file path, line number, and code excerpt above was verified directly against the current repository state — no code was changed, no database rows were written, no schema was migrated.
+</footer>
+
+</body>
+</html>

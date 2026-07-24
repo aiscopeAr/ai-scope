@@ -6,6 +6,8 @@ import { embedReview } from "@/lib/embeddings";
 import { extractMemoryFromReview } from "@/lib/author-memory";
 import { syndicateReviewToWordPress } from "@/lib/wordpress";
 import { CACHE_TAGS, revalidateNow } from "@/lib/cache";
+import { buildTrackedArticleUrl } from "@/lib/social/url";
+import { buildReviewTelegramMessage } from "@/lib/social/telegram-message";
 
 // ─── NewsItem queue ────────────────────────────────────────────────────────
 
@@ -178,42 +180,67 @@ export async function approveReview(
     revalidatePath("/");
     revalidatePath(`/reviews/${overrides.slug}`);
 
-    embedReview(review.id).catch(() => {
+    embedReview(review.id).catch((err) => {
       // embedding is best-effort; doesn't block publish
+      console.error(`[approveReview] embedding failed for review=${review.id}:`, err instanceof Error ? err.message : err);
     });
 
-    // חלץ זיכרון מהכתבה החדשה — ישפר את הכתיבה הבאה
-    extractMemoryFromReview(review.id).catch(() => {
+    // Extract memory from the new article — improves the next author's draft
+    extractMemoryFromReview(review.id).catch((err) => {
       // memory extraction is best-effort
+      console.error(`[approveReview] memory extraction failed for review=${review.id}:`, err instanceof Error ? err.message : err);
     });
 
     // Cross-post to partner WordPress site (no-op if not configured yet)
-    syndicateReviewToWordPress(review.id).catch(() => {
+    syndicateReviewToWordPress(review.id).catch((err) => {
       // syndication is best-effort; failures are recorded in SyndicationPost.status
+      console.error(`[approveReview] WordPress syndication failed for review=${review.id}:`, err instanceof Error ? err.message : err);
     });
 
-    // Auto-draft social posts
+    // Auto-draft social posts. Best-effort — a drafting failure must never
+    // block the article publish that already happened above — but it must
+    // be visible in logs, never silently swallowed. Never log `acc.credentials`.
     try {
       const accounts = await prisma.socialAccount.findMany({ where: { enabled: true } });
       if (accounts.length > 0) {
-        const articleUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://ai-news-ar.vercel.app"}/reviews/${overrides.slug}`;
+        const category = await prisma.category.findUniqueOrThrow({
+          where: { id: overrides.categoryId },
+          select: { slug: true, nameAr: true },
+        });
+        const telegramMessage = buildReviewTelegramMessage({
+          titleAr: item.titleAr ?? item.topic,
+          summary: item.summaryAr ?? "",
+          content: item.contentAr ?? "",
+          tags: item.tags ?? [],
+          category,
+          publishedAt: new Date(),
+          sources,
+          slug: overrides.slug,
+        });
+
         await prisma.socialPost.createMany({
           data: accounts.map((acc) => ({
             reviewId: review.id,
             accountId: acc.id,
             platform: acc.platform,
-            caption: buildCaption(
-              acc.platform,
-              item.titleAr ?? item.topic,
-              (item.summaryAr ?? "").slice(0, 200),
-              articleUrl,
-            ),
+            caption:
+              acc.platform === "telegram"
+                ? telegramMessage.body
+                : buildCaption(
+                    acc.platform,
+                    item.titleAr ?? item.topic,
+                    (item.summaryAr ?? "").slice(0, 200),
+                    buildTrackedArticleUrl(overrides.slug, acc.platform),
+                  ),
             status: "approved",  // auto-approve so the cron sends them immediately
           })),
         });
       }
-    } catch {
-      // social drafting is best-effort
+    } catch (err) {
+      console.error(
+        `[approveReview] social post drafting failed for review=${review.id}:`,
+        err instanceof Error ? err.message : err,
+      );
     }
   }
 
@@ -229,12 +256,15 @@ export async function rejectReview(id: string) {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
+// Telegram is intentionally not handled here — it goes through
+// buildTelegramCaption() (lib/social/telegram-format.ts) above, which
+// produces escaped HTML matching the provider's parse_mode: "HTML". Removed
+// the old Markdown-asterisk Telegram branch so a future call site can't
+// accidentally reintroduce the parse_mode mismatch that caused broken
+// formatting in every previously-sent Telegram message.
 function buildCaption(platform: string, title: string, summary: string, url: string): string {
   if (platform === "twitter") {
     return `${title}\n\n${url}\n\n#ذكاء_اصطناعي #AI`.slice(0, 280);
-  }
-  if (platform === "telegram") {
-    return `📰 *${title}*\n\n${summary}\n\n🔗 ${url}`;
   }
   return `${title}\n\n${summary}\n\n${url}\n\n#ذكاء_اصطناعي #AI #أخبار`;
 }

@@ -162,21 +162,29 @@ model SocialAccount {
 }
 
 model SocialPost {
-  id        String        @id @default(cuid())
-  reviewId  String
-  review    Review        @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  accountId String
-  account   SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  platform  String
-  caption   String        @db.Text
-  status    String        @default("pending") // "pending" | "approved" | "sent" | "failed" | "skipped"
-  sentAt    DateTime?
-  errorMsg  String?
-  createdAt DateTime      @default(now())
+  id                String        @id @default(cuid())
+  reviewId          String
+  review            Review        @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  accountId         String
+  account           SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  platform          String
+  caption           String        @db.Text
+  status            String        @default("pending") // "pending" | "approved" | "sending" | "sent" | "failed" | "skipped"
+  sentAt            DateTime?
+  errorMsg          String?
+  createdAt         DateTime      @default(now())
+  // Reliability fields (Telegram Stabilization Sprint 1) — all additive/nullable/defaulted,
+  // safe for existing rows which read these as 0/null and behave exactly as before.
+  attemptCount      Int           @default(0)    // number of send attempts made so far
+  nextAttemptAt     DateTime?     // earliest time the cron should retry a failed-but-retryable post; null = eligible now
+  sendingAt         DateTime?     // set atomically when a worker claims the post (approved -> sending); used to detect stale claims from a crashed run
+  lastAttemptAt     DateTime?     // timestamp of the most recent send attempt, success or failure
+  externalMessageId String?       // Telegram's result.message_id (or equivalent) once sent, for auditability
 
   @@index([status])
   @@index([reviewId])
   @@index([accountId])
+  @@index([status, nextAttemptAt])
 }
 
 // ─── Syndication (cross-posting to partner sites, e.g. WordPress) ────────────
