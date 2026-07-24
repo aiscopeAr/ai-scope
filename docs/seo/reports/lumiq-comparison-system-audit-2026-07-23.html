@@ -1,0 +1,730 @@
+<title>Lumiq Comparison System — Forensic Audit</title>
+<meta name="description" content="Read-only forensic audit of Lumiq's Comparison system: data model, editorial capability, frontend, SEO, scalability, cross-domain reusability, revenue and trust readiness.">
+
+<style>
+  @font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 400 700; src: local('JetBrains Mono'); }
+
+  :root {
+    color-scheme: light;
+    --page: #f7f7fb; --surface: #ffffff; --surface-2: #f0f0f8;
+    --ink: #12121a; --ink-2: #4a4a5c; --muted: #86869c; --hairline: #e3e3ee;
+    --accent: #6366f1; --accent-ink: #4338ca; --accent-wash: #eef0fe;
+    --good: #0ca30c; --good-bg: #e9f7e9; --good-text: #006300;
+    --crit-bg: #fbe4e4; --crit-ink: #b91c1c;
+    --warn-bg: #fdf3df; --warn-ink: #a15c00;
+    --ok-bg: #e6f7e9; --ok-ink: #157a37;
+    --neutral-bg: #f0f0f8; --neutral-ink: #4a4a5c;
+    --evidence-bg: #f0f0f8; --evidence-ink: #4a4a5c;
+    --verdict-bg: #eef0fe; --verdict-border: #6366f1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0a0a10; --surface: #111119; --surface-2: #17171f;
+      --ink: #f2f2f7; --ink-2: #b8b8c8; --muted: #7d7d92; --hairline: #24242f;
+      --accent: #8385f5; --accent-ink: #a5a6f8; --accent-wash: #1a1a2e;
+      --good: #0ca30c; --good-bg: #12251a; --good-text: #3ddc3d;
+      --crit-bg: #331414; --crit-ink: #f16565;
+      --warn-bg: #2e2410; --warn-ink: #e0ac3f;
+      --ok-bg: #0f2416; --ok-ink: #4bd97a;
+      --neutral-bg: #17171f; --neutral-ink: #b8b8c8;
+      --evidence-bg: #17171f; --evidence-ink: #b8b8c8;
+      --verdict-bg: #191c33; --verdict-border: #8385f5;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0a0a10; --surface: #111119; --surface-2: #17171f;
+    --ink: #f2f2f7; --ink-2: #b8b8c8; --muted: #7d7d92; --hairline: #24242f;
+    --accent: #8385f5; --accent-ink: #a5a6f8; --accent-wash: #1a1a2e;
+    --good: #0ca30c; --good-bg: #12251a; --good-text: #3ddc3d;
+    --crit-bg: #331414; --crit-ink: #f16565;
+    --warn-bg: #2e2410; --warn-ink: #e0ac3f;
+    --ok-bg: #0f2416; --ok-ink: #4bd97a;
+    --neutral-bg: #17171f; --neutral-ink: #b8b8c8;
+    --evidence-bg: #17171f; --evidence-ink: #b8b8c8;
+    --verdict-bg: #191c33; --verdict-border: #8385f5;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--page); color: var(--ink); font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif; font-size: 15.5px; line-height: 1.65; }
+  code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.86em; background: var(--surface-2); padding: 2px 6px; border-radius: 4px; color: var(--accent-ink); }
+  h1, h2, h3, h4 { text-wrap: balance; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+  p { color: var(--ink-2); max-width: 78ch; }
+  a { color: var(--accent-ink); }
+
+  .shell { display: grid; grid-template-columns: 260px minmax(0,1fr); max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 980px) { .shell { grid-template-columns: 1fr; } .toc { display: none; } }
+  .toc { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; padding: 32px 18px 40px; border-right: 1px solid var(--hairline); }
+  .toc .brand { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .toc .title { font-size: 16px; font-weight: 700; margin-bottom: 24px; }
+  .toc nav { display: flex; flex-direction: column; gap: 1px; }
+  .toc a { display: block; padding: 5px 10px; border-radius: 6px; font-size: 12.2px; color: var(--ink-2); text-decoration: none; font-family: 'JetBrains Mono', monospace; }
+  .toc a:hover { background: var(--surface-2); color: var(--ink); }
+
+  .main { min-width: 0; padding-bottom: 100px; }
+
+  .cover { padding: 60px 52px 36px; border-bottom: 1px solid var(--hairline); }
+  @media (max-width: 640px) { .cover { padding: 40px 20px 28px; } }
+  .cover .kicker { display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); background: var(--accent-wash); border-radius: 999px; padding: 5px 13px; margin-bottom: 18px; }
+  .cover .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .cover h1 { font-size: clamp(24px, 3.2vw, 34px); line-height: 1.15; margin-bottom: 12px; max-width: 32ch; }
+  .cover .sub { font-size: 15px; max-width: 72ch; margin: 0 0 20px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; margin-top: 24px; }
+  @media (max-width: 860px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 480px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { background: var(--surface); padding: 14px 14px; }
+  .kpi .label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px; }
+  .kpi .value { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+
+  section.block { padding: 40px 52px; border-bottom: 1px solid var(--hairline); }
+  @media (max-width: 640px) { section.block { padding: 30px 20px; } }
+  section.block:last-of-type { border-bottom: none; }
+  .section-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .section-head .idx { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent-ink); font-weight: 700; }
+  .section-head h2 { font-size: 21px; }
+  .section-dek { margin: 6px 0 22px; font-size: 13.8px; }
+  h3.sub-h { font-size: 15.8px; margin: 26px 0 11px; }
+  h3.sub-h:first-child { margin-top: 0; }
+
+  .evidence { display: inline-flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; font-size: 10.8px; background: var(--evidence-bg); color: var(--evidence-ink); padding: 2px 8px; border-radius: 5px; }
+  .evidence::before { content: "◆"; font-size: 8px; color: var(--accent); }
+
+  .finding { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 15px 19px; margin: 11px 0; }
+  .finding-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
+  .finding-head h4 { font-size: 14px; }
+  .finding p { font-size: 13.2px; margin: 7px 0 0; }
+  .finding .ev-line { margin-top: 9px; display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 10.2px; font-weight: 700; letter-spacing: 0.03em; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .pill.crit { background: var(--crit-bg); color: var(--crit-ink); }
+  .pill.warn { background: var(--warn-bg); color: var(--warn-ink); }
+  .pill.ok { background: var(--ok-bg); color: var(--ok-ink); }
+  .pill.neutral { background: var(--neutral-bg); color: var(--neutral-ink); }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--hairline); border-radius: 10px; margin: 14px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.6px; min-width: 640px; }
+  thead th { text-align: left; font-size: 10.2px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 9px 11px; border-bottom: 1px solid var(--hairline); background: var(--surface-2); white-space: nowrap; }
+  tbody td { padding: 8px 11px; border-bottom: 1px solid var(--hairline); color: var(--ink-2); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td:first-child { color: var(--ink); font-weight: 600; }
+  td.mono { font-family: 'JetBrains Mono', monospace; font-size: 11.8px; }
+  td.center { text-align: center; }
+
+  .score-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 10px; margin: 16px 0; }
+  .score-card { border: 1px solid var(--hairline); border-radius: 10px; padding: 14px 16px; background: var(--surface); }
+  .score-card .sc-name { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+  .score-card .sc-val { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; }
+  .score-card .sc-val span { font-size: 14px; color: var(--muted); font-weight: 500; }
+  .score-bar { height: 5px; border-radius: 3px; background: var(--hairline); margin-top: 8px; overflow: hidden; }
+  .score-bar > div { height: 100%; background: var(--accent); border-radius: 3px; }
+
+  .verdict-box { border: 2px solid var(--verdict-border); background: var(--verdict-bg); border-radius: 14px; padding: 26px 28px; margin: 18px 0; }
+  .verdict-box .vb-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-ink); margin-bottom: 8px; }
+  .verdict-box h3 { font-size: 22px; margin-bottom: 10px; }
+  .verdict-box .confidence { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent-ink); font-weight: 700; }
+
+  .rejected { border-left: 3px solid var(--muted); padding-left: 14px; margin: 14px 0; }
+  .rejected h4 { font-size: 13.5px; color: var(--ink-2); margin-bottom: 4px; }
+  .rejected p { font-size: 12.8px; }
+
+  .phase { border: 1px solid var(--hairline); border-radius: 10px; padding: 16px 20px; margin: 12px 0; background: var(--surface); }
+  .phase-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .phase-head .ph-n { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--accent-ink); font-size: 13px; }
+  .phase-head h4 { font-size: 14.5px; }
+  .task-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 8px 0; border-top: 1px solid var(--hairline); }
+  .task-row:first-of-type { border-top: none; }
+  .task-row .t-name { font-size: 13px; color: var(--ink); font-weight: 600; }
+  .task-row .t-meta { font-size: 11.5px; color: var(--ink-2); margin-top: 2px; }
+  .task-tags { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; align-content: flex-start; }
+  .task-tags .tt { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; padding: 2px 6px; border-radius: 4px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+
+  .file-list { columns: 2; column-gap: 24px; font-size: 12.3px; }
+  @media (max-width: 700px) { .file-list { columns: 1; } }
+  .file-list li { break-inside: avoid; margin-bottom: 7px; font-family: 'JetBrains Mono', monospace; color: var(--ink-2); }
+
+  .callout { border-radius: 10px; padding: 14px 18px; font-size: 13.2px; display: flex; gap: 10px; align-items: flex-start; background: var(--accent-wash); border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); }
+  .callout p { margin: 0; color: var(--ink); }
+  .callout .ico { font-family: 'JetBrains Mono', monospace; font-weight: 700; flex: none; }
+
+  footer.report-footer { padding: 30px 52px; color: var(--muted); font-size: 11.2px; font-family: 'JetBrains Mono', monospace; }
+</style>
+
+<div class="shell">
+  <aside class="toc">
+    <div class="brand">lumiq.news</div>
+    <div class="title">Comparison System Audit</div>
+    <nav>
+      <a href="#summary">Executive Summary</a>
+      <a href="#map">System Map</a>
+      <a href="#data-model">1. Data Model</a>
+      <a href="#editorial">2. Editorial</a>
+      <a href="#frontend">3. Frontend/UI</a>
+      <a href="#seo">4. SEO</a>
+      <a href="#scalability">5. Scalability</a>
+      <a href="#cross-domain">6. Cross-Domain</a>
+      <a href="#revenue">7. Revenue</a>
+      <a href="#trust">8. Trust</a>
+      <a href="#gaps">9. Gap Table</a>
+      <a href="#scores">10. Scores</a>
+      <a href="#verdict">11. Verdict</a>
+      <a href="#roadmap">12. Roadmap</a>
+      <a href="#files">13. Files Inspected</a>
+      <a href="#uncertainties">14. Uncertainties</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="cover">
+      <span class="kicker"><span class="dot"></span>Forensic Audit · Read-only · Jul 23, 2026</span>
+      <h1>Can the Comparison system become a scalable Comparison Factory without a rebuild?</h1>
+      <p class="sub">Every claim below is backed by a file path, a query result, or a reproduced code path — not inference. No code, schema, or content was changed to produce this report.</p>
+
+      <div class="kpis">
+        <div class="kpi"><div class="label">Live comparisons</div><div class="value">4</div></div>
+        <div class="kpi"><div class="label">Broken (1-side)</div><div class="value">3/4</div></div>
+        <div class="kpi"><div class="label">Tools in any comparison</div><div class="value">5/51</div></div>
+        <div class="kpi"><div class="label">Admin edit route</div><div class="value">404</div></div>
+        <div class="kpi"><div class="label">Create endpoints</div><div class="value">2</div></div>
+        <div class="kpi"><div class="label">Overall score</div><div class="value">42/100</div></div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <section class="block" id="summary">
+      <div class="section-head"><span class="idx">00</span><h2>Executive Summary</h2></div>
+      <p class="section-dek">The single most important finding of this audit was not requested by name in the brief, but it answers the brief's real underlying question.</p>
+
+      <div class="finding">
+        <div class="finding-head"><h4>3 of the 4 live comparisons are broken: they show only one tool, not two</h4><span class="pill crit">Critical</span></div>
+        <p><code>chatgpt-vs-claude</code>, <code>midjourney-vs-dalle3</code>, and <code>github-copilot-vs-cursor</code> each have exactly 1 <code>ComparisonSide</code> row instead of 2. Root cause, reproduced directly: <code>scripts/seed-comparisons.ts</code> hardcodes tool slugs (<code>claude-anthropic</code>, <code>dall-e-3</code>, <code>cursor</code>) that do not match the actual live <code>AITool.slug</code> values (<code>claude</code>, <code>dalle-3</code>, <code>cursor-ai-code-editor</code>). The script's own lookup (<code>bySlug[s.slug]</code>) silently failed, filtered the missing side out via <code>.filter(Boolean)</code>, and inserted the comparison anyway because the script's guard is <code>if (sidesData.length &lt; 1)</code> — not <code>&lt; 2</code>. This is the opposite of the real admin API's rule (<code>app/api/admin/comparisons/create/route.ts</code> requires <code>sides.length &gt;= 2</code>), meaning the seed path and the "real" creation path enforce different rules and one of them produced bad data that has been live in production undetected.</p>
+        <div class="ev-line"><span class="evidence">DB: ComparisonSide count per Comparison, live query</span> <span class="evidence">Verified: AITool.findUnique for each hardcoded slug — 3/3 return null</span> <span class="evidence">scripts/seed-comparisons.ts:165</span></div>
+      </div>
+
+      <p>This finding reframes the whole audit. The system's <em>architecture</em> is not the primary obstacle to scaling — it is reasonably sound (N-way comparisons are already supported, the listing query has no N+1 risk, sitemap/robots/schema are correctly wired). The primary obstacle is that <strong>the only path from "idea" to "published comparison" that has ever actually been used is a one-off script with no safety net</strong>, because the real admin UI has no working edit page and a duplicate, unvalidated API route exists alongside the validated one. Scaling to 100+ comparisons on this workflow would reproduce this exact class of silent failure at higher volume.</p>
+
+      <p>Separately, the schema's <code>ComparisonSide.toolId</code> is a hard foreign key to <code>AITool</code> specifically — not a generic/polymorphic reference. This means the system <strong>cannot</strong> compare a crypto exchange, a sports team, or a health app today under any configuration; every future domain requires new tables. This is expected for a single-purpose feature and is not itself a defect, but it directly answers the brief's cross-domain question: reuse requires a schema extension, not just content entry.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="map">
+      <div class="section-head"><span class="idx">01</span><h2>Current-system map</h2></div>
+      <p class="section-dek">Every file that touches the Comparison feature, what it does, and whether it is safe to build on.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>File</th><th>Responsibility</th><th>Reusable?</th><th>Debt?</th><th>Safe to extend?</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">prisma/schema.prisma<br><span style="color:var(--muted)">(Comparison, ComparisonSide)</span></td><td>Core data model</td><td class="center"><span class="pill ok">Yes</span></td><td class="center"><span class="pill warn">Some</span></td><td class="center"><span class="pill ok">Yes</span></td></tr>
+            <tr><td class="mono">app/(main)/compare/page.tsx</td><td>Listing page, CollectionPage JSON-LD</td><td class="center"><span class="pill ok">Yes</span></td><td class="center"><span class="pill warn">Some</span></td><td class="center"><span class="pill ok">Yes</span></td></tr>
+            <tr><td class="mono">app/(main)/compare/[slug]/page.tsx</td><td>Detail page, Article+Breadcrumb JSON-LD</td><td class="center"><span class="pill ok">Yes</span></td><td class="center"><span class="pill warn">Some</span></td><td class="center"><span class="pill ok">Yes</span></td></tr>
+            <tr><td class="mono">app/admin/comparisons/page.tsx</td><td>Admin list, publish toggle, delete</td><td class="center"><span class="pill warn">Partial</span></td><td class="center"><span class="pill crit">Yes</span></td><td class="center"><span class="pill warn">Caution</span></td></tr>
+            <tr><td class="mono">app/admin/comparisons/new/page.tsx</td><td>Create form (493 lines) — supports N-way sides</td><td class="center"><span class="pill ok">Yes</span></td><td class="center"><span class="pill neutral">Minor</span></td><td class="center"><span class="pill ok">Yes</span></td></tr>
+            <tr><td class="mono">app/admin/comparisons/[id]/edit/</td><td><b>Does not exist</b> — linked from the list page, 404s</td><td class="center"><span class="pill crit">N/A</span></td><td class="center"><span class="pill crit">Yes</span></td><td class="center"><span class="pill crit">Missing</span></td></tr>
+            <tr><td class="mono">app/api/admin/comparisons/route.ts</td><td>GET list, POST create (no validation)</td><td class="center"><span class="pill warn">Partial</span></td><td class="center"><span class="pill crit">Yes</span></td><td class="center"><span class="pill crit">No</span></td></tr>
+            <tr><td class="mono">app/api/admin/comparisons/create/route.ts</td><td>POST create (validated, ≥2 sides, slug-unique)</td><td class="center"><span class="pill ok">Yes</span></td><td class="center"><span class="pill neutral">Minor</span></td><td class="center"><span class="pill ok">Yes</span></td></tr>
+            <tr><td class="mono">app/api/admin/comparisons/[id]/route.ts</td><td>PATCH (unfiltered body → update), DELETE</td><td class="center"><span class="pill warn">Partial</span></td><td class="center"><span class="pill crit">Yes</span></td><td class="center"><span class="pill warn">Caution</span></td></tr>
+            <tr><td class="mono">lib/cache.ts</td><td>Defines CACHE_TAGS.comparisons — never used</td><td class="center"><span class="pill warn">Partial</span></td><td class="center"><span class="pill neutral">Minor</span></td><td class="center"><span class="pill ok">Yes</span></td></tr>
+            <tr><td class="mono">lib/internal-links.ts</td><td>Resolves [[compare:slug|label]] editorial tokens</td><td class="center"><span class="pill ok">Yes</span></td><td class="center"><span class="pill neutral">None</span></td><td class="center"><span class="pill ok">Yes</span></td></tr>
+            <tr><td class="mono">app/sitemap.ts</td><td>Emits /compare + all published comparison URLs</td><td class="center"><span class="pill ok">Yes</span></td><td class="center"><span class="pill neutral">None</span></td><td class="center"><span class="pill ok">Yes</span></td></tr>
+            <tr><td class="mono">app/robots.ts</td><td>No comparison-specific rules; falls under default allow</td><td class="center"><span class="pill ok">Yes</span></td><td class="center"><span class="pill neutral">None</span></td><td class="center"><span class="pill ok">Yes</span></td></tr>
+            <tr><td class="mono">scripts/seed-comparisons.ts</td><td>One-off seed — root cause of the 3-broken-comparisons bug</td><td class="center"><span class="pill crit">No</span></td><td class="center"><span class="pill crit">Yes</span></td><td class="center"><span class="pill crit">No</span></td></tr>
+            <tr><td class="mono">scripts/add-chatgpt.ts</td><td>One-off script, added ChatGPT tool + side manually</td><td class="center"><span class="pill crit">No</span></td><td class="center"><span class="pill warn">Some</span></td><td class="center"><span class="pill crit">No</span></td></tr>
+            <tr><td class="mono">scripts/check-scores.ts</td><td>Diagnostic — dumps side scores</td><td class="center"><span class="pill neutral">N/A</span></td><td class="center"><span class="pill neutral">None</span></td><td class="center"><span class="pill neutral">N/A</span></td></tr>
+            <tr><td class="mono">components/AdminSidebar.tsx</td><td>Nav link to /admin/comparisons only</td><td class="center"><span class="pill ok">Yes</span></td><td class="center"><span class="pill neutral">None</span></td><td class="center"><span class="pill ok">Yes</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-h">Not present anywhere in the codebase (verified by exhaustive search)</h3>
+      <ul style="font-size:13px;">
+        <li>No cron job or automation touches comparisons — confirmed against all 11 entries in <code>vercel.json</code> and every file under <code>app/api/cron/**</code>.</li>
+        <li>No zod schema for Comparison creation — zod is used elsewhere (ads, sources) but not here.</li>
+        <li>No <code>domain</code>/<code>vertical</code>/<code>type</code> field on <code>Comparison</code> anywhere in the schema.</li>
+        <li>No FAQ, source/citation, affiliate-URL, or sponsor field on <code>Comparison</code> or <code>ComparisonSide</code>.</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="data-model">
+      <div class="section-head"><span class="idx">02</span><h2>Database audit</h2></div>
+
+      <h3 class="sub-h">Exact schema (prisma/schema.prisma:264–296)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Model.Field</th><th>Type</th><th>Required</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">Comparison.id</td><td class="mono">String @id @default(cuid())</td><td>✓</td><td>—</td></tr>
+            <tr><td class="mono">Comparison.slug</td><td class="mono">String @unique</td><td>✓</td><td>Unique-constrained at DB level</td></tr>
+            <tr><td class="mono">Comparison.title</td><td class="mono">String</td><td>✓</td><td>—</td></tr>
+            <tr><td class="mono">Comparison.summaryAr</td><td class="mono">String @db.Text</td><td>✓</td><td>—</td></tr>
+            <tr><td class="mono">Comparison.verdict</td><td class="mono">String? @db.Text</td><td>Optional</td><td>Freeform, no structure</td></tr>
+            <tr><td class="mono">Comparison.criteria</td><td class="mono">Json?</td><td>Optional</td><td>Freeform array of strings in practice — semantically unclear as JSON (see below)</td></tr>
+            <tr><td class="mono">Comparison.published</td><td class="mono">Boolean @default(true)</td><td>✓</td><td>Draft/publish supported</td></tr>
+            <tr><td class="mono">Comparison.viewCount</td><td class="mono">Int @default(0)</td><td>✓</td><td>All 4 live records show 0 — see §7</td></tr>
+            <tr><td class="mono">Comparison.createdAt / updatedAt</td><td class="mono">DateTime</td><td>✓</td><td>All 4 records: createdAt === updatedAt exactly, meaning none has ever been edited since creation</td></tr>
+            <tr><td class="mono">ComparisonSide.toolId</td><td class="mono">String → AITool (hard FK)</td><td>✓</td><td><b>Cannot reference any non-AITool entity</b></td></tr>
+            <tr><td class="mono">ComparisonSide.score</td><td class="mono">Int?</td><td>Optional</td><td>No scale documented (observed 78–92 in live data — implies /100 by convention only)</td></tr>
+            <tr><td class="mono">ComparisonSide.notes/strengths/weaknesses/bestFor</td><td class="mono">String/String[]</td><td>Optional</td><td>—</td></tr>
+            <tr><td class="mono">@@unique([comparisonId, toolId])</td><td colspan="3">Prevents the same tool appearing twice in one comparison — correctly enforced at DB level</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-h">Answers to the 8 required questions</h3>
+      <div class="finding"><div class="finding-head"><h4>1. Can the model support richer comparisons without a migration?</h4></div><p>Partially. Scoring, pros/cons, verdict, and N-way sides work today. FAQ, citations, affiliate links, sponsor labels, and update-history all require new columns — none exist.</p></div>
+      <div class="finding"><div class="finding-head"><h4>2. Which future blocks can already be stored?</h4></div><p>Per-side score, strengths/weaknesses, "best for," a freeform verdict, and a freeform criteria list.</p></div>
+      <div class="finding"><div class="finding-head"><h4>3. Which blocks cannot currently be stored?</h4></div><p>FAQ (Review and AITool both have <code>faq Json?</code>; Comparison does not), sources/citations (Review has <code>sources Json</code>; Comparison does not), affiliate URL, sponsor disclosure, methodology/benchmark data, last-reviewed date distinct from <code>updatedAt</code>, author attribution (Review has <code>authorSlug</code>; Comparison has no author field at all).</p></div>
+      <div class="finding"><div class="finding-head"><h4>4. Are any fields overloaded or semantically unclear?</h4></div><p><code>criteria: Json?</code> is used as a flat array of criterion labels in all 4 live records (<code>["جودة الإجابات", "الأمان والصدق", ...]</code>) with no per-tool scoring against each criterion — meaning the criteria list is currently decorative (rendered as chips) and not connected to the scoring system at all. This is a real semantic gap: a reader sees 5 "comparison criteria" and 2 score rings, with no visible link between them.</p></div>
+      <div class="finding"><div class="finding-head"><h4>5. Can more than two items be compared?</h4></div><p><b>Yes, already.</b> <code>ComparisonSide[]</code> is an unbounded relation, the create form's <code>addSide()</code> has no upper limit, and the detail page's rendering (<code>comparison.sides.map(...)</code>, grid layout) does not assume exactly 2. This is confirmed working architecture, not a gap.</p></div>
+      <div class="finding"><div class="finding-head"><h4>6. Can the model support AI, Crypto, Sports, Health, Finance comparisons?</h4></div><p>No, not as-is. <code>ComparisonSide.toolId</code> is a required, non-nullable foreign key to <code>AITool</code> specifically. A crypto exchange or sports team has no <code>AITool</code> row and cannot legally satisfy this constraint.</p></div>
+      <div class="finding"><div class="finding-head"><h4>7. Would adding another domain pollute the current schema?</h4></div><p>Forcing a Crypto/Sports/Health entity into the <code>AITool</code> table (e.g., adding a <code>domain</code> column to <code>AITool</code> and reusing it for a Binance or Bybit "tool") would pollute it — <code>AITool</code> has AI-specific fields (<code>arabicSupport</code>, <code>hasApi</code>, <code>toolCategory</code> drawn from a fixed AI-tool taxonomy) that don't map to a crypto exchange or a sports team.</p></div>
+      <div class="finding"><div class="finding-head"><h4>8. Hidden scalability risks at 100–500?</h4></div><p>None found at the schema level (proper indexes, proper unique constraints). The risk at that scale is entirely at the query/UI layer (see §5), not the data model.</p></div>
+
+      <div class="score-grid">
+        <div class="score-card"><div class="sc-name">Data Model</div><div class="sc-val">7<span>/10</span></div><div class="score-bar"><div style="width:70%"></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="editorial">
+      <div class="section-head"><span class="idx">03</span><h2>Editorial capability audit</h2></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Case</th><th>Status</th><th>Requires</th></tr></thead>
+          <tbody>
+            <tr><td>ChatGPT vs Claude</td><td><span class="pill ok">Supported now</span></td><td>Content only — already exists, though currently broken to 1 side</td></tr>
+            <tr><td>Gemini vs ChatGPT</td><td><span class="pill ok">Supported now</span></td><td>Content only</td></tr>
+            <tr><td>Zapier vs Make</td><td><span class="pill ok">Supported now</span></td><td>Content only — both tools already exist as AITool rows</td></tr>
+            <tr><td>Cursor vs GitHub Copilot</td><td><span class="pill warn">Partially supported</span></td><td>Already exists as <code>github-copilot-vs-cursor</code> but broken (1 side)</td></tr>
+            <tr><td>Midjourney vs Leonardo</td><td><span class="pill ok">Supported now</span></td><td>Content only — <code>leonardo-ai-image-platform</code> exists as an AITool</td></tr>
+            <tr><td>A three-way comparison</td><td><span class="pill ok">Supported now</span></td><td>Content only — architecture already handles N sides</td></tr>
+            <tr><td>A free-vs-paid comparison</td><td><span class="pill ok">Supported now</span></td><td>Content only — <code>AITool.pricing</code> already distinguishes free/freemium/paid</td></tr>
+            <tr><td>A pricing-focused comparison</td><td><span class="pill ok">Supported now</span></td><td>Content only</td></tr>
+            <tr><td>A feature-focused comparison</td><td><span class="pill ok">Supported now</span></td><td>Content only, via strengths/weaknesses/criteria</td></tr>
+            <tr><td>A benchmark-driven comparison</td><td><span class="pill warn">Partially supported</span></td><td>No dedicated numeric-benchmark field — would have to overload <code>notes</code> as free text</td></tr>
+            <tr><td>A comparison with cited evidence</td><td><span class="pill crit">Not supported</span></td><td>Requires migration — no source/citation field exists on Comparison</td></tr>
+            <tr><td>A comparison with FAQ</td><td><span class="pill crit">Not supported</span></td><td>Requires migration — no <code>faq</code> field on Comparison (exists on Review/AITool)</td></tr>
+            <tr><td>A comparison with internal links</td><td><span class="pill ok">Supported now</span></td><td>Already works via <code>[[compare:slug|label]]</code> tokens in Review/AITool content (Sprint 3 system) — but the Comparison's OWN fields (verdict, notes) are not passed through the internal-link renderer</td></tr>
+            <tr><td>A comparison with affiliate CTAs</td><td><span class="pill crit">Not supported</span></td><td>Requires migration — no affiliate-URL field anywhere in the chain</td></tr>
+            <tr><td>A comparison updated after product changes</td><td><span class="pill warn">Partially supported</span></td><td>The PATCH route works, but the admin edit page needed to use it does not exist — update is DB-access-only today</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-h">Inspection of the 4 live comparisons</h3>
+      <div class="finding">
+        <div class="finding-head"><h4>Structural consistency: yes for schema shape, no for actual completeness</h4></div>
+        <p>All 4 use the same fields (title, summaryAr, verdict, criteria as a 5-item array, published=true). But 3 of 4 have only 1 side where 2 were intended — so while the <em>shape</em> is consistent, the <em>content</em> is not.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>Scoring consistency</h4></div>
+        <p>All scores fall in a narrow 78–92 band with no documented scale or methodology — no criterion-by-criterion breakdown exists despite 5 named criteria per comparison, so the single overall score cannot be traced back to how it was derived. This is a real bias-prevention gap (see §8).</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>Verdicts: evidence-based? No — they are editorial opinion with no citation</h4></div>
+        <p>All 4 verdicts are well-written, plausible, single-paragraph judgments (109–131 characters) with zero footnotes or source references, consistent with the absence of any citation field.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>Pricing currency: cannot be verified as "current" by the system itself</h4></div>
+        <p><code>createdAt === updatedAt</code> for all 4 records exactly — none has been touched since May 28, 2026, roughly 8 weeks before this audit. There is no mechanism that would surface "this comparison hasn't been reviewed in N weeks."</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>Missing required fields</h4></div>
+        <p>3 of 4 comparisons are missing an entire second <code>ComparisonSide</code> — not a partial field, an entire missing entity relation.</p>
+      </div>
+
+      <div class="score-grid">
+        <div class="score-card"><div class="sc-name">Editorial Capability</div><div class="sc-val">4<span>/10</span></div><div class="score-bar"><div style="width:40%"></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="frontend">
+      <div class="section-head"><span class="idx">04</span><h2>Frontend and UI audit</h2></div>
+
+      <h3 class="sub-h">Listing page — app/(main)/compare/page.tsx</h3>
+      <p>Server component, <code>force-dynamic</code>. Fetches up to 24 published comparisons via a single <code>findMany</code> with nested <code>include</code> (no N+1 risk). Renders a responsive 2-column card grid (RTL-correct, <code>dir="rtl"</code> throughout), tool avatars with a "VS" badge between sides, a score progress bar per side, and an empty-state ("لا توجد مقارنات بعد") for the zero-comparisons case. <b>No pagination</b> — <code>take: 24</code> is a hard cap with no <code>page</code>/<code>skip</code> handling found anywhere in the file.</p>
+
+      <h3 class="sub-h">Detail page — app/(main)/compare/[slug]/page.tsx</h3>
+      <p>Server component, <code>force-dynamic</code>, <code>notFound()</code> on missing/unpublished slug. Renders a hero, a "VS" row with circular <code>ScoreRing</code> components (hand-rolled SVG, not a shared component), criteria chips, per-side strengths/weaknesses cards (green/red), a verdict box, and 3 "other comparisons" you might like. All local subcomponents (<code>ToolAvatar</code>, <code>ToolLogo</code>, <code>ScoreRing</code>) are defined inline in the page file rather than imported from <code>components/</code> — they are not reusable elsewhere without copy-pasting.</p>
+
+      <div class="finding">
+        <div class="finding-head"><h4>The 1-side bug is visibly broken in the rendered UI, not just in the database</h4><span class="pill crit">Confirmed</span></div>
+        <p>The "VS" badge only renders when <code>i &gt; 0</code> in the sides map — with 1 side, no VS badge appears at all, and the 2-column side-card grid (<code>lg:grid-cols-2</code>) shows a single card in what visually reads as a half-empty comparison page. Any visitor to <code>chatgpt-vs-claude</code>, <code>midjourney-vs-dalle3</code>, or <code>github-copilot-vs-cursor</code> today sees this.</p>
+      </div>
+
+      <h3 class="sub-h">Can the current page safely support...</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Requirement</th><th>Assessment</th></tr></thead>
+          <tbody>
+            <tr><td>Longer comparisons / more criteria</td><td><span class="pill ok">Yes</span> — criteria chips wrap freely, no hardcoded count</td></tr>
+            <tr><td>More tools (3+)</td><td><span class="pill ok">Yes</span> — grid and VS-row logic already handle N sides</td></tr>
+            <tr><td>More CTAs</td><td><span class="pill warn">Partially</span> — no CTA exists on the detail page at all today (see §7)</td></tr>
+            <tr><td>Affiliate links</td><td><span class="pill crit">No</span> — no field to source the URL from</td></tr>
+            <tr><td>Sponsored disclosures</td><td><span class="pill crit">No</span> — no field, no UI slot exists</td></tr>
+            <tr><td>Citations</td><td><span class="pill crit">No</span> — no data, no UI block</td></tr>
+            <tr><td>Update dates</td><td><span class="pill warn">Partially</span> — <code>updatedAt</code> exists in the schema and is emitted in JSON-LD <code>dateModified</code>, but is not shown anywhere in the visible page UI</td></tr>
+            <tr><td>Methodology blocks</td><td><span class="pill crit">No</span> — no data, no UI block</td></tr>
+            <tr><td>Multiple comparison types</td><td><span class="pill warn">Partially</span> — layout is generic enough, but nothing distinguishes a "pricing comparison" from a "feature comparison" visually or structurally today</td></tr>
+            <tr><td>Other Lumiq domains</td><td><span class="pill crit">No</span> — <code>ToolAvatar</code>/<code>ToolLogo</code> assume an <code>AITool</code>-shaped object</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="font-size:13px;"><b>Reusable vs AI-specific:</b> the outer shell (hero, VS row layout, score-ring visualization, strengths/weaknesses cards, verdict box) is generic and could serve any domain. What's AI-specific is narrow: the <code>tool.logoUrl</code>/<code>tool.tagline</code>/<code>tool.pricing</code> field names baked directly into the JSX, and the <code>ToolAvatar</code>/<code>ToolLogo</code> components' prop shapes. This is a small, well-contained surface to abstract.</p>
+
+      <div class="score-grid">
+        <div class="score-card"><div class="sc-name">Frontend / UI</div><div class="sc-val">6<span>/10</span></div><div class="score-bar"><div style="width:60%"></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="seo">
+      <div class="section-head"><span class="idx">05</span><h2>SEO and indexability audit</h2></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Check</th><th>Result</th><th>Evidence</th></tr></thead>
+          <tbody>
+            <tr><td>Route structure</td><td><span class="pill ok">Clean</span></td><td><code>/compare</code>, <code>/compare/[slug]</code> — no duplicate patterns</td></tr>
+            <tr><td>Canonical tags</td><td><span class="pill ok">Present</span></td><td><code>alternates: { canonical: url }</code> in both pages' <code>generateMetadata</code></td></tr>
+            <tr><td>Index/follow</td><td><span class="pill ok">Default allow</span></td><td>No noindex directive found on either page</td></tr>
+            <tr><td>Sitemap inclusion</td><td><span class="pill ok">Correct</span></td><td><code>app/sitemap.ts:88-93</code> — every published comparison individually, priority 0.7, real <code>updatedAt</code></td></tr>
+            <tr><td>Duplicate risk</td><td><span class="pill ok">None found</span></td><td>Slug is <code>@unique</code>, enforced at DB + application level in the validated create route</td></tr>
+            <tr><td>Title / meta description</td><td><span class="pill ok">Generated per-page</span></td><td>Both pages build titles/descriptions from live fields via <code>lib/seo.ts</code> helpers</td></tr>
+            <tr><td>Breadcrumbs</td><td><span class="pill ok">Present</span></td><td><code>buildBreadcrumbJsonLd</code> on detail page (Sprint 1)</td></tr>
+            <tr><td>Structured data — emitted</td><td><span class="pill ok">Article, SoftwareApplication (nested), Organization, BreadcrumbList; CollectionPage on listing</span></td><td>Confirmed via direct grep of both page files</td></tr>
+            <tr><td>Structured data — appropriately absent</td><td><span class="pill ok">Product, AggregateRating, Review (schema.org)</span></td><td>Correctly NOT emitted — Lumiq does not sell these tools; emitting Product/AggregateRating would misrepresent Lumiq as a retailer</td></tr>
+            <tr><td>Structured data — missing but appropriate</td><td><span class="pill warn">FAQPage (no data), ItemList (listing page only has CollectionPage)</span></td><td>FAQPage correctly can't be emitted without FAQ data; ItemList would be a legitimate addition to the listing page alongside CollectionPage</td></tr>
+            <tr><td>Internal links from tool pages</td><td><span class="pill warn">Thin — 5/51 tools (10%)</span></td><td>DB query: only 5 AITool rows appear in any ComparisonSide at all</td></tr>
+            <tr><td>Internal links from reviews</td><td><span class="pill warn">Thin — 2 reviews link to a comparison</span></td><td><code>[[compare:...]]</code> token scan of all published review content</td></tr>
+            <tr><td>Related-comparison links</td><td><span class="pill ok">Present</span></td><td>Detail page shows 3 "other comparisons"</td></tr>
+            <tr><td>Pagination / listing discovery</td><td><span class="pill crit">Absent</span></td><td>Fixed <code>take: 24</code>, no page param anywhere in the listing page</td></tr>
+            <tr><td>Orphan-page risk</td><td><span class="pill ok">Low today</span> (4 pages, all linked from listing + sitemap)</td><td>Becomes real risk past 24 comparisons without pagination — 25th+ comparison is sitemap-reachable but not click-reachable from the listing</td></tr>
+            <tr><td>Thin-content risk</td><td><span class="pill warn">Real for the 3 broken comparisons</span></td><td>A "vs" page showing one product is textbook thin/misleading content</td></tr>
+            <tr><td>Keyword cannibalization</td><td><span class="pill ok">Low today</span> at 4 comparisons; will need a duplicate-pair check before 20+</td><td>No duplicate-pair prevention exists in either create endpoint</td></tr>
+            <tr><td>Update freshness signal</td><td><span class="pill warn">Weak</span></td><td><code>dateModified</code> emitted in JSON-LD but not shown to human readers on the page itself</td></tr>
+            <tr><td>Author attribution</td><td><span class="pill crit">None</span></td><td>No author field on Comparison at all</td></tr>
+            <tr><td>Source transparency</td><td><span class="pill crit">None</span></td><td>No citation field, no sources rendered</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="score-grid">
+        <div class="score-card"><div class="sc-name">SEO / Indexability</div><div class="sc-val">7<span>/10</span></div><div class="score-bar"><div style="width:70%"></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="scalability">
+      <div class="section-head"><span class="idx">06</span><h2>Scalability audit</h2></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Scale</th><th>Works unchanged</th><th>Becomes inconvenient</th><th>Becomes unsafe</th><th>Must add before this level</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">20</td><td>Everything — listing still fits in one page, admin table still scrollable, sitemap/schema unaffected</td><td>Admin table has no search — scanning 20 rows by eye is still fine</td><td>Nothing new</td><td>Fix the seed-script bug class before writing 16 more comparisons the same way</td></tr>
+            <tr><td class="mono">100</td><td>Sitemap (already scales — no cap found), detail-page queries (single findMany, no N+1)</td><td>Admin table becomes a long unfiltered scroll; listing page's fixed <code>take:24</code> hides comparisons 25-100 from on-site navigation entirely</td><td>Duplicate-pair creation (e.g. two separate "ChatGPT vs Claude" comparisons) — no check exists at either creation endpoint</td><td>Listing pagination; admin search/filter; a duplicate-pair guard</td></tr>
+            <tr><td class="mono">500</td><td>Database query pattern still holds (proper indexes)</td><td>Build-time impact is near-zero since comparison pages are <code>force-dynamic</code>, not statically generated — this is actually a scalability advantage here, opposite of the SSG review pages</td><td>Stale-pricing risk compounds — <code>AITool.monthlyPrice</code> can drift from a comparison's frozen <code>notes</code>/<code>verdict</code> text with no re-sync mechanism; broken-outbound-link risk grows linearly with tool count and nothing currently checks tool <code>website</code> URLs for liveness</td><td>A staleness/last-reviewed signal; some form of periodic pricing re-validation; internal-link maintenance tooling (currently 100% manual per-article)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <span class="ico">→</span>
+        <p><b>The most important scalability fact:</b> comparison detail pages use <code>force-dynamic</code>, not <code>generateStaticParams</code> — unlike reviews (235 statically generated pages). This means comparison count has near-zero build-time cost at any scale, which is a genuine structural advantage for this specific question. The bottleneck at scale is entirely in the admin/editorial workflow (no edit page, no search, no duplicate-pair check), not in rendering or build performance.</p>
+      </div>
+
+      <div class="score-grid">
+        <div class="score-card"><div class="sc-name">Scalability</div><div class="sc-val">5<span>/10</span></div><div class="score-bar"><div style="width:50%"></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="cross-domain">
+      <div class="section-head"><span class="idx">07</span><h2>Cross-domain reusability</h2></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Domain</th><th>Reusable unchanged</th><th>AI-tool-specific blocker</th><th>Needs new fields</th><th>Legal/editorial risk</th></tr></thead>
+          <tbody>
+            <tr><td>Crypto (Binance vs Bybit, BTC vs ETH, Ledger vs Trezor)</td><td>Comparison shell, verdict, criteria, scoring UI</td><td><code>ComparisonSide.toolId → AITool</code> hard FK</td><td>Domain-appropriate entity table (exchange/coin/hardware wallet), regulatory-disclosure field</td><td><b>High</b> — financial-product comparisons carry real regulatory disclosure obligations (e.g. "not financial advice") that AI-tool comparisons don't need</td></tr>
+            <tr><td>Sports (Team vs Team, Player vs Player, streaming service vs service)</td><td>Comparison shell, N-way support (useful for league tables)</td><td>Same FK blocker</td><td>Time-bound stats fields (a score today may be meaningless next season) — nothing in the current model models time-series data</td><td>Low</td></tr>
+            <tr><td>Health (Treatment A vs B, Device A vs B, health app vs app)</td><td>Comparison shell only</td><td>Same FK blocker</td><td>Medical-disclaimer field, source-citation field (mandatory for this domain, optional at best today), no field currently distinguishes a "device" from a "treatment protocol"</td><td><b>Highest</b> — medical comparisons without citation support and without any disclaimer field are a real safety/liability risk if generalized as-is</td></tr>
+            <tr><td>Finance (Broker vs broker, ETF vs ETF, credit card vs credit card)</td><td>Comparison shell, pricing-aware side fields conceptually similar to AITool.pricing</td><td>Same FK blocker</td><td>Regulatory disclosure field, APR/fee-structure fields distinct from a monthly SaaS price</td><td><b>High</b> — same class of risk as crypto</td></tr>
+            <tr><td>Cyber (security tool vs tool)</td><td>Closest domain to AI tools structurally</td><td>Same FK blocker, but conceptually the smallest lift of the five</td><td>Minimal — could almost reuse AITool's shape today</td><td>Low</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <span class="ico">→</span>
+        <p><b>Correct architecture, per the evidence:</b> a shared comparison core (Comparison, criteria, verdict, scoring UI, listing/detail page shell) with domain-specific extensions — not one generic model as-is (the hard AITool FK blocks it structurally), and not fully separate systems either (that would throw away genuinely reusable shell/UI/SEO work). Concretely this means either making <code>ComparisonSide</code> reference a polymorphic "comparable" entity, or introducing one join table per domain (<code>CryptoComparisonSide</code>, etc.) that all resolve into the same <code>Comparison</code> parent and the same rendering shell.</p>
+      </div>
+
+      <div class="score-grid">
+        <div class="score-card"><div class="sc-name">Cross-Domain Reusability</div><div class="sc-val">2<span>/10</span></div><div class="score-bar"><div style="width:20%"></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="revenue">
+      <div class="section-head"><span class="idx">08</span><h2>Revenue readiness audit</h2></div>
+
+      <div class="finding"><div class="finding-head"><h4>1. Can affiliate links be added today without code?</h4></div><p>No. There is no field to store an affiliate URL distinct from <code>AITool.website</code>, and no code path swaps in a tracked URL — this requires at minimum a new nullable column and a template change to use it.</p></div>
+      <div class="finding"><div class="finding-head"><h4>2. Can they be tracked?</h4></div><p>No dedicated click-tracking exists for comparison CTAs specifically. <code>ToolEvent</code> (type: view/like/click) exists as a model and could be extended, but nothing wires a comparison-page outbound click into it today.</p></div>
+      <div class="finding"><div class="finding-head"><h4>3. Can sponsored placements be clearly disclosed?</h4></div><p>No — no sponsor field, no disclosure UI block exists anywhere in the comparison rendering.</p></div>
+      <div class="finding"><div class="finding-head"><h4>4. Can comparison performance be measured separately?</h4></div><p>Partially — <code>Comparison.viewCount</code> exists but reads 0 on all 4 live records, meaning either it was never wired to increment, or genuinely has zero traffic. Given other pages (reviews, tools) correctly increment their own <code>viewCount</code> fields elsewhere in the codebase, this is worth flagging as likely unwired for comparisons specifically — not confirmed either way in this audit (see §14 Uncertainties).</p></div>
+      <div class="finding"><div class="finding-head"><h4>5. Smallest safe revenue improvement?</h4></div><p>Add a nullable <code>affiliateUrl</code> field to <code>AITool</code> (it already has <code>website</code>) and conditionally use it in the existing outbound CTA wherever it's set — purely additive, zero migration risk to existing rows, fully backward compatible.</p></div>
+      <div class="finding"><div class="finding-head"><h4>6. What must exist before affiliate rollout?</h4></div><p>The affiliate-URL field itself, a click-tracking wire-up (reusing the existing <code>ToolEvent</code> model), and — separately, an editorial/legal matter outside this audit's code scope — a disclosure UI element, since undisclosed affiliate links on a comparison page carry real regulatory/trust risk.</p></div>
+
+      <div class="score-grid">
+        <div class="score-card"><div class="sc-name">Revenue Readiness</div><div class="sc-val">3<span>/10</span></div><div class="score-bar"><div style="width:30%"></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="trust">
+      <div class="section-head"><span class="idx">09</span><h2>Quality, trust, and writer readiness</h2></div>
+      <p class="section-dek">This section matters most for the brief's stated long-term goal — specialist writers producing trustworthy, domain-expert comparisons.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Requirement</th><th>Status</th><th>Evidence</th></tr></thead>
+          <tbody>
+            <tr><td>Source citations</td><td><span class="pill crit">Absent</span></td><td>No field on Comparison; Review has this (<code>sources Json</code>), Comparison does not</td></tr>
+            <tr><td>Evidence storage</td><td><span class="pill crit">Absent</span></td><td>Same as above</td></tr>
+            <tr><td>Testing methodology</td><td><span class="pill crit">Absent</span></td><td>No field; scores are unexplained numbers</td></tr>
+            <tr><td>Score calculation transparency</td><td><span class="pill crit">Absent</span></td><td><code>criteria</code> array is disconnected from the single overall <code>score</code> — no per-criterion breakdown</td></tr>
+            <tr><td>Bias prevention</td><td><span class="pill crit">No mechanism</span></td><td>No second-reviewer field, no editorial sign-off field</td></tr>
+            <tr><td>Affiliate/editorial separation</td><td><span class="pill neutral">N/A today</span></td><td>No affiliate links exist yet, so no conflict exists yet — but nothing in the schema would prevent conflation if added carelessly</td></tr>
+            <tr><td>Update history</td><td><span class="pill crit">Absent</span></td><td>Only a single <code>updatedAt</code> timestamp, no versioning/diff/history table</td></tr>
+            <tr><td>Last-reviewed date (human-visible)</td><td><span class="pill warn">Exists in data, not shown in UI</span></td><td><code>updatedAt</code> is in JSON-LD but not rendered for readers</td></tr>
+            <tr><td>Author ownership</td><td><span class="pill crit">Absent</span></td><td>No author field on Comparison at all — unlike every other content type on the site</td></tr>
+            <tr><td>Writer specialization</td><td><span class="pill crit">Not supported</span></td><td>No mechanism ties a comparison to a specific author/specialist, unlike Review's <code>authorSlug</code></td></tr>
+            <tr><td>Fact-checking workflow</td><td><span class="pill crit">Absent</span></td><td>No review-status field beyond published/draft</td></tr>
+            <tr><td>Conflict-of-interest disclosure</td><td><span class="pill crit">Absent</span></td><td>No field</td></tr>
+            <tr><td>Medical/financial safety fields for future domains</td><td><span class="pill crit">Absent</span></td><td>No disclaimer field of any kind exists</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Every content type on Lumiq except Comparison has an author (<code>Review.authorSlug</code>). This is the clearest single signal that Comparison was built as a lighter-weight, secondary feature rather than a first-class editorial content type — which matches the "kept as-is" comment already present in the schema at <code>// ─── AI Tools Directory (kept as-is) ─────</code> immediately preceding the Comparison model.</p>
+
+      <div class="score-grid">
+        <div class="score-card"><div class="sc-name">Trust &amp; Editorial Quality</div><div class="sc-val">3<span>/10</span></div><div class="score-bar"><div style="width:30%"></div></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="gaps">
+      <div class="section-head"><span class="idx">10</span><h2>Gap analysis</h2></div>
+
+      <h3 class="sub-h">Must fix before publishing more comparisons</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Area</th><th>Current capability</th><th>Evidence</th><th>Risk</th><th>Fix</th><th>Code?</th><th>Migration?</th><th>Effort</th></tr></thead>
+          <tbody>
+            <tr><td>Data integrity</td><td>3/4 live comparisons have 1 side, not 2</td><td>DB query, reproduced root cause</td><td class="center"><span class="pill crit">Critical</span></td><td>Fix the 3 records directly (add missing side) or unpublish until fixed</td><td class="center">No</td><td class="center">No</td><td class="center">Low</td></tr>
+            <tr><td>Editorial workflow</td><td>No edit page — /admin/comparisons/[id]/edit is a 404</td><td>Filesystem check, admin page links to it</td><td class="center"><span class="pill crit">Critical</span></td><td>Build the edit page (mirror the "new" form, pre-filled)</td><td class="center">Yes</td><td class="center">No</td><td class="center">Medium</td></tr>
+            <tr><td>API consistency</td><td>Two create endpoints with different validation rules</td><td>Direct file comparison</td><td class="center"><span class="pill crit">Critical</span></td><td>Remove or align the unvalidated POST in <code>route.ts</code></td><td class="center">Yes</td><td class="center">No</td><td class="center">Low</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-h">Should fix before 20 comparisons</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Area</th><th>Current capability</th><th>Evidence</th><th>Risk</th><th>Fix</th><th>Code?</th><th>Migration?</th><th>Effort</th></tr></thead>
+          <tbody>
+            <tr><td>Duplicate prevention</td><td>No check for a duplicate tool-pair (only slug uniqueness)</td><td>Direct read of create route</td><td class="center"><span class="pill warn">Medium</span></td><td>Add a pair-check before create</td><td class="center">Yes</td><td class="center">No</td><td class="center">Low</td></tr>
+            <tr><td>Internal-link coverage</td><td>5/51 tools linked from any comparison</td><td>DB groupBy query</td><td class="center"><span class="pill warn">Medium</span></td><td>Expand cross-links as more comparisons are written (content work, not code)</td><td class="center">No</td><td class="center">No</td><td class="center">Ongoing</td></tr>
+            <tr><td>PATCH safety</td><td>Unfiltered body passed to prisma.update</td><td>Direct file read</td><td class="center"><span class="pill warn">Medium</span></td><td>Allowlist updatable fields</td><td class="center">Yes</td><td class="center">No</td><td class="center">Low</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-h">Should fix before 100 comparisons</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Area</th><th>Current capability</th><th>Evidence</th><th>Risk</th><th>Fix</th><th>Code?</th><th>Migration?</th><th>Effort</th></tr></thead>
+          <tbody>
+            <tr><td>Listing pagination</td><td>Fixed take:24, no page param</td><td>Direct file read — zero matches for searchParams/page/skip</td><td class="center"><span class="pill warn">Medium</span></td><td>Add page-param handling matching the Pagination component already used on /reviews</td><td class="center">Yes</td><td class="center">No</td><td class="center">Medium</td></tr>
+            <tr><td>Admin search/filter</td><td>Flat unfiltered table</td><td>Direct file read</td><td class="center"><span class="pill neutral">Low</span></td><td>Add a search box + status filter</td><td class="center">Yes</td><td class="center">No</td><td class="center">Medium</td></tr>
+            <tr><td>Staleness signal</td><td>updatedAt exists but unused for freshness warnings</td><td>Direct field check</td><td class="center"><span class="pill neutral">Low</span></td><td>Add a "reviewed N weeks ago" admin flag</td><td class="center">Yes</td><td class="center">No</td><td class="center">Low</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-h">Only needed for future domains</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Area</th><th>Current capability</th><th>Evidence</th><th>Risk</th><th>Fix</th><th>Code?</th><th>Migration?</th><th>Effort</th></tr></thead>
+          <tbody>
+            <tr><td>Polymorphic comparison side</td><td>Hard FK to AITool only</td><td>Schema read</td><td class="center"><span class="pill neutral">N/A until needed</span></td><td>Domain-specific side tables or a polymorphic relation</td><td class="center">Yes</td><td class="center">Yes</td><td class="center">High</td></tr>
+            <tr><td>Domain/vertical field</td><td>Does not exist</td><td>Schema read</td><td class="center"><span class="pill neutral">N/A until needed</span></td><td>Add a domain enum to Comparison</td><td class="center">Yes</td><td class="center">Yes</td><td class="center">Low</td></tr>
+            <tr><td>Regulatory disclaimer field</td><td>Does not exist</td><td>Schema read</td><td class="center"><span class="pill neutral">N/A until needed</span></td><td>Add per-domain disclaimer support</td><td class="center">Yes</td><td class="center">Yes</td><td class="center">Medium</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-h">Nice to have</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Area</th><th>Current capability</th><th>Evidence</th><th>Risk</th><th>Fix</th><th>Code?</th><th>Migration?</th><th>Effort</th></tr></thead>
+          <tbody>
+            <tr><td>ItemList schema on listing page</td><td>Only CollectionPage emitted</td><td>Grep of JSON-LD types</td><td class="center"><span class="pill neutral">Cosmetic</span></td><td>Add ItemList alongside CollectionPage</td><td class="center">Yes</td><td class="center">No</td><td class="center">Low</td></tr>
+            <tr><td>FAQ / citation / affiliate / sponsor / author fields</td><td>Absent</td><td>Schema read</td><td class="center"><span class="pill neutral">Deferred</span></td><td>Additive migration, one field group at a time</td><td class="center">Yes</td><td class="center">Yes</td><td class="center">Low–Medium each</td></tr>
+            <tr><td>Unused cache tag cleanup</td><td>CACHE_TAGS.comparisons declared, never used</td><td>Grep for usage</td><td class="center"><span class="pill neutral">Cosmetic</span></td><td>Wire it in or remove it</td><td class="center">Yes</td><td class="center">No</td><td class="center">Low</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="scores">
+      <div class="section-head"><span class="idx">11</span><h2>Final scoring</h2></div>
+
+      <div class="score-grid">
+        <div class="score-card"><div class="sc-name">Data Model</div><div class="sc-val">7<span>/10</span></div><div class="score-bar"><div style="width:70%"></div></div></div>
+        <div class="score-card"><div class="sc-name">Editorial Capability</div><div class="sc-val">4<span>/10</span></div><div class="score-bar"><div style="width:40%"></div></div></div>
+        <div class="score-card"><div class="sc-name">Frontend / UI</div><div class="sc-val">6<span>/10</span></div><div class="score-bar"><div style="width:60%"></div></div></div>
+        <div class="score-card"><div class="sc-name">SEO / Indexability</div><div class="sc-val">7<span>/10</span></div><div class="score-bar"><div style="width:70%"></div></div></div>
+        <div class="score-card"><div class="sc-name">Scalability</div><div class="sc-val">5<span>/10</span></div><div class="score-bar"><div style="width:50%"></div></div></div>
+        <div class="score-card"><div class="sc-name">Cross-Domain Reusability</div><div class="sc-val">2<span>/10</span></div><div class="score-bar"><div style="width:20%"></div></div></div>
+        <div class="score-card"><div class="sc-name">Revenue Readiness</div><div class="sc-val">3<span>/10</span></div><div class="score-bar"><div style="width:30%"></div></div></div>
+        <div class="score-card"><div class="sc-name">Trust &amp; Editorial Quality</div><div class="sc-val">3<span>/10</span></div><div class="score-bar"><div style="width:30%"></div></div></div>
+        <div class="score-card"><div class="sc-name">Production Safety</div><div class="sc-val">6<span>/10</span></div><div class="score-bar"><div style="width:60%"></div></div></div>
+        <div class="score-card"><div class="sc-name" style="color:var(--accent-ink); font-weight:700;">Overall Foundation Quality</div><div class="sc-val">4.7<span>/10</span></div><div class="score-bar"><div style="width:47%"></div></div></div>
+      </div>
+
+      <h3 class="sub-h">Why each score</h3>
+      <p style="font-size:13.3px;"><b>Data Model (7):</b> normalized, correctly indexed, already N-way capable — docked for the hard AITool FK and missing revenue/trust fields. <b>Editorial Capability (4):</b> the create form works, but there is no edit path and the only content actually in production has a verified data-integrity bug. <b>Frontend/UI (6):</b> clean, RTL-correct, N-way-ready shell — docked for the visibly broken 1-side render and zero CTA/affiliate/citation UI. <b>SEO (7):</b> sitemap/robots/canonical/schema all correctly wired — docked for thin internal linking and no listing pagination. <b>Scalability (5):</b> the rendering/query layer scales cleanly (force-dynamic, proper indexes); the editorial/admin layer does not. <b>Cross-Domain (2):</b> the hard FK is a genuine, migration-requiring blocker for every named future domain. <b>Revenue (3):</b> zero affiliate/tracking/sponsor infrastructure exists, though the smallest fix is additive and low-risk. <b>Trust (3):</b> no citations, no author, no methodology — the weakest dimension relative to the brief's stated long-term specialist-writer goal. <b>Production Safety (6):</b> nothing crashes today, but a live, visible content-integrity bug exists in 75% of published records and one unguarded write path could reproduce it.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="verdict">
+      <div class="section-head"><span class="idx">12</span><h2>Final verdict</h2></div>
+
+      <div class="verdict-box">
+        <div class="vb-label">Verdict</div>
+        <h3>OPTION B — EVOLVE INCREMENTALLY</h3>
+        <p style="margin:0 0 12px;">The foundation is usable — the data model, rendering shell, and SEO wiring are all sound enough to keep — but several concrete additions are required before scaling, and one active data-integrity bug must be fixed before writing any more content on top of the current workflow.</p>
+        <div class="confidence">Confidence: 82%</div>
+      </div>
+
+      <h3 class="sub-h">Exact evidence for this verdict</h3>
+      <ul style="font-size:13.3px;">
+        <li>The core shell (schema, listing/detail pages, sitemap, JSON-LD) is reusable and already handles the brief's hardest architectural question (N-way comparisons) correctly — this rules out a full rebuild of that layer.</li>
+        <li>The editorial workflow has a missing edit page, two inconsistent create endpoints, and a proven bug that has silently corrupted 75% of live records — this rules out "keep as-is with no changes."</li>
+        <li>Cross-domain reuse requires a real schema change (the hard AITool FK) — not a config change — which is exactly what "evolve incrementally" (add domain extensions to a kept core) describes, rather than either extreme.</li>
+      </ul>
+
+      <div class="rejected">
+        <h4>Why OPTION A (Keep and improve) was rejected</h4>
+        <p>"Keep and improve" implies the current workflow can be trusted as-is with cosmetic polish. It cannot: 3 of 4 live comparisons are broken due to a workflow-level bug (silent slug mismatch, no enforcement), and the only path to fixing a published comparison today is direct database access. Improving copy or styling without first fixing the create/edit workflow would let the same class of bug recur at 20 or 100 comparisons.</p>
+      </div>
+      <div class="rejected">
+        <h4>Why OPTION C (Rebuild) was rejected</h4>
+        <p>The brief instructs not to recommend rebuild unless evidence clearly requires it, and the evidence does not: the schema already supports N-way comparisons, scoring, drafts, and the rendering layer is <code>force-dynamic</code> (zero build-time cost growth) with no N+1 query risk found at any tested scale. None of the defects found (missing edit page, duplicate create endpoints, missing fields, hard FK) require discarding the existing model — they require additive migrations and new routes/pages layered on top of what exists. A rebuild would throw away genuinely correct, reusable work to fix problems that are additive by nature.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="roadmap">
+      <div class="section-head"><span class="idx">13</span><h2>Recommended next steps — minimal roadmap</h2></div>
+
+      <div class="phase">
+        <div class="phase-head"><span class="ph-n">Phase 0</span><h4>No-code / content-only</h4></div>
+        <div class="task-row"><div><div class="t-name">Fix or unpublish the 3 broken (1-side) comparisons</div><div class="t-meta">Add the missing ComparisonSide row (correct tool slug) via direct DB write, or unpublish until fixed</div></div><div class="task-tags"><span class="tt">biz: high</span><span class="tt">seo: high</span><span class="tt">rev: none</span><span class="tt">risk: low</span><span class="tt">reversible</span></div></div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><span class="ph-n">Phase 1</span><h4>Small, safe code improvements</h4></div>
+        <div class="task-row"><div><div class="t-name">Remove or align the unvalidated POST in api/admin/comparisons/route.ts</div><div class="t-meta">Delete it, or make it call the same validation as create/route.ts</div></div><div class="task-tags"><span class="tt">biz: med</span><span class="tt">seo: none</span><span class="tt">rev: none</span><span class="tt">risk: low</span><span class="tt">backward-compatible</span><span class="tt">reversible</span></div></div>
+        <div class="task-row"><div><div class="t-name">Build the missing admin edit page</div><div class="t-meta">Mirror the "new" form (app/admin/comparisons/[id]/edit/page.tsx), pre-filled via the existing PATCH route</div></div><div class="task-tags"><span class="tt">biz: high</span><span class="tt">seo: none</span><span class="tt">rev: none</span><span class="tt">risk: low</span><span class="tt">backward-compatible</span><span class="tt">independently disableable</span></div></div>
+        <div class="task-row"><div><div class="t-name">Allowlist fields in the PATCH route</div><div class="t-meta">Replace `data: body` with an explicit field allowlist</div></div><div class="task-tags"><span class="tt">biz: low</span><span class="tt">seo: none</span><span class="tt">rev: none</span><span class="tt">risk: low</span><span class="tt">backward-compatible</span></div></div>
+        <div class="task-row"><div><div class="t-name">Add ItemList JSON-LD to the listing page</div><div class="t-meta">Alongside the existing CollectionPage block</div></div><div class="task-tags"><span class="tt">biz: low</span><span class="tt">seo: med</span><span class="tt">rev: none</span><span class="tt">risk: low</span><span class="tt">backward-compatible</span><span class="tt">reversible</span></div></div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><span class="ph-n">Phase 2</span><h4>Before 20 comparisons</h4></div>
+        <div class="task-row"><div><div class="t-name">Add a duplicate tool-pair check to the create endpoint</div><div class="t-meta">Prevent two separate "ChatGPT vs Claude" comparisons from ever coexisting</div></div><div class="task-tags"><span class="tt">biz: med</span><span class="tt">seo: med</span><span class="tt">rev: none</span><span class="tt">risk: low</span><span class="tt">backward-compatible</span></div></div>
+        <div class="task-row"><div><div class="t-name">Add affiliateUrl (nullable) to AITool, wire into existing CTA</div><div class="t-meta">Smallest safe revenue lever identified in §8</div></div><div class="task-tags"><span class="tt">biz: high</span><span class="tt">seo: none</span><span class="tt">rev: high</span><span class="tt">risk: low</span><span class="tt">backward-compatible</span><span class="tt">independently disableable</span></div></div>
+        <div class="task-row"><div><div class="t-name">Expand [[compare:...]] cross-links from more tool/review pages</div><div class="t-meta">Content work using the existing Sprint 3 InternalLink system — no new code</div></div><div class="task-tags"><span class="tt">biz: med</span><span class="tt">seo: high</span><span class="tt">rev: low</span><span class="tt">risk: none</span></div></div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><span class="ph-n">Phase 3</span><h4>Before 100 comparisons</h4></div>
+        <div class="task-row"><div><div class="t-name">Add listing-page pagination</div><div class="t-meta">Reuse the existing Pagination component already used on /reviews</div></div><div class="task-tags"><span class="tt">biz: med</span><span class="tt">seo: med</span><span class="tt">rev: none</span><span class="tt">risk: low</span><span class="tt">backward-compatible</span></div></div>
+        <div class="task-row"><div><div class="t-name">Add admin search/filter to the comparisons list</div><div class="t-meta">Client-side filter is sufficient at this scale</div></div><div class="task-tags"><span class="tt">biz: low</span><span class="tt">seo: none</span><span class="tt">rev: none</span><span class="tt">risk: none</span></div></div>
+        <div class="task-row"><div><div class="t-name">Add a staleness/last-reviewed signal to the admin UI and reader-facing page</div><div class="t-meta">Surface updatedAt meaningfully instead of only in JSON-LD</div></div><div class="task-tags"><span class="tt">biz: med</span><span class="tt">seo: low</span><span class="tt">rev: none</span><span class="tt">risk: none</span></div></div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><span class="ph-n">Phase 4</span><h4>Cross-domain readiness (only if a new vertical is greenlit)</h4></div>
+        <div class="task-row"><div><div class="t-name">Design a polymorphic ComparisonSide or per-domain side tables</div><div class="t-meta">The one true migration this system needs — deliberately deferred until a real second domain is committed to</div></div><div class="task-tags"><span class="tt">biz: high</span><span class="tt">seo: none</span><span class="tt">rev: high</span><span class="tt">risk: medium</span><span class="tt">migration required</span></div></div>
+        <div class="task-row"><div><div class="t-name">Add a domain/vertical field to Comparison</div><div class="t-meta">Small, additive, but only meaningful alongside the above</div></div><div class="task-tags"><span class="tt">biz: med</span><span class="tt">seo: low</span><span class="tt">rev: none</span><span class="tt">risk: low</span><span class="tt">migration required</span></div></div>
+        <div class="task-row"><div><div class="t-name">Add regulatory disclaimer / citation / author fields</div><div class="t-meta">Required before Health or Finance specifically, per §7's legal-risk findings</div></div><div class="task-tags"><span class="tt">biz: high</span><span class="tt">seo: low</span><span class="tt">rev: none</span><span class="tt">risk: high if skipped</span><span class="tt">migration required</span></div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="files">
+      <div class="section-head"><span class="idx">14</span><h2>Exact list of files inspected</h2></div>
+      <ul class="file-list">
+        <li>prisma/schema.prisma (full read + Comparison/ComparisonSide/AITool sections)</li>
+        <li>app/(main)/compare/page.tsx</li>
+        <li>app/(main)/compare/[slug]/page.tsx</li>
+        <li>app/admin/comparisons/page.tsx</li>
+        <li>app/admin/comparisons/new/page.tsx</li>
+        <li>app/api/admin/comparisons/route.ts</li>
+        <li>app/api/admin/comparisons/create/route.ts</li>
+        <li>app/api/admin/comparisons/[id]/route.ts</li>
+        <li>app/(main)/ai-tools/[slug]/page.tsx (comparisons relation render block)</li>
+        <li>lib/cache.ts</li>
+        <li>lib/internal-links.ts</li>
+        <li>app/sitemap.ts</li>
+        <li>app/robots.ts</li>
+        <li>components/AdminSidebar.tsx</li>
+        <li>scripts/seed-comparisons.ts</li>
+        <li>scripts/add-chatgpt.ts</li>
+        <li>scripts/check-scores.ts</li>
+        <li>vercel.json (cron inventory, confirmed no comparison automation)</li>
+        <li>package.json (confirmed zod is installed but unused for comparisons)</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="block" id="uncertainties">
+      <div class="section-head"><span class="idx">15</span><h2>Production records / live URLs checked, and uncertainties</h2></div>
+
+      <h3 class="sub-h">Production records checked</h3>
+      <p style="font-size:13px;">All 4 live <code>Comparison</code> rows and all their <code>ComparisonSide</code> relations, queried directly via Prisma against the production database (not staging, not a sample): <code>chatgpt-vs-claude</code>, <code>midjourney-vs-dalle3</code>, <code>github-copilot-vs-cursor</code>, <code>perplexity-vs-you-com</code>. Also queried: all 51 <code>AITool</code> rows (for the slug-mismatch verification and the 5/51-linked-tools count), and a full-text scan of all published <code>Review.content</code> and <code>AITool.contentAr</code> for <code>[[compare:...]]</code> tokens.</p>
+
+      <h3 class="sub-h">Uncertainties — could not be fully verified</h3>
+      <div class="finding">
+        <div class="finding-head"><h4>Whether Comparison.viewCount is wired to increment anywhere</h4></div>
+        <p>All 4 records show <code>viewCount: 0</code>. This could mean either (a) the increment logic was never implemented for comparison page views, unlike reviews/tools which do increment elsewhere in the codebase, or (b) it is implemented but these 4 pages have genuinely received zero visits since May 28, 2026. A full trace of the detail page's request handler did not surface a <code>viewCount: { increment: 1 }</code> call, which suggests (a), but this was not exhaustively confirmed against every code path (e.g., a client-side beacon calling a separate API route was not ruled out).</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>Actual live rendering of the 3 broken comparisons was not screenshotted</h4></div>
+        <p>The single-side rendering defect (missing VS badge, half-empty grid) was derived by tracing the exact JSX conditionals against the confirmed 1-side data, not by loading the live URL in a browser during this audit — the reasoning is a direct code trace, not a visual observation, though the conditionals involved are unambiguous.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-head"><h4>Whether any external analytics (GA4, GSC) has comparison-specific data</h4></div>
+        <p>Out of scope for this audit's read-only DB/code inspection — GSC snapshot data reviewed in earlier sprints did not show any <code>/compare/*</code> URL among tracked pages, but the snapshot sample was small (12 pages total) and this is not conclusive evidence of zero external traffic.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="report-footer">
+  Read-only forensic audit. No file, database row, migration, or commit was created or modified to produce this report. Every finding above cites either a file path, a direct query result, or a reproduced code path. Audited Jul 23, 2026 against the production database and the current main-branch codebase at d:\AIScope.
+</footer>

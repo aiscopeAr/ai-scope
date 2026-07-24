@@ -4,6 +4,17 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, SITE_URL, SITE_TWITTER_HANDLE, truncate } from "@/lib/seo";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
+import { pricingLabel, normalizeCriteria, getMaxScore, isWinningSide, getKeyDifferences } from "@/lib/comparison-helpers";
+import ToolLogo from "@/components/comparison/ToolLogo";
+import ScoreRing from "@/components/comparison/ScoreRing";
+import MethodologySection from "@/components/comparison/MethodologySection";
+import ReviewDateBadge from "@/components/comparison/ReviewDateBadge";
+import NotRecommendedForBadge from "@/components/comparison/NotRecommendedForBadge";
+import DecisionSummary from "@/components/comparison/DecisionSummary";
+import ChooseIfCard from "@/components/comparison/ChooseIfCard";
+import KeyDifferences from "@/components/comparison/KeyDifferences";
+import EditorialTrustSection from "@/components/comparison/EditorialTrustSection";
+import RelatedContentSection from "@/components/comparison/RelatedContentSection";
 import { CheckCircle2, XCircle, Trophy, ArrowLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +31,7 @@ async function getComparison(slug: string) {
                 id: true, slug: true, name: true, tagline: true,
                 pricing: true, monthlyPrice: true,
                 arabicSupport: true, hasApi: true, logoUrl: true,
+                toolCategory: true,
               },
             },
           },
@@ -29,17 +41,81 @@ async function getComparison(slug: string) {
   } catch { return null; }
 }
 
-async function getOtherComparisons(currentSlug: string) {
+/** Related comparisons ranked by relevance (shares a tool category with
+ *  the current comparison) before falling back to recency — previously
+ *  this list was ordered purely by updatedAt with no relevance signal. */
+async function getOtherComparisons(currentSlug: string, toolCategories: string[]) {
   try {
-    return await prisma.comparison.findMany({
+    const candidates = await prisma.comparison.findMany({
       where: { published: true, NOT: { slug: currentSlug } },
       orderBy: { updatedAt: "desc" },
-      take: 3,
+      take: 12,
       include: {
-        sides: { include: { tool: { select: { name: true, logoUrl: true } } } },
+        sides: { include: { tool: { select: { name: true, logoUrl: true, toolCategory: true } } } },
       },
     });
+
+    const categorySet = new Set(toolCategories);
+    const scored = candidates.map((c) => {
+      const relevance = c.sides.some((s) => categorySet.has(s.tool.toolCategory)) ? 1 : 0;
+      return { comparison: c, relevance };
+    });
+    scored.sort((a, b) => b.relevance - a.relevance);
+
+    return scored.slice(0, 3).map((s) => s.comparison);
   } catch { return []; }
+}
+
+interface RelatedToolRef {
+  id: string;
+  slug: string;
+  name: string;
+  toolCategory: string;
+}
+
+/** Reviews that actually mention either tool by name, prompts linked to
+ *  either tool via a real toolId FK, and other tools in the same
+ *  category(ies) as the tools being compared — same matching pattern
+ *  already used on the AI Tool detail page
+ *  (app/(main)/ai-tools/[slug]/page.tsx), reused here rather than
+ *  inventing a new heuristic. */
+async function getRelatedContent(tools: RelatedToolRef[]) {
+  try {
+    const toolCategories = [...new Set(tools.map((t) => t.toolCategory))];
+    const [reviews, relatedTools, prompts] = await Promise.all([
+      prisma.review.findMany({
+        where: {
+          published: true,
+          OR: tools.flatMap((t) => [
+            { titleAr: { contains: t.name, mode: "insensitive" as const } },
+            { tags: { has: t.name } },
+          ]),
+        },
+        orderBy: { publishedAt: "desc" },
+        take: 4,
+        select: { slug: true, titleAr: true },
+      }),
+      prisma.aITool.findMany({
+        where: {
+          published: true,
+          slug: { notIn: tools.map((t) => t.slug) },
+          toolCategory: { in: toolCategories },
+        },
+        orderBy: { viewCount: "desc" },
+        take: 4,
+        select: { slug: true, name: true },
+      }),
+      prisma.prompt.findMany({
+        where: { published: true, toolId: { in: tools.map((t) => t.id) } },
+        orderBy: { viewCount: "desc" },
+        take: 4,
+        select: { slug: true, titleAr: true },
+      }),
+    ]);
+    return { reviews, relatedTools, prompts };
+  } catch {
+    return { reviews: [], relatedTools: [], prompts: [] };
+  }
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -67,83 +143,21 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-function normalizeCriteria(criteria: unknown): string[] {
-  if (Array.isArray(criteria)) return criteria.filter((item): item is string => typeof item === "string");
-  if (criteria && typeof criteria === "object") return Object.entries(criteria).map(([k, v]) => `${k}: ${String(v)}`);
-  return [];
-}
-
-function pricingLabel(pricing: string, monthly: number | null) {
-  const map: Record<string, string> = {
-    free: "مجاني",
-    freemium: "مجاني جزئياً",
-    paid: "مدفوع",
-    enterprise: "للمؤسسات",
-  };
-  const label = map[pricing] ?? pricing;
-  return monthly ? `${label} · $${monthly}/شهر` : label;
-}
-
-function ToolLogo({ name, logoUrl, size = 14 }: { name: string; logoUrl: string | null; size?: number }) {
-  if (logoUrl) {
-    return (
-      <img
-        src={logoUrl}
-        alt={name}
-        style={{ width: size * 4, height: size * 4, objectFit: "contain", borderRadius: 10, background: "#f8fafc", border: "1px solid #e2e8f0", padding: 6 }}
-      />
-    );
-  }
-  return (
-    <div style={{
-      width: size * 4, height: size * 4, borderRadius: 10,
-      background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center",
-      color: "#fff", fontWeight: 700, fontSize: size,
-    }}>
-      {name[0]}
-    </div>
-  );
-}
-
-// ScoreRing — دائرة درجة دائرية (score من 0 إلى 100)
-function ScoreRing({ score, winner }: { score: number; winner: boolean }) {
-  const pct = score / 100;
-  const r = 28;
-  const circ = 2 * Math.PI * r;
-  const dash = circ * pct;
-
-  return (
-    <div className="relative flex items-center justify-center" style={{ width: 72, height: 72 }}>
-      <svg width={72} height={72} className="-rotate-90">
-        <circle cx={36} cy={36} r={r} fill="none" stroke="#e2e8f0" strokeWidth={5} />
-        <circle
-          cx={36} cy={36} r={r} fill="none"
-          stroke={winner ? "#16a34a" : "var(--accent)"}
-          strokeWidth={5}
-          strokeDasharray={`${dash} ${circ}`}
-          strokeLinecap="round"
-          style={{ transition: "stroke-dasharray 0.6s ease" }}
-        />
-      </svg>
-      <div className="absolute flex flex-col items-center leading-none">
-        <span className="text-lg font-black" style={{ color: winner ? "#16a34a" : "var(--accent)" }}>{score}</span>
-        <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>/100</span>
-      </div>
-    </div>
-  );
-}
-
 export default async function ComparisonPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [comparison, otherComparisons] = await Promise.all([
-    getComparison(slug),
-    getOtherComparisons(slug),
-  ]);
+  const comparison = await getComparison(slug);
   if (!comparison?.published) notFound();
 
+  const toolCategories = comparison.sides.map((s) => s.tool.toolCategory);
+  const [otherComparisons, relatedContent] = await Promise.all([
+    getOtherComparisons(slug, toolCategories),
+    getRelatedContent(comparison.sides.map((s) => s.tool)),
+  ]);
+
   const criteria = normalizeCriteria(comparison.criteria);
-  const maxScore = Math.max(...comparison.sides.map(s => s.score ?? 0));
-  const winner = comparison.sides.find(s => s.score === maxScore && maxScore > 0);
+  const maxScore = getMaxScore(comparison.sides);
+  const winner = comparison.sides.find((s) => isWinningSide(s, maxScore));
+  const keyDifferences = getKeyDifferences(comparison.sides.map((s) => s.tool));
 
   const comparisonUrl = absoluteUrl(`/compare/${slug}`);
   const articleJsonLd = {
@@ -223,16 +237,31 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
               </div>
               {side.score && (
                 <div className="mr-1">
-                  <ScoreRing score={side.score} winner={side.score === maxScore} />
+                  <ScoreRing score={side.score} winner={isWinningSide(side, maxScore)} />
                 </div>
               )}
-              {side.score === maxScore && maxScore > 0 && (
+              {isWinningSide(side, maxScore) && (
                 <Trophy className="h-5 w-5" style={{ color: "#ca8a04" }} />
               )}
             </div>
           </div>
         ))}
       </section>
+
+      {/* Decision summary */}
+      <DecisionSummary winner={winner} />
+
+      {/* Choose X if / Choose Y if */}
+      {comparison.sides.some((s) => s.bestFor || s.strengths.length > 0) && (
+        <section className="mb-10 grid gap-4 sm:grid-cols-2">
+          {comparison.sides.map((side) => (
+            <ChooseIfCard key={side.id} toolName={side.tool.name} bestFor={side.bestFor} strengths={side.strengths} />
+          ))}
+        </section>
+      )}
+
+      {/* Key differences */}
+      <KeyDifferences differences={keyDifferences} toolNames={comparison.sides.map((s) => s.tool.name)} />
 
       {/* Criteria chips */}
       {criteria.length > 0 && (
@@ -252,10 +281,13 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
         </section>
       )}
 
+      {/* Methodology */}
+      <MethodologySection methodology={comparison.methodology} />
+
       {/* Side cards */}
       <section className="grid gap-6 lg:grid-cols-2">
         {comparison.sides.map((side) => {
-          const isWinner = side.score === maxScore && maxScore > 0;
+          const isWinner = isWinningSide(side, maxScore);
           return (
             <article key={side.id}
               className="rounded-2xl border overflow-hidden"
@@ -309,15 +341,6 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
                   </span>
                 </div>
 
-                {/* Best for */}
-                {side.bestFor && (
-                  <div className="rounded-xl p-4"
-                    style={{ background: "var(--accent-bg)", border: "1px solid var(--border-subtle)" }}>
-                    <p className="text-xs font-semibold mb-1" style={{ color: "var(--accent)" }}>الأفضل لـ</p>
-                    <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{side.bestFor}</p>
-                  </div>
-                )}
-
                 {/* Notes */}
                 {side.notes && (
                   <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
@@ -357,6 +380,18 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
                     </ul>
                   </div>
                 </div>
+
+                {/* Best for */}
+                {side.bestFor && (
+                  <div className="rounded-xl p-4"
+                    style={{ background: "var(--accent-bg)", border: "1px solid var(--border-subtle)" }}>
+                    <p className="text-xs font-semibold mb-1" style={{ color: "var(--accent)" }}>الأفضل لـ</p>
+                    <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{side.bestFor}</p>
+                  </div>
+                )}
+
+                {/* Not recommended for */}
+                <NotRecommendedForBadge notRecommendedFor={side.notRecommendedFor} />
               </div>
             </article>
           );
@@ -378,6 +413,32 @@ export default async function ComparisonPage({ params }: { params: Promise<{ slu
           </p>
         </section>
       )}
+
+      {/* Review date */}
+      <div className="mt-4">
+        <ReviewDateBadge reviewedAt={comparison.reviewedAt} />
+      </div>
+
+      {/* Related AI tools */}
+      <RelatedContentSection
+        heading="أدوات ذكاء اصطناعي مشابهة"
+        items={relatedContent.relatedTools.map((t) => ({ href: `/ai-tools/${t.slug}`, title: t.name }))}
+      />
+
+      {/* Related reviews */}
+      <RelatedContentSection
+        heading="تقارير ذات صلة"
+        items={relatedContent.reviews.map((r) => ({ href: `/reviews/${r.slug}`, title: r.titleAr }))}
+      />
+
+      {/* Related prompts */}
+      <RelatedContentSection
+        heading="برومبتات جاهزة لهذه الأدوات"
+        items={relatedContent.prompts.map((p) => ({ href: `/prompts/${p.slug}`, title: p.titleAr }))}
+      />
+
+      {/* Editorial trust */}
+      <EditorialTrustSection updatedAt={comparison.updatedAt} />
 
       {/* Other comparisons */}
       {otherComparisons.length > 0 && (

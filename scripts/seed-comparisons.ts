@@ -31,7 +31,7 @@ async function main() {
       published: true,
       sides: [
         {
-          slug: "claude-anthropic",
+          slug: "claude",
           score: 88,
           bestFor: "تحليل المستندات والكتابة الأكاديمية",
           notes: "يتفوق في السياقات الطويلة والتحليل العميق",
@@ -60,7 +60,7 @@ async function main() {
           weaknesses: ["يعمل فقط عبر Discord", "لا نسخة مجانية", "أوامر تحتاج تعلم"],
         },
         {
-          slug: "dall-e-3",
+          slug: "dalle-3",
           score: 84,
           bestFor: "من يريد سهولة الاستخدام والدمج مع ChatGPT",
           notes: "مدمج في ChatGPT مما يجعله الأسهل استخداماً",
@@ -89,7 +89,7 @@ async function main() {
           weaknesses: ["لا نسخة مجانية كاملة", "أحياناً يقترح كود خاطئ"],
         },
         {
-          slug: "cursor",
+          slug: "cursor-ai-code-editor",
           score: 91,
           bestFor: "المطورين الذين يريدون أقصى استفادة من AI في البرمجة",
           notes: "الأقوى للمشاريع الكبيرة التي تحتاج تعديل ملفات متعددة",
@@ -162,8 +162,18 @@ async function main() {
         notes: string | null; strengths: string[]; weaknesses: string[];
       }[];
 
-    if (sidesData.length < 1) {
-      console.log(`  ⚠️  דילגתי (אין כלים תקינים): ${comp.title}`);
+    // A comparison with fewer sides than intended is not a smaller version
+    // of the same comparison — it's broken, so this must match the >=2
+    // rule enforced everywhere else a Comparison can be created (the admin
+    // create/edit endpoints). A silent single-side insert here is exactly
+    // what shipped 3 broken "vs" pages to production previously.
+    if (sidesData.length < comp.sides.length) {
+      console.error(`  ❌ توقفت: بعض الأدوات لم يتم العثور عليها لـ "${comp.title}" — تحقق من الـ slugs أعلاه قبل المتابعة`);
+      skipped++;
+      continue;
+    }
+    if (sidesData.length < 2) {
+      console.log(`  ⚠️  تخطّي (أقل من أداتين): ${comp.title}`);
       skipped++;
       continue;
     }

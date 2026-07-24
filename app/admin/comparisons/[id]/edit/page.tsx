@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Plus, Trash2, Search, X, ChevronUp, ChevronDown, Save, Eye } from "lucide-react";
 
 interface AITool {
@@ -29,12 +29,13 @@ function emptySide(): SideForm {
   return { toolId: "", toolName: "", toolLogo: null, score: "", notes: "", bestFor: "", notRecommendedFor: "", strengths: [""], weaknesses: [""] };
 }
 
-function slugify(str: string) {
-  return str.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-|-$/g, "");
-}
-
-export default function NewComparisonPage() {
+export default function EditComparisonPage() {
   const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
+
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   // form state
   const [title, setTitle] = useState("");
@@ -42,7 +43,8 @@ export default function NewComparisonPage() {
   const [summaryAr, setSummaryAr] = useState("");
   const [verdict, setVerdict] = useState("");
   const [methodology, setMethodology] = useState("");
-  const [criteria, setCriteria] = useState<string[]>(["السعر", "سهولة الاستخدام", "دعم العربية", "الأداء"]);
+  const [reviewedAt, setReviewedAt] = useState("");
+  const [criteria, setCriteria] = useState<string[]>([]);
   const [sides, setSides] = useState<SideForm[]>([emptySide(), emptySide()]);
   const [published, setPublished] = useState(false);
 
@@ -54,10 +56,46 @@ export default function NewComparisonPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // auto-slug from title
+  // load existing comparison
   useEffect(() => {
-    if (title) setSlug(slugify(title));
-  }, [title]);
+    if (!id) return;
+    fetch(`/api/admin/comparisons/${id}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((d) => {
+        const c = d.comparison;
+        setTitle(c.title);
+        setSlug(c.slug);
+        setSummaryAr(c.summaryAr);
+        setVerdict(c.verdict ?? "");
+        setMethodology(c.methodology ?? "");
+        setReviewedAt(c.reviewedAt ? new Date(c.reviewedAt).toISOString().slice(0, 10) : "");
+        setCriteria(Array.isArray(c.criteria) ? c.criteria : []);
+        setPublished(c.published);
+        setSides(
+          c.sides.length > 0
+            ? c.sides.map((s: { tool: AITool; score: number | null; notes: string | null; bestFor: string | null; notRecommendedFor: string | null; strengths: string[]; weaknesses: string[] }) => ({
+                toolId: s.tool.id,
+                toolName: s.tool.name,
+                toolLogo: s.tool.logoUrl,
+                score: s.score?.toString() ?? "",
+                notes: s.notes ?? "",
+                bestFor: s.bestFor ?? "",
+                notRecommendedFor: s.notRecommendedFor ?? "",
+                strengths: s.strengths.length ? s.strengths : [""],
+                weaknesses: s.weaknesses.length ? s.weaknesses : [""],
+              }))
+            : [emptySide(), emptySide()],
+        );
+        setLoading(false);
+      })
+      .catch((e) => {
+        setLoadError(e instanceof Error ? e.message : "تعذر تحميل المقارنة");
+        setLoading(false);
+      });
+  }, [id]);
 
   // load tools
   useEffect(() => {
@@ -75,7 +113,7 @@ export default function NewComparisonPage() {
 
   const filteredTools = useCallback((idx: number) => {
     const q = (searchQuery[idx] ?? "").toLowerCase();
-    const usedIds = sides.map((s) => s.toolId).filter((id, i) => i !== idx && id);
+    const usedIds = sides.map((s) => s.toolId).filter((tid, i) => i !== idx && tid);
     return allTools
       .filter((t) => !usedIds.includes(t.id))
       .filter((t) => !q || t.name.toLowerCase().includes(q) || t.tagline?.toLowerCase().includes(q));
@@ -136,16 +174,17 @@ export default function NewComparisonPage() {
     setSaving(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/comparisons/create", {
-        method: "POST",
+      const res = await fetch(`/api/admin/comparisons/${id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: title.trim(),
-          slug: slug.trim() || slugify(title),
+          slug: slug.trim(),
           summaryAr: summaryAr.trim(),
           verdict: verdict.trim() || null,
           criteria: criteria.filter(Boolean),
           methodology: methodology.trim() || null,
+          reviewedAt: reviewedAt || null,
           published: pub,
           sides: validSides.map((s) => ({
             toolId: s.toolId,
@@ -168,13 +207,25 @@ export default function NewComparisonPage() {
     }
   }
 
+  if (loading) {
+    return <div className="p-6 max-w-5xl" dir="rtl"><p className="text-slate-400">جاري التحميل…</p></div>;
+  }
+
+  if (loadError) {
+    return (
+      <div className="p-6 max-w-5xl" dir="rtl">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{loadError}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-5xl space-y-6" dir="rtl">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">مقارنة جديدة</h1>
-          <p className="text-sm text-slate-500 mt-1">{sides.filter(s => s.toolId).length} أدوات محددة</p>
+          <h1 className="text-2xl font-bold text-slate-800">تعديل المقارنة</h1>
+          <p className="text-sm text-slate-500 mt-1">{sides.filter(s => s.toolId).length} أدوات محددة · {published ? "منشورة" : "مسودة"}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -182,14 +233,14 @@ export default function NewComparisonPage() {
             disabled={saving}
             className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-50"
           >
-            <Save className="h-4 w-4" /> حفظ مسودة
+            <Save className="h-4 w-4" /> حفظ كمسودة
           </button>
           <button
             onClick={() => handleSave(true)}
             disabled={saving}
             className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition disabled:opacity-50"
           >
-            <Eye className="h-4 w-4" /> نشر الآن
+            <Eye className="h-4 w-4" /> {saving ? "جاري الحفظ..." : "حفظ ونشر"}
           </button>
         </div>
       </div>
@@ -250,6 +301,16 @@ export default function NewComparisonPage() {
             rows={2}
             placeholder="كيف تم اختبار وتقييم الأدوات؟ يظهر فقط إذا تمت تعبئته."
             className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-400 focus:outline-none resize-none"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-slate-600">تاريخ آخر مراجعة تحريرية (اختياري)</label>
+          <input
+            type="date"
+            value={reviewedAt}
+            onChange={(e) => setReviewedAt(e.target.value)}
+            className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-400 focus:outline-none"
+            dir="ltr"
           />
         </div>
       </div>
@@ -503,14 +564,14 @@ export default function NewComparisonPage() {
           disabled={saving}
           className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-50"
         >
-          <Save className="h-4 w-4" /> حفظ مسودة
+          <Save className="h-4 w-4" /> حفظ كمسودة
         </button>
         <button
           onClick={() => handleSave(true)}
           disabled={saving}
           className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition disabled:opacity-50"
         >
-          <Eye className="h-4 w-4" /> {saving ? "جاري الحفظ..." : "نشر الآن"}
+          <Eye className="h-4 w-4" /> {saving ? "جاري الحفظ..." : "حفظ ونشر"}
         </button>
       </div>
     </div>

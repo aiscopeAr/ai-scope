@@ -65,6 +65,15 @@ nextConfig.redirects = async () => [
     destination: "/reviews/how-to-use-chatgpt-for-beginners",
     permanent: true,
   },
+  // Duplicate-content merge: jasper-ai and jasper-ai-writing-tool were two
+  // AITool pages for the same product. jasper-ai-writing-tool has the more
+  // complete content (FAQ, Arabic support, sourceUrl) and is kept as the
+  // canonical page.
+  {
+    source: "/ai-tools/jasper-ai",
+    destination: "/ai-tools/jasper-ai-writing-tool",
+    permanent: true,
+  },
 ];
 
 // Security + performance headers

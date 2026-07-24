@@ -262,33 +262,36 @@ model AITool {
 }
 
 model Comparison {
-  id        String           @id @default(cuid())
-  slug      String           @unique
-  title     String
-  summaryAr String           @db.Text
-  verdict   String?          @db.Text
-  criteria  Json?
-  published Boolean          @default(true)
-  viewCount Int              @default(0)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  sides     ComparisonSide[]
+  id           String           @id @default(cuid())
+  slug         String           @unique
+  title        String
+  summaryAr    String           @db.Text
+  verdict      String?          @db.Text
+  criteria     Json?
+  methodology  String?          @db.Text // how the comparison was tested/scored — optional, renders only when present
+  reviewedAt   DateTime?        // last time an editor verified this comparison is still accurate (distinct from updatedAt, which changes on any edit)
+  published    Boolean          @default(true)
+  viewCount    Int              @default(0)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  sides        ComparisonSide[]
 
   @@index([slug])
   @@index([published])
 }
 
 model ComparisonSide {
-  id           String     @id @default(cuid())
-  comparisonId String
-  comparison   Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
-  toolId       String
-  tool         AITool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
-  score        Int?
-  notes        String?    @db.Text
-  strengths    String[]
-  weaknesses   String[]
-  bestFor      String?
+  id                String     @id @default(cuid())
+  comparisonId      String
+  comparison        Comparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  toolId            String
+  tool              AITool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  score             Int?
+  notes             String?    @db.Text
+  strengths         String[]
+  weaknesses        String[]
+  bestFor           String?
+  notRecommendedFor String?    // who should skip this tool — optional, renders only when present
 
   @@unique([comparisonId, toolId])
   @@index([comparisonId])

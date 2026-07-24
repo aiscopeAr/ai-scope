@@ -3,6 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
+// Comparison creation always goes through POST /api/admin/comparisons/create,
+// which validates required fields, enforces >=2 sides, and checks slug
+// uniqueness. This route only lists — it intentionally has no POST, so
+// there is exactly one code path that can create a Comparison.
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -17,18 +21,4 @@ export async function GET() {
   });
 
   return NextResponse.json({ comparisons });
-}
-
-export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const body = await req.json();
-  const { title, slug, summaryAr, verdict, criteria, published } = body;
-
-  const comparison = await prisma.comparison.create({
-    data: { title, slug, summaryAr, verdict, criteria: criteria ?? [], published: published ?? false },
-  });
-
-  return NextResponse.json({ comparison });
 }
