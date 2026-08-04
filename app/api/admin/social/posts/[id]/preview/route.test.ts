@@ -82,6 +82,20 @@ describe("admin preview endpoint — equals production output", () => {
     expect(data.imageUrl).toBeNull();
   });
 
+  it("returns an internal editorialScore breakdown, never included in the caption body itself", async () => {
+    const { GET } = await import("./route");
+    const req = new Request("https://x.test/api/admin/social/posts/post-1/preview");
+    const res = await GET(req, { params: Promise.resolve({ id: "post-1" }) });
+    const data = await res.json();
+
+    expect(data.editorialScore).toBeDefined();
+    expect(typeof data.editorialScore.overall).toBe("number");
+    expect(data.editorialScore.overall).toBeGreaterThanOrEqual(0);
+    expect(data.editorialScore.overall).toBeLessThanOrEqual(100);
+    expect(data.caption).not.toContain("editorialScore");
+    expect(data.caption).not.toMatch(/\d+\s*\/\s*100/);
+  });
+
   it("never sends a real Telegram request — no fetch to api.telegram.org occurs", async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);

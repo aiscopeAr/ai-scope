@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { buildReviewTelegramMessage } from "@/lib/social/telegram-message";
 import { buildTrackedArticleUrl } from "@/lib/social/url";
+import { scoreTelegramMessage } from "@/lib/social/editorial-score";
 
 /**
  * Admin preview endpoint — recomputes the Telegram message for a post's
@@ -11,6 +12,10 @@ import { buildTrackedArticleUrl } from "@/lib/social/url";
  * fetch the Review row and call the one shared formatter, so a preview can
  * never show something different from what actually gets sent. No Telegram
  * API call is made — this never contacts api.telegram.org.
+ *
+ * Telegram Experience Sprint 5: also returns an internal `editorialScore`
+ * diagnostic (lib/social/editorial-score.ts) — admin/preview-only, never
+ * part of the caption body, never sent to Telegram.
  */
 export async function GET(
   _request: Request,
@@ -69,6 +74,7 @@ export async function GET(
   });
 
   const articleUrl = buildTrackedArticleUrl(review.slug, "telegram");
+  const editorialScore = scoreTelegramMessage(message.parts, message.body);
 
   return NextResponse.json({
     template: message.template,
@@ -77,5 +83,6 @@ export async function GET(
     hashtags: message.hashtags,
     articleUrl,
     imageUrl: review.imageUrl ?? null,
+    editorialScore,
   });
 }

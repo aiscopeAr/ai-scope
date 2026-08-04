@@ -55,3 +55,44 @@ describe("buildHashtags — deduplication and limits", () => {
     expect(tags.every((t) => t.length > 1)).toBe(true);
   });
 });
+
+describe("buildHashtags — priority order (Telegram Experience Sprint 5: product/company > technology > category)", () => {
+  it("ranks named-entity (product/company, Latin-script) tags ahead of descriptive (Arabic-script) tags", () => {
+    const tags = buildHashtags({
+      tags: ["الذكاء الاصطناعي", "GPT-5.6", "تعلم آلي", "OpenAI"],
+      categoryNameAr: "نماذج الذكاء الاصطناعي",
+      categorySlug: "ai-models",
+    });
+    const gptIndex = tags.indexOf("#GPT_56");
+    const openaiIndex = tags.indexOf("#OpenAI");
+    const genericIndex = tags.findIndex((t) => t.includes("الذكاء_الاصطناعي") || t.includes("تعلم_آلي"));
+
+    expect(gptIndex).toBeGreaterThanOrEqual(0);
+    expect(openaiIndex).toBeGreaterThanOrEqual(0);
+    expect(gptIndex).toBeLessThan(genericIndex);
+    expect(openaiIndex).toBeLessThan(genericIndex);
+  });
+
+  it("still fills remaining slots with descriptive tags and category when fewer than 4 named entities exist", () => {
+    const tags = buildHashtags({
+      tags: ["Perplexity"],
+      categoryNameAr: "نماذج الذكاء الاصطناعي",
+      categorySlug: "ai-models",
+    });
+    expect(tags[0]).toBe("#Perplexity");
+    expect(tags.length).toBeGreaterThan(1); // category (and/or #AI) fills the rest
+  });
+
+  it("category comes after both named-entity and descriptive tags", () => {
+    const tags = buildHashtags({
+      tags: ["Notion_AI", "إنتاجية"],
+      categoryNameAr: "نماذج الذكاء الاصطناعي",
+      categorySlug: "ai-models",
+    });
+    const categoryIndex = tags.findIndex((t) => t.includes("نماذج"));
+    const productIndex = tags.indexOf("#Notion_AI");
+    const descriptiveIndex = tags.indexOf("#إنتاجية");
+    expect(productIndex).toBeLessThan(categoryIndex === -1 ? Infinity : categoryIndex);
+    expect(descriptiveIndex).toBeLessThan(categoryIndex === -1 ? Infinity : categoryIndex);
+  });
+});

@@ -7,6 +7,10 @@ import {
 } from "./telegram-templates";
 
 const baseCategory = { slug: "companies", nameAr: "الشركات" };
+// A category that isn't company/tools/tutorials/research — for tests that
+// probe weaker signals (title phrasing, recency, fallback) which the
+// company-category shortcut would otherwise intercept first.
+const neutralCategory = { slug: "applications", nameAr: "تطبيقات وحالات استخدام" };
 
 describe("classifyReviewTemplate — template classification", () => {
   it("classifies as comparison when the content contains a [[compare:...]] token", () => {
@@ -58,7 +62,7 @@ describe("classifyReviewTemplate — template classification", () => {
       titleAr: "كيف تستخدم ChatGPT بفعالية",
       content: "نص",
       tags: [],
-      category: baseCategory,
+      category: neutralCategory,
       publishedAt: new Date("2020-01-01"),
     });
     expect(kind).toBe("guide");
@@ -75,12 +79,32 @@ describe("classifyReviewTemplate — template classification", () => {
     expect(kind).toBe("research");
   });
 
+  it("classifies as company when the category is companies or ai-companies", () => {
+    const viaCompanies = classifyReviewTemplate({
+      titleAr: "مايكروسوفت تعلن شراكة جديدة",
+      content: "نص",
+      tags: [],
+      category: { slug: "companies", nameAr: "الشركات" },
+      publishedAt: new Date("2020-01-01"),
+    });
+    expect(viaCompanies).toBe("company");
+
+    const viaAiCompanies = classifyReviewTemplate({
+      titleAr: "OpenAI تعيد هيكلة فريقها",
+      content: "نص",
+      tags: [],
+      category: { slug: "ai-companies", nameAr: "شركات الذكاء الاصطناعي" },
+      publishedAt: new Date("2020-01-01"),
+    });
+    expect(viaAiCompanies).toBe("company");
+  });
+
   it("classifies as breaking when publishedAt is very recent (within 24h) and no stronger signal applies", () => {
     const kind = classifyReviewTemplate({
       titleAr: "تطور جديد في السوق",
       content: "نص عادي",
       tags: [],
-      category: baseCategory,
+      category: neutralCategory,
       publishedAt: new Date(),
     });
     expect(kind).toBe("breaking");
@@ -91,7 +115,7 @@ describe("classifyReviewTemplate — template classification", () => {
       titleAr: "تطور في السوق",
       content: "نص عادي",
       tags: [],
-      category: baseCategory,
+      category: neutralCategory,
       publishedAt: new Date("2020-01-01"),
     });
     expect(kind).toBe("general");
@@ -175,10 +199,10 @@ describe("buildTelegramMessageParts / renderTelegramMessage — full assembly", 
     });
     expect(parts.highlights).toEqual([]);
     const rendered = renderTelegramMessage(parts);
-    expect(rendered).not.toContain("▪️");
+    expect(rendered).not.toContain("•");
   });
 
-  it("selects the comparison CTA for a comparison-classified article", () => {
+  it("selects a CTA from the comparison pool for a comparison-classified article", () => {
     const parts = buildTelegramMessageParts({
       titleAr: "عنوان",
       summary: "ملخص",
@@ -187,11 +211,12 @@ describe("buildTelegramMessageParts / renderTelegramMessage — full assembly", 
       category: baseCategory,
       publishedAt: new Date("2020-01-01"),
       sources: [],
+      slug: "compare-a-vs-b",
     });
-    expect(parts.cta).toBe("شاهد المقارنة الكاملة");
+    expect(["شاهد المقارنة الكاملة", "أيهما يناسبك؟ قارن الآن", "النتيجة الكاملة هنا"]).toContain(parts.cta);
   });
 
-  it("selects the guide CTA for a guide-classified article", () => {
+  it("selects a CTA from the guide pool for a guide-classified article", () => {
     const parts = buildTelegramMessageParts({
       titleAr: "عنوان",
       summary: "ملخص",
@@ -200,8 +225,9 @@ describe("buildTelegramMessageParts / renderTelegramMessage — full assembly", 
       category: { slug: "tutorials", nameAr: "شروحات الذكاء الاصطناعي" },
       publishedAt: new Date("2020-01-01"),
       sources: [],
+      slug: "some-guide-slug",
     });
-    expect(parts.cta).toBe("اكتشف الدليل");
+    expect(["اكتشف الدليل", "تعلّم الطريقة كاملة", "الدليل التفصيلي هنا"]).toContain(parts.cta);
   });
 
   it("never contains literal Markdown asterisks around the headline", () => {
@@ -231,5 +257,97 @@ describe("buildTelegramMessageParts / renderTelegramMessage — full assembly", 
     });
     expect(parts.headline).not.toBe(parts.summary);
     expect(parts.highlights.every((h) => h !== parts.headline && h !== parts.summary)).toBe(true);
+  });
+});
+
+describe("CTA rotation (Telegram Experience Sprint 5)", () => {
+  it("is deterministic — the same slug always yields the same CTA", () => {
+    const build = () =>
+      buildTelegramMessageParts({
+        titleAr: "عنوان", summary: "ملخص", content: "نص", tags: [],
+        category: baseCategory, publishedAt: new Date("2020-01-01"), sources: [],
+        slug: "stable-slug-123",
+      });
+    expect(build().cta).toBe(build().cta);
+  });
+
+  it("spreads across the CTA pool rather than always picking the same phrase for a given template", () => {
+    const slugs = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"];
+    const ctas = new Set(
+      slugs.map(
+        (slug) =>
+          buildTelegramMessageParts({
+            titleAr: "عنوان", summary: "ملخص", content: "نص", tags: [],
+            category: baseCategory, publishedAt: new Date("2020-01-01"), sources: [],
+            slug,
+          }).cta,
+      ),
+    );
+    // 3-item pool, 10 different slugs — with real hash spread this should
+    // not collapse onto a single phrase (the exact repetition Sprint 4 found).
+    expect(ctas.size).toBeGreaterThan(1);
+  });
+});
+
+describe("company template (Telegram Experience Sprint 5)", () => {
+  it("uses the 🏢 icon and 'الشركات' label for a companies-category review", () => {
+    const parts = buildTelegramMessageParts({
+      titleAr: "مايكروسوفت تعلن استثماراً جديداً",
+      summary: "ملخص", content: "نص", tags: [],
+      category: { slug: "companies", nameAr: "الشركات" },
+      publishedAt: new Date("2020-01-01"), sources: [],
+    });
+    expect(parts.template).toBe("company");
+    expect(parts.templateIcon).toBe("🏢");
+    expect(parts.templateLabel).toBe("الشركات");
+  });
+});
+
+describe("renderTelegramMessage — premium layout (Telegram Experience Sprint 5)", () => {
+  const premiumInput = {
+    titleAr: "عنوان تجريبي",
+    summary: "ملخص تجريبي للمقال",
+    content: "نص",
+    tags: [],
+    category: baseCategory,
+    publishedAt: new Date("2020-01-01"),
+    sources: [{ name: "Reuters" }],
+    readingMinutes: 4,
+    slug: "premium-layout-test",
+  };
+
+  it("opens and closes with the divider line", () => {
+    const parts = buildTelegramMessageParts(premiumInput);
+    const rendered = renderTelegramMessage(parts);
+    const lines = rendered.split("\n");
+    expect(lines[0]).toBe("━━━━━━━━━━━━━━");
+    expect(lines[lines.length - 1]).toBe("━━━━━━━━━━━━━━");
+  });
+
+  it("includes exactly one template icon as the section marker", () => {
+    const parts = buildTelegramMessageParts(premiumInput);
+    const rendered = renderTelegramMessage(parts);
+    const occurrences = rendered.split(parts.templateIcon).length - 1;
+    expect(occurrences).toBe(1);
+  });
+
+  it("shows a dedicated reading-time line with the 📖 marker when readingMinutes is set", () => {
+    const parts = buildTelegramMessageParts(premiumInput);
+    const rendered = renderTelegramMessage(parts);
+    expect(rendered).toContain("📖 4 دقائق قراءة");
+  });
+
+  it("omits the reading-time line when readingMinutes is not provided", () => {
+    const parts = buildTelegramMessageParts({ ...premiumInput, readingMinutes: undefined });
+    const rendered = renderTelegramMessage(parts);
+    expect(rendered).not.toContain("📖");
+  });
+
+  it("uses bullet markers (•) for fact highlights, not the old ▪️ marker", () => {
+    const parts = buildTelegramMessageParts(premiumInput);
+    const rendered = renderTelegramMessage(parts);
+    expect(parts.highlights.length).toBeGreaterThan(0);
+    expect(rendered).toContain("•");
+    expect(rendered).not.toContain("▪️");
   });
 });

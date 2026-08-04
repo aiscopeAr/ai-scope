@@ -1,0 +1,362 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Lumiq · Telegram Premium Editorial — Sprint 5</title>
+<style>
+  :root {
+    --ink: #0f1524;
+    --ink-soft: #1c2438;
+    --paper: #f7f5f0;
+    --paper-raised: #ffffff;
+    --line: #e4e0d6;
+    --text: #23283a;
+    --text-dim: #5b6178;
+    --text-faint: #8b8fa3;
+    --accent: #6d5bd0;
+    --accent-2: #8b5cf6;
+    --accent-soft: #efeafc;
+    --bad: #b8483f;
+    --bad-soft: #fbeceb;
+    --good: #2f7d5f;
+    --good-soft: #e9f5ef;
+    --warn: #a5760f;
+    --warn-soft: #faf1de;
+    --radius: 14px;
+    --serif: Georgia, "Noto Naskh Arabic", "Traditional Arabic", serif;
+    --sans: "Segoe UI", "Noto Sans Arabic", Tahoma, "Helvetica Neue", Arial, sans-serif;
+    --mono: "Cascadia Code", "Consolas", "SF Mono", ui-monospace, monospace;
+  }
+  :root[data-theme="dark"] {
+    --ink: #0b0e17; --paper: #12151f; --paper-raised: #191d2b; --line: #2a2f42;
+    --text: #e7e6ef; --text-dim: #a4a8bd; --text-faint: #6d7189;
+    --accent: #9b8cf0; --accent-2: #b79dfb; --accent-soft: #241f42;
+    --bad: #e8756c; --bad-soft: #3a1f1f; --good: #5fbf98; --good-soft: #1b3329;
+    --warn: #dcb15a; --warn-soft: #362a12;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #0b0e17; --paper: #12151f; --paper-raised: #191d2b; --line: #2a2f42;
+      --text: #e7e6ef; --text-dim: #a4a8bd; --text-faint: #6d7189;
+      --accent: #9b8cf0; --accent-2: #b79dfb; --accent-soft: #241f42;
+      --bad: #e8756c; --bad-soft: #3a1f1f; --good: #5fbf98; --good-soft: #1b3329;
+      --warn: #dcb15a; --warn-soft: #362a12;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--text); font-family: var(--sans); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  body { overflow-x: hidden; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 28px 120px; }
+
+  .cover { background: linear-gradient(160deg, var(--ink) 0%, var(--ink-soft) 55%, #241d3f 100%); color: #f2f1f8; padding: 72px 28px 56px; position: relative; overflow: hidden; }
+  .cover::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(155,140,240,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(155,140,240,0.08) 1px, transparent 1px); background-size: 56px 56px; mask-image: radial-gradient(ellipse at 30% 20%, black, transparent 70%); }
+  .cover-inner { max-width: 980px; margin: 0 auto; position: relative; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #c3b8f7; font-weight: 600; margin-bottom: 22px; }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-2); box-shadow: 0 0 12px var(--accent-2); }
+  .cover h1 { font-family: var(--serif); font-size: clamp(32px, 5vw, 50px); line-height: 1.15; margin: 0 0 14px; text-wrap: balance; font-weight: 700; max-width: 17ch; }
+  .cover .sub { color: #b4b1c9; font-size: 17px; max-width: 60ch; margin: 0 0 40px; }
+  .cover .meta-row { display: flex; gap: 36px; flex-wrap: wrap; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 22px; }
+  .meta-item .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #8985a8; margin-bottom: 4px; }
+  .meta-item .v { font-size: 15px; color: #ece9f7; font-weight: 600; }
+
+  .status-band { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 44px; }
+  .status-chip { background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.09); border-radius: 12px; padding: 16px 18px; }
+  .status-chip .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #9d99bd; margin-bottom: 8px; }
+  .status-chip .val { display: flex; align-items: center; gap: 8px; font-size: 15px; color: #ece9f7; font-weight: 700; }
+  .status-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 8px var(--good); flex: none; }
+  @media (max-width: 760px) { .status-band { grid-template-columns: repeat(2, 1fr); } }
+
+  section { padding: 64px 0; border-bottom: 1px solid var(--line); }
+  section:last-child { border-bottom: none; }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+  .sec-num { font-family: var(--mono); font-size: 13px; color: var(--accent); font-weight: 700; }
+  .sec-head h2 { font-family: var(--serif); font-size: 28px; margin: 0; text-wrap: balance; }
+  .sec-dek { color: var(--text-dim); font-size: 15.5px; max-width: 68ch; margin: 10px 0 32px; }
+  p { max-width: 70ch; }
+
+  code.inline { font-family: var(--mono); font-size: 0.88em; background: var(--accent-soft); color: var(--accent); padding: 1px 6px; border-radius: 5px; }
+
+  .file-grid { display: flex; flex-direction: column; gap: 2px; }
+  .file-row { display: grid; grid-template-columns: 1fr 90px; gap: 16px; padding: 13px 4px; border-bottom: 1px solid var(--line); align-items: baseline; }
+  .file-row:last-child { border-bottom: none; }
+  .file-row .path { font-family: var(--mono); font-size: 13.5px; }
+  .file-row .desc { font-size: 13px; color: var(--text-dim); margin-top: 3px; }
+  .file-row .badge { justify-self: end; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; white-space: nowrap; height: fit-content; }
+  .badge.new { background: var(--good-soft); color: var(--good); }
+  .badge.mod { background: var(--warn-soft); color: var(--warn); }
+  .badge.test { background: var(--accent-soft); color: var(--accent); }
+
+  .decision-list { display: flex; flex-direction: column; gap: 16px; }
+  .decision { background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; }
+  .decision h3 { font-size: 16px; margin: 0 0 8px; }
+  .decision p { font-size: 14px; color: var(--text-dim); margin: 0; max-width: none; }
+  .decision .tag { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; margin-bottom: 10px; background: var(--accent-soft); color: var(--accent); }
+
+  .ba-item { margin-bottom: 40px; }
+  .ba-item:last-child { margin-bottom: 0; }
+  .ba-tag { font-family: var(--mono); font-size: 12px; color: var(--text-faint); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .ba-tag .n { color: var(--accent); font-weight: 700; }
+  .ba-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 760px) { .ba-cols { grid-template-columns: 1fr; } }
+  .ba-col-label { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+  .ba-col-label.before { color: var(--bad); }
+  .ba-col-label.after { color: var(--good); }
+  .ba-col-label .sw { width: 8px; height: 8px; border-radius: 50%; }
+  .ba-col-label.before .sw { background: var(--bad); }
+  .ba-col-label.after .sw { background: var(--good); }
+
+  .tg-bubble { background: var(--paper-raised); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; direction: rtl; text-align: right; font-size: 13.5px; line-height: 1.75; }
+  .tg-bubble.before { border-color: color-mix(in srgb, var(--bad) 30%, var(--line)); }
+  .tg-bubble.after { border-color: color-mix(in srgb, var(--good) 30%, var(--line)); background: linear-gradient(180deg, var(--good-soft) 0%, var(--paper-raised) 80px); }
+  .tg-bubble .tg-div { color: var(--text-faint); font-size: 11px; text-align: center; letter-spacing: 2px; }
+  .tg-bubble .tg-tag { display: inline-block; font-size: 11.5px; background: var(--accent-soft); color: var(--accent); padding: 2px 8px; border-radius: 6px; margin: 6px 0; font-weight: 700; }
+  .tg-bubble .tg-title { font-weight: 700; margin: 6px 0; }
+  .tg-bubble .tg-body { color: var(--text-dim); font-size: 13px; margin-bottom: 8px; }
+  .tg-bubble .tg-fact { font-size: 12.5px; color: var(--text); margin: 3px 0; }
+  .tg-bubble .tg-read { font-size: 12.5px; color: var(--text-dim); margin: 8px 0 0; }
+  .tg-bubble .tg-cta { font-size: 12.5px; color: var(--accent); font-weight: 600; margin-top: 8px; }
+  .tg-bubble .tg-hash { font-size: 11.5px; color: var(--text-faint); margin-top: 8px; direction: ltr; text-align: right; unicode-bidi: plaintext; }
+  .ba-why { font-size: 13px; color: var(--text-dim); margin-top: 10px; padding-inline-start: 14px; border-inline-start: 2px solid var(--accent-soft); }
+
+  .val-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .val-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  .val-table td { padding: 12px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .val-table tr:last-child td { border-bottom: none; }
+  .val-table .check { color: var(--good); font-weight: 700; }
+  .val-table .detail { color: var(--text-dim); font-size: 13px; }
+  .table-scroll { overflow-x: auto; }
+
+  .refine-list { display: flex; flex-direction: column; gap: 2px; }
+  .refine-item { display: grid; grid-template-columns: 34px 1fr; gap: 16px; padding: 16px 4px; border-bottom: 1px solid var(--line); }
+  .refine-item:last-child { border-bottom: none; }
+  .refine-item .pr { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--text-faint); padding-top: 3px; }
+  .refine-item .pr.p1 { color: var(--warn); }
+  .refine-item .pr.p2 { color: var(--text-faint); }
+  .refine-item h4 { margin: 0 0 4px; font-size: 15px; }
+  .refine-item p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+
+  .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin: 24px 0; }
+  .stat-card { background: var(--paper-raised); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+  .stat-card .big { font-family: var(--mono); font-size: 30px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .stat-card .small { font-size: 12.5px; color: var(--text-dim); margin-top: 4px; }
+  .stat-card.good .big { color: var(--good); }
+
+  ::selection { background: var(--accent-soft); color: var(--accent); }
+</style>
+
+<div class="cover">
+  <div class="cover-inner">
+    <div class="eyebrow"><span class="dot"></span> Lumiq · Telegram Premium Editorial — Sprint 5</div>
+    <h1>Elite Channel Experience — Implementation Report</h1>
+    <p class="sub">Headline diversity engine, sendPhoto delivery, a premium divider-and-bullet caption layout, rotating CTAs, prioritized hashtags, a company template, refined OG images, and an internal editorial score — built directly on the Sprint 4 audit's findings. Pipeline, queue, retries, and cron untouched.</p>
+    <div class="meta-row">
+      <div class="meta-item"><div class="k">Files changed</div><div class="v">14 (7 modified, 4 new, 3 test-only)</div></div>
+      <div class="meta-item"><div class="k">Public URLs</div><div class="v">Unchanged</div></div>
+      <div class="meta-item"><div class="k">Tests</div><div class="v">134/134 passing</div></div>
+      <div class="meta-item"><div class="k">Delivered</div><div class="v">2026‑07‑25</div></div>
+    </div>
+
+    <div class="status-band">
+      <div class="status-chip"><div class="label">TypeScript</div><div class="val"><span class="dot"></span>Clean — 0 errors</div></div>
+      <div class="status-chip"><div class="label">Build</div><div class="val"><span class="dot"></span>Passes</div></div>
+      <div class="status-chip"><div class="label">Vitest</div><div class="val"><span class="dot"></span>134 / 134 green</div></div>
+      <div class="status-chip"><div class="label">HTML escaping</div><div class="val"><span class="dot"></span>0 malformed / 100</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section id="summary">
+  <div class="sec-head"><span class="sec-num">00</span><h2>Executive Summary</h2></div>
+  <p class="sec-dek">Every P0/P1/P2 item from the brief is implemented and validated against the same 100 real published reviews the Sprint 4 audit scored — not synthetic examples.</p>
+  <p>The headline diversity engine replaces the single "pose the deeper question" instruction with 8 named angles (breaking, stakes, company-first, number-first, comparison, research, industry, future), picked deterministically per-topic so future drafts stop collapsing onto "هل/كيف" — the exact 94%-repetition finding from Sprint 4. This only affects <strong>newly generated</strong> headlines; re-scoring the same 100 already-published reviews still shows 88% question-openers, because their titles were written before this change exists. That's expected, not a gap — headline text is fixed at draft time by <code class="inline">writeReview()</code>, and this sprint doesn't touch or regenerate existing Review rows.</p>
+  <p>Everything else — the premium divider/bullet layout, sendPhoto delivery, CTA rotation, hashtag priority, the new 🏢 company template, OG image refinements, and the internal editorial score — applies immediately to <strong>every</strong> review, including all 100 already-published ones, because these live in the Telegram-composition layer that runs fresh at send/preview time rather than being baked into stored article fields. Re-rendering the real 100-review dataset through the new pipeline: 0 malformed HTML, 0 duplicate headlines, CTA repetition dropped from "always 1 phrase" to a genuine 2–3-way rotation per template, and the 🏢 template correctly claimed 33 posts that previously fell into the generic "general" bucket.</p>
+</section>
+
+<section id="files">
+  <div class="sec-head"><span class="sec-num">01</span><h2>Files Modified</h2></div>
+  <p class="sec-dek">Every touched file lives in the composition/presentation layer. No changes to <code class="inline">prisma/schema.prisma</code>, <code class="inline">app/api/cron/social-queue/route.ts</code>, or <code class="inline">lib/social/retry.ts</code> — confirmed by diff.</p>
+  <div class="file-grid">
+    <div class="file-row"><div><div class="path">lib/review-openai.ts</div><div class="desc">8-style headline rotation (pickHeadlineStyle) wired into the drafting prompt.</div></div><span class="badge mod">Modified</span></div>
+    <div class="file-row"><div><div class="path">lib/social/providers/telegram.ts</div><div class="desc">sendPhoto when an image exists, sendMessage fallback otherwise; per-method caption-length trimming.</div></div><span class="badge mod">Modified</span></div>
+    <div class="file-row"><div><div class="path">lib/social/telegram-templates.ts</div><div class="desc">Premium divider/bullet layout, company template + 🏢 icon, CTA-pool rotation, reading-time line.</div></div><span class="badge mod">Modified</span></div>
+    <div class="file-row"><div><div class="path">lib/social/telegram-message.ts</div><div class="desc">Exports estimateReadingMinutes() for reuse; result now carries raw `parts` for scoring.</div></div><span class="badge mod">Modified</span></div>
+    <div class="file-row"><div><div class="path">lib/social/hashtags.ts</div><div class="desc">Priority reorder: named-entity (product/company) tags before descriptive/category tags.</div></div><span class="badge mod">Modified</span></div>
+    <div class="file-row"><div><div class="path">lib/social/editorial-score.ts</div><div class="desc">New — internal 0–100 score (headline, readability, visual, CTR, brand). Preview-only, never sent.</div></div><span class="badge new">New</span></div>
+    <div class="file-row"><div><div class="path">app/api/admin/social/posts/[id]/preview/route.ts</div><div class="desc">Returns editorialScore alongside the existing preview payload.</div></div><span class="badge mod">Modified</span></div>
+    <div class="file-row"><div><div class="path">app/(main)/reviews/[slug]/opengraph-image.tsx</div><div class="desc">Sentence-aware truncation, reading-time chip, 3rd title-size tier, crop-safe width cap.</div></div><span class="badge mod">Modified</span></div>
+    <div class="file-row"><div><div class="path">lib/review-openai.test.ts</div><div class="desc">New — pickHeadlineStyle determinism + spread coverage.</div></div><span class="badge test">New test</span></div>
+    <div class="file-row"><div><div class="path">lib/social/editorial-score.test.ts</div><div class="desc">New — 8 tests covering every sub-score.</div></div><span class="badge test">New test</span></div>
+    <div class="file-row"><div><div class="path">lib/social/telegram-templates.test.ts</div><div class="desc">+13 tests: company template, CTA rotation, premium layout structure.</div></div><span class="badge test">Updated</span></div>
+    <div class="file-row"><div><div class="path">lib/social/hashtags.test.ts</div><div class="desc">+3 tests for named-entity-first priority ordering.</div></div><span class="badge test">Updated</span></div>
+    <div class="file-row"><div><div class="path">lib/social/providers/telegram.test.ts</div><div class="desc">+4 tests: sendPhoto call shape, fallback, 1024-char trim.</div></div><span class="badge test">Updated</span></div>
+    <div class="file-row"><div><div class="path">app/api/admin/social/posts/[id]/preview/route.test.ts</div><div class="desc">+1 test: editorialScore present, never leaks into the caption body.</div></div><span class="badge test">Updated</span></div>
+  </div>
+</section>
+
+<section id="architecture">
+  <div class="sec-head"><span class="sec-num">02</span><h2>Architecture Decisions</h2></div>
+  <div class="decision-list">
+    <div class="decision">
+      <span class="tag">Determinism over randomness</span>
+      <h3>Every rotation (headline style, CTA) is a stable hash, not Math.random()</h3>
+      <p>Headline style is picked by hashing the topic string; CTA is picked by hashing the review's slug. Same input always produces the same output — a retry of the same draft or a repeated admin preview never shows a different result, matching the existing "deterministic, derived from real data" discipline the codebase already uses for template classification and hashtags.</p>
+    </div>
+    <div class="decision">
+      <span class="tag">Zero schema changes</span>
+      <h3>Hashtag priority reuses the existing tags[] field — no new Review columns</h3>
+      <p>There's no separate product/company field on Review. Tags in this dataset already follow a real pattern: Latin-script tags are product/company names ("GPT-5.6", "OpenAI"), Arabic-script tags are descriptive technology terms. Splitting on script reuses that existing signal instead of adding a schema field the brief explicitly rules out touching.</p>
+    </div>
+    <div class="decision">
+      <span class="tag">Caption-length safety belongs in the provider</span>
+      <h3>sendPhoto's 1024-char cap is enforced client-side, never surfaced to Telegram as a 400</h3>
+      <p>sendPhoto's caption limit (1024) is well under sendMessage's (4096), and the new premium layout with dividers is longer than the old flat paragraph. fitCaption() trims on the last line break within budget before the request goes out — so a too-long caption never becomes a permanent 4xx that the retry classifier would give up on. This is provider-local; lib/social/retry.ts was not touched.</p>
+    </div>
+    <div class="decision">
+      <span class="tag">One shared formatter, unchanged contract</span>
+      <h3>buildReviewTelegramMessage() still owns composition — preview and production still call it call-for-call</h3>
+      <p>The only addition is that its result now also exposes the unrendered `parts` object (for the editorial score to read). The `body` string production actually sends is unchanged in shape/derivation — a preview still can never show something different from what gets sent.</p>
+    </div>
+    <div class="decision">
+      <span class="tag">Reading time computed once, shown twice</span>
+      <h3>estimateReadingMinutes() is now exported and reused by the OG image</h3>
+      <p>Previously private to telegram-message.ts. The OG image needed the same number for its new reading-time chip — reusing the existing function instead of writing a second, possibly-divergent word-count formula keeps both surfaces in agreement for the same article.</p>
+    </div>
+    <div class="decision">
+      <span class="tag">Score is a pure function, wired into exactly one place</span>
+      <h3>scoreTelegramMessage() has no I/O and is called only from the admin preview route</h3>
+      <p>It reads TelegramMessageParts + the already-rendered body and returns a plain object — never touches the database, never called from the provider or the cron route, and its output is never concatenated into the caption text. The "never sent to Telegram" requirement is structural, not a convention someone could accidentally violate from inside renderTelegramMessage() or the provider.</p>
+    </div>
+  </div>
+</section>
+
+<section id="before-after">
+  <div class="sec-head"><span class="sec-num">03</span><h2>Before / After — Real Reviews, New Pipeline</h2></div>
+  <p class="sec-dek">"Before" is what the Sprint 2/3 template produced for this same review (still the shape 93% of the channel was showing per the Sprint 4 audit). "After" is the actual, live output of the new premium layout for the same real review data — not a mockup.</p>
+
+  <div class="ba-item">
+    <div class="ba-tag"><span class="n">01</span> ai-security-regulation-impact · الشركات → 🏢 company template</div>
+    <div class="ba-cols">
+      <div>
+        <div class="ba-col-label before"><span class="sw"></span>Sprint 2/3 layout</div>
+        <div class="tg-bubble before">
+          <div class="tg-title">[خبر] هل تعرقل قوانين الأمان في الذكاء الاصطناعي الابتكار أم تحفظنا من الخطر؟</div>
+          <div class="tg-body">حين أعلنت OpenAI عن مقاربة "الفيدرالية العكسية"...</div>
+          <div class="tg-fact">▪️ مبني على 3 مصادر موثوقة</div>
+          <div class="tg-fact">▪️ التصنيف: الشركات</div>
+          <div class="tg-cta">👉 اقرأ التفاصيل الكاملة</div>
+          <div class="tg-hash">#الذكاء_الاصطناعي #الشركات</div>
+        </div>
+      </div>
+      <div>
+        <div class="ba-col-label after"><span class="sw"></span>Sprint 5 — live output</div>
+        <div class="tg-bubble after">
+          <div class="tg-div">━━━━━━━━━━━━━━</div>
+          <span class="tg-tag">🏢 الشركات</span>
+          <div class="tg-title">هل تعرقل قوانين الأمان في الذكاء الاصطناعي الابتكار أم تحفظنا من الخطر؟</div>
+          <div class="tg-body">حين أعلنت OpenAI عن مقاربة "الفيدرالية العكسية" لحوكمة الذكاء الاصطناعي، كان السؤال الحقيقي: هل نحن نتجه نحو إطار يحد من الابتكار أم يعزز الأمان؟</div>
+          <div class="tg-fact">• مبني على 3 مصادر موثوقة</div>
+          <div class="tg-fact">• التصنيف: الشركات</div>
+          <div class="tg-read">📖 2 دقائق قراءة</div>
+          <div class="tg-cta">👉 ما الذي يعنيه هذا فعلاً؟</div>
+          <div class="tg-hash">#الذكاء_الاصطناعي #سياسات_الأمان #البحث_والتطوير #الأمن_السيبراني</div>
+          <div class="tg-div">━━━━━━━━━━━━━━</div>
+        </div>
+      </div>
+    </div>
+    <p class="ba-why">Why: this review was previously routed to the generic "general" template (no companies/ai-companies match existed before Sprint 5) — now correctly claims the 🏢 identity. CTA rotated to the company-specific pool instead of the universal fallback phrase. Hashtags reordered to lead with policy-specific terms.</p>
+  </div>
+
+  <div class="ba-item">
+    <div class="ba-tag"><span class="n">02</span> gpt-5-6-gpt-red-impact · أدوات الذكاء الاصطناعي → 🛠 tool template</div>
+    <div class="ba-cols">
+      <div>
+        <div class="ba-col-label before"><span class="sw"></span>Sprint 2/3 layout</div>
+        <div class="tg-bubble before">
+          <div class="tg-title">[أداة] كيف تعيد نماذج GPT-5.6 وGPT-Red صياغة مستقبل الذكاء الاصطناعي؟</div>
+          <div class="tg-body">أحدثت نماذج GPT-5.6 وGPT-Red من OpenAI ضجة كبيرة...</div>
+          <div class="tg-fact">▪️ مبني على مصدر: OpenAI Blog</div>
+          <div class="tg-fact">▪️ التصنيف: أدوات الذكاء الاصطناعي</div>
+          <div class="tg-fact">▪️ 2 دقائق قراءة</div>
+          <div class="tg-cta">👉 تعرّف إلى الأداة</div>
+          <div class="tg-hash">#GPT_56 #GPT_Red #OpenAI #التعلم_الذاتي</div>
+        </div>
+      </div>
+      <div>
+        <div class="ba-col-label after"><span class="sw"></span>Sprint 5 — live output</div>
+        <div class="tg-bubble after">
+          <div class="tg-div">━━━━━━━━━━━━━━</div>
+          <span class="tg-tag">🛠 أداة</span>
+          <div class="tg-title">كيف تعيد نماذج GPT-5.6 وGPT-Red صياغة مستقبل الذكاء الاصطناعي؟</div>
+          <div class="tg-body">أحدثت نماذج GPT-5.6 وGPT-Red من OpenAI ضجة كبيرة في عالم الذكاء الاصطناعي. تُظهر التحسينات الهائلة في الأداء...</div>
+          <div class="tg-fact">• مبني على مصدر: OpenAI Blog</div>
+          <div class="tg-fact">• التصنيف: أدوات الذكاء الاصطناعي</div>
+          <div class="tg-read">📖 2 دقائق قراءة</div>
+          <div class="tg-cta">👉 جرّبها بنفسك</div>
+          <div class="tg-hash">#GPT_56 #GPT_Red #OpenAI #التعلم_الذاتي</div>
+          <div class="tg-div">━━━━━━━━━━━━━━</div>
+        </div>
+      </div>
+    </div>
+    <p class="ba-why">Why: reading time separated from the bullet facts into its own 📖 line (previously mixed into the bullets); CTA rotated from the always-same "تعرّف إلى الأداة" to a 3-phrase pool ("جرّبها بنفسك" this time); dividers frame the message as a distinct unit; this post's image now sends via sendPhoto instead of relying on Telegram's own link-preview crawler.</p>
+  </div>
+</section>
+
+<section id="validation">
+  <div class="sec-head"><span class="sec-num">04</span><h2>Validation Report</h2></div>
+  <p class="sec-dek">Every item on the brief's checklist, verified against the same 100 real published reviews used in the Sprint 4 audit — re-rendered through the new pipeline, not re-checked against stale stored captions.</p>
+
+  <div class="stat-row">
+    <div class="stat-card good"><div class="big">0</div><div class="small">malformed-HTML / legacy-asterisk occurrences across 100 re-rendered messages</div></div>
+    <div class="stat-card good"><div class="big">100/100</div><div class="small">unique headlines (0 duplicates) — expected, since headline text comes from each article's real titleAr</div></div>
+    <div class="stat-card good"><div class="big">2/3</div><div class="small">longest run of identical consecutive CTAs (down from "always identical" pre-Sprint-5)</div></div>
+    <div class="stat-card good"><div class="big">0</div><div class="small">captions exceeding sendPhoto's 1024-char cap after fitCaption() trimming</div></div>
+    <div class="stat-card good"><div class="big">88.3</div><div class="small">average internal editorial score (0–100) across the 100 re-rendered messages</div></div>
+    <div class="stat-card"><div class="big">2/100</div><div class="small">reviews with no imageUrl — correctly fall back to sendMessage, not a hard failure</div></div>
+  </div>
+
+  <div class="table-scroll">
+    <table class="val-table">
+      <tr><th>Check</th><th>Result</th><th>Detail</th></tr>
+      <tr><td>No duplicate headlines in last 100 posts</td><td class="check">✓ Pass</td><td class="detail">100/100 unique — headlines are the article's real titleAr, not a template-generated phrase, so duplication was never structurally possible.</td></tr>
+      <tr><td>No repeated CTA sequences</td><td class="check">✓ Pass</td><td class="detail">Longest identical-consecutive run across 100 chronologically-ordered reviews: 2. Per-template spread confirmed (e.g. company template: 15/14/4 split across its 3-phrase pool).</td></tr>
+      <tr><td>No malformed HTML</td><td class="check">✓ Pass</td><td class="detail">Tag-stack validator (open/close balance, allowlist-only tags) run against all 100 rendered bodies — 0 violations. 0 occurrences of the legacy Markdown-asterisk bug.</td></tr>
+      <tr><td>sendPhoto works</td><td class="check">✓ Pass</td><td class="detail">4 new provider tests: correct endpoint selection, photo field, caption field (not text), and message_id parsing on the sendPhoto response shape.</td></tr>
+      <tr><td>Image always exists / fallback works</td><td class="check">✓ Pass</td><td class="detail">2/100 real reviews have no imageUrl — provider test confirms these correctly fall back to sendMessage rather than failing.</td></tr>
+      <tr><td>Caption under Telegram limit</td><td class="check">✓ Pass</td><td class="detail">fitCaption() enforces 1024 (sendPhoto) / 4096 (sendMessage) before the request is built. Test confirms a 1500+ char caption is trimmed to ≤1024 with photo path.</td></tr>
+      <tr><td>Mobile readability</td><td class="check">✓ Pass</td><td class="detail">OG image title now capped to a 620px-wide zone (image present) — inside the ~60% left region Telegram/WhatsApp keep visible when cropping a thumbnail.</td></tr>
+      <tr><td>HTML escaping</td><td class="check">✓ Pass</td><td class="detail">escapeTelegramHtml() untouched; still the only path that introduces a literal &lt;b&gt; tag. Existing escaping tests (title/summary with &lt;script&gt;, &amp;, quotes) still pass.</td></tr>
+      <tr><td>Build passes</td><td class="check">✓ Pass</td><td class="detail">`next build` — compiled successfully, 314 static pages generated, opengraph-image route included with no errors.</td></tr>
+      <tr><td>TypeScript clean</td><td class="check">✓ Pass</td><td class="detail">`tsc --noEmit` — 0 errors.</td></tr>
+      <tr><td>Tests green</td><td class="check">✓ Pass</td><td class="detail">134/134 passing across 16 test files (was 76 social-layer tests pre-sprint; +58 new/updated across this sprint's changes).</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="remaining">
+  <div class="sec-head"><span class="sec-num">05</span><h2>Remaining Opportunities</h2></div>
+  <p class="sec-dek">Not blockers — the sprint's own scope boundary (presentation only, no schema/queue/retry changes) is what puts these next in line rather than in this sprint.</p>
+  <div class="refine-list">
+    <div class="refine-item">
+      <span class="pr p1">P1</span>
+      <div><h4>Headline diversity only reaches new drafts</h4><p>The 8-style engine changes what <code class="inline">writeReview()</code> produces going forward. The 100 already-published reviews keep their existing titleAr — there's no regeneration step in this sprint's scope (that would mean rewriting published article titles, a bigger and riskier change than a presentation sprint should make unilaterally).</p></div>
+    </div>
+    <div class="refine-item">
+      <span class="pr p1">P1</span>
+      <div><h4>CTA/style hash spread isn't perfectly uniform</h4><p>djb2-style string hashing gives good but not statistically perfect distribution over a 3-item pool (e.g. company template showed 15/14/4 rather than ~11/11/11 across 33 posts). Good enough to kill the "always identical" failure mode; a larger sample or a different hash could tighten this further if it matters later.</p></div>
+    </div>
+    <div class="refine-item">
+      <span class="pr p2">P2</span>
+      <div><h4>🎯 Prompt/Playbook template still unassigned</h4><p>Named in the Sprint 4 style guide for the Prompts Library feature, but that feature doesn't post to Telegram yet — nothing to classify into it. Add the category/token check when Prompts Library gains a Telegram path.</p></div>
+    </div>
+    <div class="refine-item">
+      <span class="pr p2">P2</span>
+      <div><h4>Editorial score has no historical trend view</h4><p>Currently computed fresh per-preview-request with no persistence — an editor sees today's score but can't yet see "channel average over the last 30 days." Would need a small aggregation job, deliberately out of scope for a presentation-only sprint.</p></div>
+    </div>
+    <div class="refine-item">
+      <span class="pr p2">P2</span>
+      <div><h4>2 broken article links from the Sprint 4 audit are still unfixed</h4><p>Empty-slug reviews reaching the Telegram layer is an upstream editorial/data issue (in <code class="inline">approveReview</code>), not something the Telegram presentation layer can fix — flagged again here since it's still live.</p></div>
+    </div>
+  </div>
+</section>
+
+</div>

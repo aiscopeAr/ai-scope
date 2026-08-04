@@ -5,6 +5,15 @@
  * (canonical tags + category) — no AI, no invented terms. Replaces the
  * old fully-static "#ذكاء_اصطناعي #AI" pair with tags that actually vary
  * per article, while staying bounded and free of duplicates/near-spam.
+ *
+ * Telegram Experience Sprint 5: priority order is product > company >
+ * technology > category, so the sharpest, most-searched term always claims
+ * a slot before the broadest one. There is no separate product/company
+ * field on Review — tags[] is one flat array — so tags are split into
+ * "named-entity" (Latin/mixed-script tokens like "GPT-5.6", "OpenAI",
+ * "Perplexity": how product and company names actually appear in this
+ * dataset) vs "descriptive" (Arabic technology/topic terms) using only the
+ * tag's own script, never an invented lookup table.
  */
 
 const MAX_HASHTAGS = 4;
@@ -36,6 +45,15 @@ function toHashtagToken(raw: string): string | null {
   return `#${normalized}`;
 }
 
+/** A tag reads as a named product/company (e.g. "GPT-5.6", "OpenAI",
+ *  "Perplexity") when it contains a Latin letter — real article tags in
+ *  this dataset use Latin script exactly for product/company names and
+ *  Arabic script for descriptive technology/topic terms, so this needs no
+ *  separate taxonomy to stay accurate. */
+function isNamedEntityTag(tag: string): boolean {
+  return /[A-Za-z]/.test(tag);
+}
+
 export function buildHashtags(input: HashtagInput): string[] {
   const seen = new Set<string>();
   const hashtags: string[] = [];
@@ -50,13 +68,22 @@ export function buildHashtags(input: HashtagInput): string[] {
     return hashtags.length >= MAX_HASHTAGS;
   }
 
-  // Canonical tags first — the most specific, article-level real data.
-  for (const tag of input.tags) {
+  // Product/company tags first (named entities — Latin-script tags), then
+  // technology/topic tags (Arabic-script) — both are real per-article data,
+  // just ranked so the sharpest term wins a slot before the broader one.
+  const namedEntityTags = input.tags.filter(isNamedEntityTag);
+  const descriptiveTags = input.tags.filter((t) => !isNamedEntityTag(t));
+
+  for (const tag of namedEntityTags) {
+    if (hashtags.length >= MAX_HASHTAGS) break;
+    tryAdd(tag);
+  }
+  for (const tag of descriptiveTags) {
     if (hashtags.length >= MAX_HASHTAGS) break;
     tryAdd(tag);
   }
 
-  // Category next, unless it's one of the generic/broad categories where a
+  // Category last, unless it's one of the generic/broad categories where a
   // hashtag would add noise rather than a genuine topical signal.
   if (hashtags.length < MAX_HASHTAGS && !GENERIC_CATEGORY_SLUGS.has(input.categorySlug)) {
     tryAdd(input.categoryNameAr);

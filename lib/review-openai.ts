@@ -43,9 +43,75 @@ function buildMemoryBlock(pastReviews: SimilarReview[]): string {
   return `\n\n─── ذاكرة الكاتب: تقارير سابقة ذات صلة ───\n${lines.join("\n\n")}\n────────────────────────────────────────────\n\nإذا كان هناك صلة حقيقية بكتاباتك السابقة، أشر إليها صراحةً في المقال. مثلاً: "كما أشرت في تحليلي السابق عن...". لا تختلق صلات غير موجودة.`;
 }
 
+/**
+ * 8 rotating headline angles (Telegram Experience Sprint 5 — headline
+ * diversity engine). The old instruction ("pose the deeper question") let
+ * the model default to "هل/كيف" on ~94% of real published headlines — a
+ * single style repeated at scale reads as feed fatigue, not curiosity.
+ * Picking one deterministically per-article (hash of the topic string,
+ * stable across a retry of the *same* topic) keeps generation reproducible
+ * while forcing variety across the *set* of articles the channel publishes,
+ * without ever letting the model reach for the same shape by default.
+ */
+const HEADLINE_STYLES = [
+  {
+    key: "breaking",
+    name: "عاجل",
+    instruction: "أسلوب عاجل: صيغة فعل مضارع مباشرة تنقل الحدث فور وقوعه — بلا سؤال. مثال شكلي: '[شركة/جهة] تطلق/تكشف/تعلن عن ...'",
+  },
+  {
+    key: "stakes",
+    name: "المخاطر/الرهان",
+    instruction: "أسلوب المخاطر: يبرز ما يتغيّر أو ما هو على المحك دون طرح سؤال. مثال شكلي: 'سباق [المجال] يتغيّر مع ...' أو '[كذا] يعيد رسم موازين ...'",
+  },
+  {
+    key: "company-first",
+    name: "الشركة أولاً",
+    instruction: "أسلوب يبدأ باسم الشركة أو الجهة الفاعلة كفاعل نحوي للجملة. مثال شكلي: '[اسم الشركة] تراهن على/تتجه نحو/تعيد ...'",
+  },
+  {
+    key: "number-first",
+    name: "الرقم أولاً",
+    instruction: "أسلوب يبدأ برقم حقيقي مستخرج من المصادر (عدد شركات، نسبة، عدد ميزات) — لا تخترع رقماً غير موجود في المصادر. إن لم يوجد رقم حقيقي واضح، لا تستخدم هذا الأسلوب.",
+  },
+  {
+    key: "comparison",
+    name: "مقارنة",
+    instruction: "أسلوب مقارنة صريح يسمّي الطرفين معاً في العنوان بصيغة 'X مقابل Y' أو 'X وY: من يتفوق؟' — يُستخدم فقط إذا كانت المصادر تقارن فعلياً بين كيانين محددين.",
+  },
+  {
+    key: "research",
+    name: "بحثي",
+    instruction: "أسلوب بحثي يسمي الجهة البحثية أو المصدر العلمي كفاعل. مثال شكلي: 'باحثون في [جهة] يكتشفون ...' أو 'دراسة جديدة من [جهة] تكشف ...'",
+  },
+  {
+    key: "industry",
+    name: "قطاعي",
+    instruction: "أسلوب يصف أثراً على قطاع أو صناعة كاملة بصيغة تأثير مباشرة. مثال شكلي: '[كذا] يغيّر قواعد صناعة ...' أو '[قطاع] أمام تحوّل بفعل ...'",
+  },
+  {
+    key: "future",
+    name: "استشرافي",
+    instruction: "أسلوب استشرافي يشير إلى الجيل القادم أو ما بعد الحدث الحالي، دون تكهن غير مبني على المصادر. مثال شكلي: 'الجيل القادم من ...' أو 'ما بعد [الحدث]: ...'",
+  },
+] as const;
+
+/** Deterministic style pick — same topic always yields the same style, but
+ *  different topics spread across all 8 rather than collapsing onto one or
+ *  two (the exact failure mode the audit found: 94% opening with "هل"/"كيف").
+ *  Exported for tests only — not meant to be called outside this module. */
+export function pickHeadlineStyle(topic: string): (typeof HEADLINE_STYLES)[number] {
+  let hash = 0;
+  for (let i = 0; i < topic.length; i++) {
+    hash = (hash * 31 + topic.charCodeAt(i)) >>> 0;
+  }
+  return HEADLINE_STYLES[hash % HEADLINE_STYLES.length];
+}
+
 function buildUserPrompt(
   sources: Array<{ title: string; content: string; url: string; name: string }>,
   memoryBlock: string,
+  headlineStyle: (typeof HEADLINE_STYLES)[number],
 ): string {
   // Limit each source to 2000 chars to stay well under the 30k TPM limit
   const MAX_SOURCE_CHARS = 2000;
@@ -65,7 +131,7 @@ ${sourcesText}
 ───────────────
 
 تعليمات المحتوى:
-- العنوان: زاوية تحليلية، ليس عنوان خبر. اطرح السؤال الأعمق وراء الحدث.
+- العنوان: زاوية تحليلية، ليس عنوان خبر. الأسلوب المطلوب لهذا المقال تحديداً هو "${headlineStyle.name}": ${headlineStyle.instruction} إن كانت المصادر لا تدعم هذا الأسلوب فعلياً (مثلاً لا يوجد رقم حقيقي للأسلوب الرقمي، أو لا توجد مقارنة فعلية لأسلوب المقارنة)، اختر أقرب أسلوب آخر من نفس العائلة يناسب المحتوى الفعلي — المهم ألا يبدأ العنوان بصيغة سؤال "هل" أو "كيف" إلا إذا كان هذا فعلاً الأسلوب المطلوب. لا تخترع حقيقة لتناسب الأسلوب.
 - المقدمة (summaryAr): 3 جمل تضع القارئ في قلب الأهمية الحقيقية للموضوع.
 - المحتوى (contentAr): **لا تقل عن 1200 كلمة** — الهدف 1500–2500 كلمة بتنسيق Markdown. كتابة قصيرة = فشل. بنيّة مقترحة:
   • ## السياق — لماذا هذا الموضوع مهم الآن؟ (200–300 كلمة)
@@ -130,7 +196,8 @@ export async function writeReview(
   }
 
   const memoryBlock = buildMemoryBlock(pastReviews) + accumulatedMemory;
-  const userPrompt = buildUserPrompt(sources, memoryBlock);
+  const headlineStyle = pickHeadlineStyle(topic);
+  const userPrompt = buildUserPrompt(sources, memoryBlock, headlineStyle);
 
   const response = await client.chat.completions.create({
     model: process.env.OPENAI_MODEL ?? "gpt-4o",

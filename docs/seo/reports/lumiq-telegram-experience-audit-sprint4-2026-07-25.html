@@ -1,0 +1,864 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Lumiq · Telegram Experience Audit — Sprint 4</title>
+<style>
+  :root {
+    --ink: #0f1524;
+    --ink-soft: #1c2438;
+    --paper: #f7f5f0;
+    --paper-raised: #ffffff;
+    --line: #e4e0d6;
+    --text: #23283a;
+    --text-dim: #5b6178;
+    --text-faint: #8b8fa3;
+    --accent: #6d5bd0;
+    --accent-2: #8b5cf6;
+    --accent-soft: #efeafc;
+    --bad: #b8483f;
+    --bad-soft: #fbeceb;
+    --good: #2f7d5f;
+    --good-soft: #e9f5ef;
+    --warn: #a5760f;
+    --warn-soft: #faf1de;
+    --radius: 14px;
+    --serif: Georgia, "Noto Naskh Arabic", "Traditional Arabic", serif;
+    --sans: "Segoe UI", "Noto Sans Arabic", Tahoma, "Helvetica Neue", Arial, sans-serif;
+    --mono: "Cascadia Code", "Consolas", "SF Mono", ui-monospace, monospace;
+  }
+
+  :root[data-theme="dark"] {
+    --ink: #0b0e17;
+    --paper: #12151f;
+    --paper-raised: #191d2b;
+    --line: #2a2f42;
+    --text: #e7e6ef;
+    --text-dim: #a4a8bd;
+    --text-faint: #6d7189;
+    --accent: #9b8cf0;
+    --accent-2: #b79dfb;
+    --accent-soft: #241f42;
+    --bad: #e8756c;
+    --bad-soft: #3a1f1f;
+    --good: #5fbf98;
+    --good-soft: #1b3329;
+    --warn: #dcb15a;
+    --warn-soft: #362a12;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #0b0e17;
+      --paper: #12151f;
+      --paper-raised: #191d2b;
+      --line: #2a2f42;
+      --text: #e7e6ef;
+      --text-dim: #a4a8bd;
+      --text-faint: #6d7189;
+      --accent: #9b8cf0;
+      --accent-2: #b79dfb;
+      --accent-soft: #241f42;
+      --bad: #e8756c;
+      --bad-soft: #3a1f1f;
+      --good: #5fbf98;
+      --good-soft: #1b3329;
+      --warn: #dcb15a;
+      --warn-soft: #362a12;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { overflow-x: hidden; }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 28px 120px; }
+
+  /* ── Cover ─────────────────────────────────────────── */
+  .cover {
+    background: linear-gradient(160deg, var(--ink) 0%, var(--ink-soft) 55%, #241d3f 100%);
+    color: #f2f1f8;
+    padding: 72px 28px 56px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(155,140,240,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(155,140,240,0.08) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at 30% 20%, black, transparent 70%);
+  }
+  .cover-inner { max-width: 980px; margin: 0 auto; position: relative; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #c3b8f7; font-weight: 600; margin-bottom: 22px;
+  }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-2); box-shadow: 0 0 12px var(--accent-2); }
+  .cover h1 {
+    font-family: var(--serif);
+    font-size: clamp(32px, 5vw, 50px);
+    line-height: 1.15;
+    margin: 0 0 14px;
+    text-wrap: balance;
+    font-weight: 700;
+    max-width: 15ch;
+  }
+  .cover .sub { color: #b4b1c9; font-size: 17px; max-width: 56ch; margin: 0 0 40px; }
+  .cover .meta-row { display: flex; gap: 36px; flex-wrap: wrap; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 22px; }
+  .meta-item .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #8985a8; margin-bottom: 4px; }
+  .meta-item .v { font-size: 15px; color: #ece9f7; font-weight: 600; }
+
+  /* ── Score dial (hero number) ─────────────────────── */
+  .score-band {
+    display: grid; grid-template-columns: auto 1fr; gap: 40px;
+    align-items: center;
+    margin-top: 44px;
+    background: rgba(255,255,255,0.045);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+  }
+  .score-dial { position: relative; width: 128px; height: 128px; flex: none; }
+  .score-dial svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .score-dial .num {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .score-dial .num b { font-family: var(--serif); font-size: 34px; color: #fff; line-height: 1; font-variant-numeric: tabular-nums; }
+  .score-dial .num span { font-size: 10.5px; color: #9d99bd; letter-spacing: 0.06em; margin-top: 2px; }
+  .score-breakdown { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 28px; }
+  .score-row { display: flex; align-items: center; gap: 10px; }
+  .score-row .label { font-size: 13px; color: #c7c4dd; width: 128px; flex: none; }
+  .score-row .bar { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.1); overflow: hidden; }
+  .score-row .bar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .score-row .val { font-size: 12.5px; color: #9d99bd; width: 30px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ── Sections ──────────────────────────────────────── */
+  section { padding: 64px 0; border-bottom: 1px solid var(--line); }
+  section:last-child { border-bottom: none; }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+  .sec-num { font-family: var(--mono); font-size: 13px; color: var(--accent); font-weight: 700; }
+  .sec-head h2 { font-family: var(--serif); font-size: 28px; margin: 0; text-wrap: balance; }
+  .sec-dek { color: var(--text-dim); font-size: 15.5px; max-width: 68ch; margin: 10px 0 32px; }
+
+  p { max-width: 70ch; }
+
+  /* ── Weakness cards ────────────────────────────────── */
+  .weak-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .weak-card {
+    background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 20px 22px; position: relative;
+  }
+  .weak-card .sev {
+    display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 20px; margin-bottom: 12px;
+  }
+  .sev.high { background: var(--bad-soft); color: var(--bad); }
+  .sev.med { background: var(--warn-soft); color: var(--warn); }
+  .weak-card h3 { font-size: 16px; margin: 0 0 8px; }
+  .weak-card p { font-size: 14px; color: var(--text-dim); margin: 0 0 10px; max-width: none; }
+  .weak-card .stat { font-family: var(--mono); font-size: 22px; color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .weak-card .stat small { font-family: var(--sans); font-size: 12px; color: var(--text-faint); font-weight: 400; margin-inline-start: 6px; }
+
+  /* ── Style guide table ─────────────────────────────── */
+  .style-table { display: flex; flex-direction: column; gap: 10px; }
+  .style-row {
+    display: grid; grid-template-columns: 160px 60px 1fr 1fr; gap: 18px; align-items: center;
+    background: var(--paper-raised); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px;
+  }
+  .style-row.head { background: transparent; border: none; padding: 0 18px; }
+  .style-row.head span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); font-weight: 600; }
+  .style-row .type-name { font-weight: 700; font-size: 14.5px; }
+  .style-row .icon { font-size: 22px; text-align: center; }
+  .style-row .desc { font-size: 13.5px; color: var(--text-dim); }
+  .style-row code { font-family: var(--mono); font-size: 12.5px; background: var(--accent-soft); color: var(--accent); padding: 2px 7px; border-radius: 5px; }
+
+  /* ── CTA library ───────────────────────────────────── */
+  .cta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .cta-group { background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
+  .cta-group h4 { margin: 0 0 12px; font-size: 13px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; }
+  .cta-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .cta-group li { font-size: 14.5px; direction: rtl; text-align: right; padding: 8px 12px; background: var(--paper); border-radius: 8px; border: 1px solid var(--line); }
+
+  /* ── Before/After ──────────────────────────────────── */
+  .ba-item { margin-bottom: 40px; }
+  .ba-item:last-child { margin-bottom: 0; }
+  .ba-tag { font-family: var(--mono); font-size: 12px; color: var(--text-faint); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .ba-tag .n { color: var(--accent); font-weight: 700; }
+  .ba-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 760px) { .ba-cols { grid-template-columns: 1fr; } }
+  .ba-col-label { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+  .ba-col-label.before { color: var(--bad); }
+  .ba-col-label.after { color: var(--good); }
+  .ba-col-label .sw { width: 8px; height: 8px; border-radius: 50%; }
+  .ba-col-label.before .sw { background: var(--bad); }
+  .ba-col-label.after .sw { background: var(--good); }
+
+  .tg-bubble {
+    background: var(--paper-raised); border: 1px solid var(--line); border-radius: 16px;
+    padding: 16px 18px; direction: rtl; text-align: right; font-size: 14px; line-height: 1.75;
+    position: relative;
+  }
+  .tg-bubble.before { border-color: color-mix(in srgb, var(--bad) 30%, var(--line)); }
+  .tg-bubble.after { border-color: color-mix(in srgb, var(--good) 30%, var(--line)); background: linear-gradient(180deg, var(--good-soft) 0%, var(--paper-raised) 60px); }
+  .tg-bubble .tg-title { font-weight: 700; margin-bottom: 8px; }
+  .tg-bubble .tg-tag { display: inline-block; font-size: 11.5px; background: var(--accent-soft); color: var(--accent); padding: 2px 8px; border-radius: 6px; margin-bottom: 8px; font-weight: 700; }
+  .tg-bubble .tg-body { color: var(--text-dim); font-size: 13.5px; margin-bottom: 10px; }
+  .tg-bubble .tg-fact { font-size: 13px; color: var(--text); margin: 3px 0; }
+  .tg-bubble .tg-cta { font-size: 13px; color: var(--accent); font-weight: 600; margin-top: 8px; }
+  .tg-bubble .tg-hash { font-size: 12px; color: var(--text-faint); margin-top: 8px; direction: ltr; text-align: right; unicode-bidi: plaintext; }
+  .tg-bubble .tg-link { font-size: 11.5px; color: var(--text-faint); margin-top: 6px; direction: ltr; text-align: left; font-family: var(--mono); }
+  .ba-why { font-size: 13px; color: var(--text-dim); margin-top: 10px; padding-inline-start: 14px; border-inline-start: 2px solid var(--accent-soft); }
+
+  /* ── OG spec ───────────────────────────────────────── */
+  .og-mock {
+    aspect-ratio: 1200/630; border-radius: 12px; overflow: hidden; position: relative;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #0f172a 100%);
+    border: 1px solid var(--line);
+  }
+  .og-mock .og-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(155,140,240,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(155,140,240,0.06) 1px, transparent 1px); background-size: 40px 40px; }
+  .og-mock .og-content { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 7% 8%; direction: rtl; }
+  .og-mock .og-top { display: flex; align-items: center; gap: 10px; }
+  .og-mock .og-logo { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+  .og-mock .og-brand { color: #fff; font-weight: 700; font-size: 15px; }
+  .og-mock .og-pill { margin-inline-start: auto; background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4); color: #a5b4fc; font-size: 10px; padding: 3px 10px; border-radius: 20px; }
+  .og-mock .og-title { color: #fff; font-size: 22px; font-weight: 800; line-height: 1.3; max-width: 80%; }
+  .og-mock .og-zone { position: absolute; border: 1.5px dashed rgba(239,68,68,0.55); background: rgba(239,68,68,0.08); }
+  .og-mock .og-zone-label { position: absolute; font-size: 9.5px; color: #f87171; font-family: var(--mono); background: #0f172a; padding: 1px 5px; border-radius: 3px; }
+  .og-specs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 14px; margin-top: 24px; }
+  .og-spec-item { background: var(--paper-raised); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .og-spec-item .k { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; margin-bottom: 5px; }
+  .og-spec-item .v { font-size: 13.5px; color: var(--text-dim); }
+
+  /* ── Refinements list ──────────────────────────────── */
+  .refine-list { display: flex; flex-direction: column; gap: 2px; }
+  .refine-item {
+    display: grid; grid-template-columns: 34px 1fr; gap: 16px;
+    padding: 16px 4px; border-bottom: 1px solid var(--line);
+  }
+  .refine-item:last-child { border-bottom: none; }
+  .refine-item .pr { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--text-faint); padding-top: 3px; }
+  .refine-item .pr.p0 { color: var(--bad); }
+  .refine-item .pr.p1 { color: var(--warn); }
+  .refine-item h4 { margin: 0 0 4px; font-size: 15px; }
+  .refine-item p { margin: 0; font-size: 13.5px; color: var(--text-dim); }
+
+  code.inline { font-family: var(--mono); font-size: 0.88em; background: var(--accent-soft); color: var(--accent); padding: 1px 6px; border-radius: 5px; }
+
+  ::selection { background: var(--accent-soft); color: var(--accent); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal { animation: rise 0.5s ease both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
+  }
+</style>
+
+<div class="cover">
+  <div class="cover-inner">
+    <div class="eyebrow"><span class="dot"></span> Lumiq · Telegram Experience — Sprint 4</div>
+    <h1>Premium Visual &amp; Editorial Audit</h1>
+    <p class="sub">A full read of the last 100 published Telegram posts — real captions, real headlines, real hashtags — scored and rebuilt into a reusable editorial system. No pipeline, retry, queue, or infra code touched.</p>
+    <div class="meta-row">
+      <div class="meta-item"><div class="k">Posts Audited</div><div class="v">100 (2026‑06‑25 → 2026‑07‑25)</div></div>
+      <div class="meta-item"><div class="k">Channel</div><div class="v">t.me/lumiq_news</div></div>
+      <div class="meta-item"><div class="k">Scope</div><div class="v">Presentation only</div></div>
+      <div class="meta-item"><div class="k">Prepared</div><div class="v">2026‑07‑25</div></div>
+    </div>
+
+    <div class="score-band">
+      <div class="score-dial">
+        <svg viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="10"/>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="url(#g1)" stroke-width="10" stroke-linecap="round"
+            stroke-dasharray="326.7" stroke-dashoffset="140.5"/>
+          <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#6d5bd0"/><stop offset="100%" stop-color="#b79dfb"/>
+          </linearGradient></defs>
+        </svg>
+        <div class="num"><b>57</b><span>/ 100</span></div>
+      </div>
+      <div class="score-breakdown">
+        <div class="score-row"><span class="label">Visual quality</span><div class="bar"><i style="width:52%"></i></div><span class="val">52</span></div>
+        <div class="score-row"><span class="label">Editorial quality</span><div class="bar"><i style="width:48%"></i></div><span class="val">48</span></div>
+        <div class="score-row"><span class="label">Readability</span><div class="bar"><i style="width:45%"></i></div><span class="val">45</span></div>
+        <div class="score-row"><span class="label">Brand consistency</span><div class="bar"><i style="width:38%"></i></div><span class="val">38</span></div>
+        <div class="score-row"><span class="label">Click motivation</span><div class="bar"><i style="width:54%"></i></div><span class="val">54</span></div>
+        <div class="score-row"><span class="label">Trust</span><div class="bar"><i style="width:71%"></i></div><span class="val">71</span></div>
+        <div class="score-row"><span class="label">Mobile friendliness</span><div class="bar"><i style="width:66%"></i></div><span class="val">66</span></div>
+        <div class="score-row"><span class="label">Overall</span><div class="bar"><i style="width:57%"></i></div><span class="val">57</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<section id="summary">
+  <div class="sec-head"><span class="sec-num">00</span><h2>Executive Summary</h2></div>
+  <p class="sec-dek">The channel is factually reliable and technically stable — messages send, links resolve, HTML escaping is airtight. But it reads as one long news ticker, not a premium editorial brand.</p>
+  <p>The core finding: <strong>93 of the last 100 posts were sent before the Sprint 2/3 template system existed</strong> — they use the old single-paragraph, asterisk-Markdown format the codebase's own commit history shows was already flagged as broken (parse_mode mismatch, fixed 2026‑07‑24). Only the 7 most recent posts (this morning) reflect the new "[Template] Headline → paragraph → highlights → CTA → hashtags" structure. So the channel's actual, lived reader experience for the past month is the <em>old</em> format — and this audit treats that as the real baseline.</p>
+  <p>Within that baseline, two patterns dominate everything else: <strong>94% of headlines open with just two words</strong> — "هل" (does/is) or "كيف" (how) — turning the channel feed into a wall of interchangeable rhetorical questions; and <strong>91% of captions are hard-truncated mid-sentence</strong> at 200 characters with no ellipsis or completion, which reads as broken, not concise. The new template (visible in the last 7 posts) already fixes the truncation problem and adds structure — it just hasn't been backfilled or promoted into the reader's actual day-to-day experience yet, and headline diversity wasn't part of that fix.</p>
+</section>
+
+<section id="weaknesses">
+  <div class="sec-head"><span class="sec-num">01</span><h2>Current Weaknesses</h2></div>
+  <p class="sec-dek">Ranked by how much of the 100-post sample each defect touches.</p>
+  <div class="weak-grid">
+    <div class="weak-card">
+      <span class="sev high">High · 94/100</span>
+      <h3>Headline monotony</h3>
+      <p>94% of headlines start with "هل" (53) or "كيف" (35) — the AI prompt's own instruction to "pose the deeper question" (<code class="inline">lib/review-openai.ts:68</code>) is being followed too literally, at scale. The channel feed reads as the same rhetorical trick repeated 94 times in a row.</p>
+      <div class="stat">2 <small>distinct opening words across 94 posts</small></div>
+    </div>
+    <div class="weak-card">
+      <span class="sev high">High · 91/100</span>
+      <h3>Mid-sentence truncation</h3>
+      <p>The legacy caption builder hard-cuts at 200 characters with no sentence-boundary check and no ellipsis — captions stop on a dangling preposition or half a clause. The new <code class="inline">truncateSummary()</code> already fixes this for future posts.</p>
+      <div class="stat">200 <small>char hard cutoff, no "…"</small></div>
+    </div>
+    <div class="weak-card">
+      <span class="sev high">High · 93/100</span>
+      <h3>Flat single-paragraph body</h3>
+      <p>No template label, no highlights, no reading time, no distinct CTA line — just an emoji, a bold title, one dense paragraph, and a bare link. Nothing signals content type before the reader taps.</p>
+      <div class="stat">1 <small>visual "shape" for every post type</small></div>
+    </div>
+    <div class="weak-card">
+      <span class="sev med">Medium · 3/6</span>
+      <h3>Template coverage gap</h3>
+      <p>Of 6 defined templates (breaking / guide / comparison / tool / research / general), only 3 have ever fired in production data: أداة (tool), عاجل (breaking), دليل (guide). Comparison and research paths are unproven against real content.</p>
+      <div class="stat">3 <small>of 6 templates ever seen live</small></div>
+    </div>
+    <div class="weak-card">
+      <span class="sev med">Medium · 6/100</span>
+      <h3>Hashtag thinness (legacy)</h3>
+      <p>Old-format posts carry a static, near-identical pair — <code class="inline">#ذكاء_اصطناعي #AI</code> — repeated regardless of topic. The new deterministic engine (<code class="inline">lib/social/hashtags.ts</code>) is a real fix, but it's only live on the 7 newest posts.</p>
+      <div class="stat">2 <small>generic tags reused ~94 times</small></div>
+    </div>
+    <div class="weak-card">
+      <span class="sev med">Medium · 2/100</span>
+      <h3>Broken links</h3>
+      <p>2 posts link to <code class="inline">/reviews/</code> with an empty slug — a dead 404 sent to the whole channel. Root cause is upstream of Telegram formatting (a null/empty <code class="inline">slug</code> reaching <code class="inline">approveReview</code>), outside this sprint's scope, but worth flagging.</p>
+      <div class="stat">2 <small>dead article links sent live</small></div>
+    </div>
+    <div class="weak-card">
+      <span class="sev med">Medium · 10/100</span>
+      <h3>Split-domain links</h3>
+      <p>10 legacy posts still link to <code class="inline">ai-news-ar.vercel.app</code> instead of <code class="inline">lumiq.news</code> — a rebrand artifact. Cosmetic, but a premium channel shouldn't visibly show its own migration history to readers.</p>
+      <div class="stat">2 <small>domains live in one feed</small></div>
+    </div>
+    <div class="weak-card">
+      <span class="sev med">Medium</span>
+      <h3>No image in the send</h3>
+      <p><code class="inline">telegram.ts</code> calls <code class="inline">sendMessage</code>, never <code class="inline">sendPhoto</code> — the OG image only appears via Telegram's own link-preview crawler, which is smaller, sometimes delayed, and can be suppressed by Telegram entirely. The channel's visual identity is currently at the mercy of a preview, not a deliberate send.</p>
+    </div>
+  </div>
+</section>
+
+<section id="styleguide">
+  <div class="sec-head"><span class="sec-num">02</span><h2>Premium Telegram Editorial Style Guide</h2></div>
+  <p class="sec-dek">One identity per content type. Icons are load-bearing — each earns its place by making the post instantly sortable in a crowded feed, not decorating it.</p>
+  <div class="style-table">
+    <div class="style-row head"><span>Type</span><span>Icon</span><span>Signals</span><span>Voice</span></div>
+    <div class="style-row">
+      <span class="type-name">🚨 عاجل — Breaking</span><span class="icon">🚨</span>
+      <span class="desc">Same-day publish. Time-sensitive, first-to-report framing.</span>
+      <span class="desc">Direct, urgent, no rhetorical question — state what happened.</span>
+    </div>
+    <div class="style-row">
+      <span class="type-name">📘 دليل — Guide</span><span class="icon">📘</span>
+      <span class="desc">Tutorials category, "كيف/دليل/شرح" titles. How-to and explainer pieces.</span>
+      <span class="desc">Instructive, second person, promises a concrete takeaway.</span>
+    </div>
+    <div class="style-row">
+      <span class="type-name">⚖️ مقارنة — Comparison</span><span class="icon">⚖️</span>
+      <span class="desc"><code>[[compare:]]</code> content token. Head-to-head framing.</span>
+      <span class="desc">Neutral, names both sides explicitly in the headline.</span>
+    </div>
+    <div class="style-row">
+      <span class="type-name">🛠 أداة — AI Tool</span><span class="icon">🛠</span>
+      <span class="desc"><code>[[tool:]]</code> token or ai-tools category. Product-first.</span>
+      <span class="desc">Practical — what it does, who it's for, not hype adjectives.</span>
+    </div>
+    <div class="style-row">
+      <span class="type-name">📊 تحليل وأبحاث — Research</span><span class="icon">📊</span>
+      <span class="desc">Research category. Papers, benchmarks, findings.</span>
+      <span class="desc">Precise, cites the source institution/lab by name in-line.</span>
+    </div>
+    <div class="style-row">
+      <span class="type-name">🏢 الشركات — Company</span><span class="icon">🏢</span>
+      <span class="desc"><em>New</em> — currently folds into "general." Funding, partnerships, leadership, strategy.</span>
+      <span class="desc">Names the company and the stake first, not the implication.</span>
+    </div>
+    <div class="style-row">
+      <span class="type-name">🎯 Prompt / Playbook</span><span class="icon">🎯</span>
+      <span class="desc"><em>New</em> — for the Prompts Library feature once it feeds Telegram.</span>
+      <span class="desc">Actionable, single clear payoff stated up front.</span>
+    </div>
+  </div>
+  <p style="margin-top:20px; font-size:14px; color:var(--text-dim);">Rule across all seven: exactly one emoji per message, placed only in the template tag — never sprinkled through the body. The current system already does this correctly; keep it that way as templates are added.</p>
+</section>
+
+<section id="headlines">
+  <div class="sec-head"><span class="sec-num">03</span><h2>Headline Improvements</h2></div>
+  <p class="sec-dek">The fix isn't "stop asking questions" — a well-placed question works. It's forcing variety in <em>how</em> the deeper angle gets phrased, so the feed doesn't read as one template repeated 94 times.</p>
+  <div class="cta-grid">
+    <div class="cta-group">
+      <h4>Retire (overused)</h4>
+      <ul>
+        <li>هل يمكن لـ… أن …؟ <span style="color:var(--bad);float:left;font-size:12px;">×31</span></li>
+        <li>كيف تعيد … تشكيل …؟ <span style="color:var(--bad);float:left;font-size:12px;">×14</span></li>
+      </ul>
+    </div>
+    <div class="cta-group">
+      <h4>Prefer: declarative stance</h4>
+      <ul>
+        <li>Gemini 3.5 يتفوق على النماذج الصينية — لكن بثمن</li>
+        <li>OpenAI تراهن على ChatGPT كأداة عمل، لا محادثة</li>
+      </ul>
+    </div>
+    <div class="cta-group">
+      <h4>Prefer: named tension</h4>
+      <ul>
+        <li>Microsoft وMistral: شراكة أم استحواذ ناعم؟</li>
+        <li>الأدوات اللاكودية تتوسع أسرع من الرقابة عليها</li>
+      </ul>
+    </div>
+    <div class="cta-group">
+      <h4>Prefer: number/stakes-led</h4>
+      <ul>
+        <li>3 مختبرات، سباق واحد: من يملك المستقبل الفيزيائي للذكاء؟</li>
+        <li>جامعة براون تكتشف الغش — والذكاء الاصطناعي في قفص الاتهام</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:24px;">Suggested guardrail for the drafting prompt: cap "هل"/"كيف" openers at roughly 1 in 3 posts, and give the model 3–4 named alternative headline shapes (declarative stance, named tension, stakes-led, number-led) to rotate through — the same discipline already used for CTA selection below.</p>
+</section>
+
+<section id="cta">
+  <div class="sec-head"><span class="sec-num">04</span><h2>CTA Library</h2></div>
+  <p class="sec-dek">The template system already assigns one CTA per type — good instinct, but each type currently has exactly <strong>one</strong> phrase, so it repeats every time that template fires. Expanding each to a rotating pool of 3 keeps the "right CTA for the type" logic while killing the repetition.</p>
+  <div class="cta-grid">
+    <div class="cta-group">
+      <h4>🚨 Breaking</h4>
+      <ul><li>اقرأ التفاصيل الكاملة</li><li>القصة الكاملة هنا</li><li>تابع آخر التطورات</li></ul>
+    </div>
+    <div class="cta-group">
+      <h4>📘 Guide</h4>
+      <ul><li>اكتشف الدليل</li><li>تعلّم الطريقة كاملة</li><li>الدليل التفصيلي هنا</li></ul>
+    </div>
+    <div class="cta-group">
+      <h4>⚖️ Comparison</h4>
+      <ul><li>شاهد المقارنة الكاملة</li><li>أيهما يناسبك؟ قارن الآن</li><li>النتيجة الكاملة هنا</li></ul>
+    </div>
+    <div class="cta-group">
+      <h4>🛠 Tool</h4>
+      <ul><li>تعرّف إلى الأداة</li><li>جرّبها بنفسك</li><li>كل التفاصيل هنا</li></ul>
+    </div>
+    <div class="cta-group">
+      <h4>📊 Research</h4>
+      <ul><li>اقرأ التحليل</li><li>الأرقام والنتائج كاملة</li><li>التحليل المعمّق هنا</li></ul>
+    </div>
+    <div class="cta-group">
+      <h4>🏢 Company / General</h4>
+      <ul><li>اقرأ القصة كاملة</li><li>ما الذي يعنيه هذا فعلاً؟</li><li>التفاصيل والسياق هنا</li></ul>
+    </div>
+  </div>
+  <p style="margin-top:20px; font-size:14px; color:var(--text-dim);">Selection can stay fully deterministic — no LLM needed — by rotating on <code class="inline">reviewId</code> hash modulo pool size, the same "derived from fields that already exist" principle <code class="inline">telegram-templates.ts</code> already uses for template classification.</p>
+</section>
+
+<section id="hashtags">
+  <div class="sec-head"><span class="sec-num">05</span><h2>Hashtag Recommendations</h2></div>
+  <p class="sec-dek"><code class="inline">lib/social/hashtags.ts</code> is already the right design — deterministic, tag-first, capped at 4, with a generic-category denylist. It just isn't reaching most posts yet because most posts predate it.</p>
+  <div class="weak-grid">
+    <div class="weak-card">
+      <span class="sev high">Drop</span>
+      <h3>Static pair spam</h3>
+      <p>#ذكاء_اصطناعي #AI appended to nearly every legacy post regardless of topic — appeared 6× even in the small sample checked, and effectively 100× across the full legacy set. Superseded by the new engine; no further action needed beyond backfill (Section 09).</p>
+    </div>
+    <div class="weak-card">
+      <span class="sev med">Keep</span>
+      <h3>Product/company/tech tags</h3>
+      <p>New-format posts already surface exactly what the sprint brief asks for: #GPT_56 #GPT_Red #OpenAI, #Hugging_Face — specific, article-level, non-generic. This is the target state; just needs volume.</p>
+    </div>
+    <div class="weak-card">
+      <span class="sev med">Watch</span>
+      <h3>Category-name hashtags read soft</h3>
+      <p>Tags like #التصنيف-derived category names (e.g. a literal category label as a hashtag) are weaker than product/tech tags — they're accurate but not something a reader would search. Keep them as tag #3–4, never #1.</p>
+    </div>
+  </div>
+</section>
+
+<section id="og">
+  <div class="sec-head"><span class="sec-num">06</span><h2>OpenGraph Image Specification</h2></div>
+  <p class="sec-dek">Audit of <code class="inline">app/(main)/reviews/[slug]/opengraph-image.tsx</code> — the current implementation is already close to premium: dark navy ground, gradient overlay, category pill, two-tier title sizing. The gaps are refinement, not a rebuild.</p>
+
+  <div style="display:grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; align-items:start;">
+    <div>
+      <div class="og-mock">
+        <div class="og-grid"></div>
+        <div class="og-content">
+          <div class="og-top">
+            <div class="og-logo"></div>
+            <span class="og-brand">لوميك</span>
+            <span class="og-pill">أدوات الذكاء الاصطناعي</span>
+          </div>
+          <div class="og-title">هل تعيد نماذج GPT-5.6 صياغة مستقبل الذكاء الاصطناعي؟</div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="color:#64748b; font-size:11px;">لوميك — أخبار الذكاء الاصطناعي بالعربية</span>
+            <span style="color:#475569; font-size:10px;">lumiq.news</span>
+          </div>
+        </div>
+        <div class="og-zone" style="top:6%; left:6%; width:60%; height:12%;"><span class="og-zone-label" style="top:-16px;">safe title zone</span></div>
+        <div class="og-zone" style="bottom:5%; right:6%; width:20%; height:10%;"><span class="og-zone-label" style="bottom:-16px; right:0;">crops on WhatsApp/Telegram thumb</span></div>
+      </div>
+      <p style="font-size:12.5px; color:var(--text-faint); margin-top:10px;">Current spec, annotated. Red zones mark where third-party crawlers most often crop or shrink the canvas below the full 1200×630.</p>
+    </div>
+    <div class="og-specs" style="margin-top:0; grid-template-columns:1fr;">
+      <div class="og-spec-item"><div class="k">Title sizing</div><div class="v">Keep the 2-tier rule (38px &gt;60 chars, 46px under) — it works. Add a 3rd tier at 32px for titles &gt;80 chars instead of hard-truncating at 80.</div></div>
+      <div class="og-spec-item"><div class="k">Category pill</div><div class="v">Good as-is — indigo pill reads clearly at thumbnail size. Verify contrast holds when background photo is very light (rare but possible).</div></div>
+      <div class="og-spec-item"><div class="k">Background photo opacity</div><div class="v">0.2 full-bleed + 0.55 right-strip is correct — keeps text legible over any source photo without needing per-image adjustment.</div></div>
+      <div class="og-spec-item"><div class="k">Mobile crop risk</div><div class="v">Telegram's own preview often shows only the left ~60% width — keep title and brand mark inside that zone; never rely on the right image strip alone for identity.</div></div>
+      <div class="og-spec-item"><div class="k">Reading-time chip</div><div class="v">Not present. Add a small chip next to the category pill — reuses data already computed in <code class="inline">telegram-message.ts</code>'s <code class="inline">estimateReadingMinutes()</code>, no new field needed.</div></div>
+      <div class="og-spec-item"><div class="k">Summary line</div><div class="v">120-char slice can also cut mid-word like captions do. Reuse <code class="inline">truncateSummary()</code>'s sentence-boundary logic here instead of a raw <code class="inline">.slice()</code>.</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="before-after">
+  <div class="sec-head"><span class="sec-num">07</span><h2>Before / After — 10 Real Published Reviews</h2></div>
+  <p class="sec-dek">Each "before" is an unedited caption actually sent to the channel. Each "after" applies only this sprint's recommendations — no invented facts, same source data.</p>
+
+  <div class="ba-item">
+    <div class="ba-tag"><span class="n">01</span> tech-partnerships-ai-dominance · الشركات</div>
+    <div class="ba-cols">
+      <div>
+        <div class="ba-col-label before"><span class="sw"></span>Before — sent 2026‑07‑24</div>
+        <div class="tg-bubble before">
+          <div class="tg-title">📰 هل تؤسس الشراكات التكنولوجية لهيمنة جديدة في الذكاء الاصطناعي؟</div>
+          <div class="tg-body">حين أعلنت Microsoft عن شراكتها مع Mistral، كان السؤال الحقيقي: كيف ستؤثر هذه التحالفات على سيادة الذكاء الاصطناعي في أوروبا؟ في ظل تعاون Google Cloud وNvidia مع شركات ناشئة ألمانية، تتسارع الخطى نحو ت</div>
+          <div class="tg-link">🔗 lumiq.news/reviews/tech-partnerships-ai-dominance</div>
+        </div>
+      </div>
+      <div>
+        <div class="ba-col-label after"><span class="sw"></span>After</div>
+        <div class="tg-bubble after">
+          <span class="tg-tag">🏢 الشركات</span>
+          <div class="tg-title">Microsoft وMistral: شراكة أم استحواذ ناعم؟</div>
+          <div class="tg-body">تتسارع تحالفات التقنية الكبرى في أوروبا — Google Cloud وNvidia يدعمان شركات ناشئة ألمانية، بينما تعيد Microsoft رسم حدود سيطرتها عبر Mistral.</div>
+          <div class="tg-fact">▪️ التصنيف: الشركات</div>
+          <div class="tg-fact">▪️ 3 دقائق قراءة</div>
+          <div class="tg-cta">👉 ما الذي يعنيه هذا فعلاً؟</div>
+          <div class="tg-hash">#Microsoft #Mistral #Nvidia</div>
+        </div>
+      </div>
+    </div>
+    <p class="ba-why">Why: headline swaps rhetorical question for named tension; body leads with the concrete fact (who backs whom) instead of restating the headline's question; adds structure and a company-specific CTA.</p>
+  </div>
+
+  <div class="ba-item">
+    <div class="ba-tag"><span class="n">02</span> chinese-models-vs-us-models · الشركات</div>
+    <div class="ba-cols">
+      <div>
+        <div class="ba-col-label before"><span class="sw"></span>Before — sent 2026‑07‑24</div>
+        <div class="tg-bubble before">
+          <div class="tg-title">📰 هل يمكن للنماذج الصينية أن تتفوق على نظيراتها الأمريكية؟</div>
+          <div class="tg-body">حين أعلنت شركة جوجل عن نماذج Gemini 3.5 الجديدة، كان السؤال الحقيقي هل تستطيع هذه النماذج أن تكون أكثر من مجرد بديل أرخص وأسرع؟ يأتي هذا في ظل منافسة متصاعدة من النماذج الصينية مثل Alibaba Qwen 3.8 Ma</div>
+          <div class="tg-link">🔗 ai-news-ar.vercel.app/reviews/chinese-models-vs-us-models</div>
+        </div>
+      </div>
+      <div>
+        <div class="ba-col-label after"><span class="sw"></span>After</div>
+        <div class="tg-bubble after">
+          <span class="tg-tag">📊 تحليل وأبحاث</span>
+          <div class="tg-title">Gemini 3.5 يواجه Qwen 3.8: المعركة ليست على السعر وحده</div>
+          <div class="tg-body">Google تطلق Gemini 3.5 وسط منافسة صينية متصاعدة من Alibaba Qwen — السباق تحول من الأداء الخام إلى من يملك سلسلة التوريد الكاملة للنموذج.</div>
+          <div class="tg-fact">▪️ مبني على مصدر: Google Blog</div>
+          <div class="tg-fact">▪️ 4 دقائق قراءة</div>
+          <div class="tg-cta">👉 الأرقام والنتائج كاملة</div>
+          <div class="tg-hash">#Gemini_35 #Qwen #Alibaba</div>
+        </div>
+      </div>
+    </div>
+    <p class="ba-why">Why: fixes the split-domain link (vercel.app → lumiq.news); headline names both models instead of asking if China can "beat" the US; research CTA replaces the generic breaking-style one.</p>
+  </div>
+
+  <div class="ba-item">
+    <div class="ba-tag"><span class="n">03</span> advanced-materials-ai-limits · نماذج الذكاء الاصطناعي</div>
+    <div class="ba-cols">
+      <div>
+        <div class="ba-col-label before"><span class="sw"></span>Before — sent 2026‑07‑24</div>
+        <div class="tg-bubble before">
+          <div class="tg-title">📰 ما وراء حدود الذكاء الاصطناعي: المواد المتقدمة كمحددات للإمكانيات التقنية</div>
+          <div class="tg-body">بينما يركز النقاش حول الذكاء الاصطناعي على الخوارزميات وقوة الحوسبة، تقل أهمية المواد المتقدمة كمحور رئيسي في تطوير التقنيات. تشكل المواد المتقدمة الحد الفاصل بين الابتكار التقني والقيود الفيزيائية. ك</div>
+          <div class="tg-link">🔗 ai-news-ar.vercel.app/reviews/advanced-materials-ai-limits</div>
+        </div>
+      </div>
+      <div>
+        <div class="ba-col-label after"><span class="sw"></span>After</div>
+        <div class="tg-bubble after">
+          <span class="tg-tag">📊 تحليل وأبحاث</span>
+          <div class="tg-title">حدود الذكاء الاصطناعي القادمة ليست برمجية — بل مادية</div>
+          <div class="tg-body">النقاش حول الذكاء الاصطناعي يتمحور حول الخوارزميات، لكن المواد المتقدمة قد تكون العائق الحقيقي القادم أمام تطور التقنية.</div>
+          <div class="tg-fact">▪️ التصنيف: نماذج الذكاء الاصطناعي</div>
+          <div class="tg-fact">▪️ 3 دقائق قراءة</div>
+          <div class="tg-cta">👉 التحليل المعمّق هنا</div>
+          <div class="tg-hash">#المواد_المتقدمة #هندسة_الحوسبة</div>
+        </div>
+      </div>
+    </div>
+    <p class="ba-why">Why: original headline was already declarative and strong — kept the angle, just tightened length (this one wasn't in the "هل/كيف" majority, proof the system can already produce good headlines when the prompt doesn't default to a question).</p>
+  </div>
+
+  <div class="ba-item">
+    <div class="ba-tag"><span class="n">04</span> no-code-ai-transformation · أدوات الذكاء الاصطناعي</div>
+    <div class="ba-cols">
+      <div>
+        <div class="ba-col-label before"><span class="sw"></span>Before — sent 2026‑07‑24</div>
+        <div class="tg-bubble before">
+          <div class="tg-title">📰 هل يمكن للأدوات اللاكودية تغيير مشهد تطوير الذكاء الاصطناعي؟</div>
+          <div class="tg-body">تشهد صناعة الذكاء الاصطناعي تحولاً هائلاً بفضل الأدوات اللاكودية. فبينما يتيح التطوير الكودي سرعة ومرونة، تقدم المنصات اللاكودية إمكانية الوصول للشركات الصغيرة والمطورين غير التقنيين. يبقى السؤال: هل </div>
+          <div class="tg-link">🔗 lumiq.news/reviews/no-code-ai-transformation</div>
+        </div>
+      </div>
+      <div>
+        <div class="ba-col-label after"><span class="sw"></span>After</div>
+        <div class="tg-bubble after">
+          <span class="tg-tag">🛠 أداة</span>
+          <div class="tg-title">الأدوات اللاكودية تفتح الذكاء الاصطناعي أمام غير المبرمجين</div>
+          <div class="tg-body">منصات لاكودية جديدة تمنح الشركات الصغيرة والمطورين غير التقنيين وصولاً مباشراً لبناء أدوات ذكاء اصطناعي — بلا سطر كود واحد.</div>
+          <div class="tg-fact">▪️ التصنيف: أدوات الذكاء الاصطناعي</div>
+          <div class="tg-fact">▪️ 2 دقيقة قراءة</div>
+          <div class="tg-cta">👉 جرّبها بنفسك</div>
+          <div class="tg-hash">#لاكود #أدوات_الذكاء_الاصطناعي</div>
+        </div>
+      </div>
+    </div>
+    <p class="ba-why">Why: caption no longer cuts off on "يبقى السؤال: هل" — a dangling half-sentence; declarative headline states the actual shift instead of asking permission for it.</p>
+  </div>
+
+  <div class="ba-item">
+    <div class="ba-tag"><span class="n">05</span> moe-models-future-ai · نماذج الذكاء الاصطناعي</div>
+    <div class="ba-cols">
+      <div>
+        <div class="ba-col-label before"><span class="sw"></span>Before — sent 2026‑07‑24</div>
+        <div class="tg-bubble before">
+          <div class="tg-title">📰 كيف تعيد نماذج MoE تشكيل مستقبل الذكاء الاصطناعي</div>
+          <div class="tg-body">يبدو أن النماذج الجديدة القائمة على Mixture-of-Experts تقلب موازين الذكاء الاصطناعي. مع إطلاق Kimi K3 وInkling، نواجه أسئلة حول أداء هذه النماذج مقارنةً بالنماذج التقليدية. فما هي العوامل الحقيقية الت</div>
+          <div class="tg-link">🔗 lumiq.news/reviews/moe-models-future-ai</div>
+        </div>
+      </div>
+      <div>
+        <div class="ba-col-label after"><span class="sw"></span>After</div>
+        <div class="tg-bubble after">
+          <span class="tg-tag">⚖️ مقارنة</span>
+          <div class="tg-title">Kimi K3 وInkling: جيل MoE الجديد يقلب موازين الأداء</div>
+          <div class="tg-body">نماذج Mixture-of-Experts الجديدة — بقيادة Kimi K3 وInkling — تتفوق على البنى التقليدية في الكفاءة الحاسوبية، لا الحجم الخام وحده.</div>
+          <div class="tg-fact">▪️ مبني على مصدر: تحليل داخلي</div>
+          <div class="tg-fact">▪️ 3 دقائق قراءة</div>
+          <div class="tg-cta">👉 أيهما يناسبك؟ قارن الآن</div>
+          <div class="tg-hash">#MoE #Kimi_K3 #Inkling</div>
+        </div>
+      </div>
+    </div>
+    <p class="ba-why">Why: this article compares two named models head-to-head — a textbook case for the ⚖️ comparison template, but it fired as "general" under the current classifier since no <code class="inline">[[compare:]]</code> token was present in the source content.</p>
+  </div>
+
+  <div class="ba-item">
+    <div class="ba-tag"><span class="n">06</span> ai-impact-on-jobs · نماذج الذكاء الاصطناعي</div>
+    <div class="ba-cols">
+      <div>
+        <div class="ba-col-label before"><span class="sw"></span>Before — sent 2026‑07‑24</div>
+        <div class="tg-bubble before">
+          <div class="tg-title">📰 هل تقنيات الذكاء الاصطناعي تضع العمالة في خطر فوري؟</div>
+          <div class="tg-body">يشهد العالم تطوراً متسارعاً في الذكاء الاصطناعي، مما يثير تساؤلات حول تأثيره على سوق العمل. يتوقع الخبراء تغيرات جذرية في العقد القادم. فكيف يجب أن نستعد لهذا التحول؟</div>
+          <div class="tg-link">🔗 lumiq.news/reviews/ai-impact-on-jobs</div>
+        </div>
+      </div>
+      <div>
+        <div class="ba-col-label after"><span class="sw"></span>After</div>
+        <div class="tg-bubble after">
+          <span class="tg-tag">📊 تحليل وأبحاث</span>
+          <div class="tg-title">سوق العمل أمام عقد من التغيرات الجذرية بفعل الذكاء الاصطناعي</div>
+          <div class="tg-body">خبراء يتوقعون تحولات جوهرية في سوق العمل خلال العقد القادم مع تسارع تبني الذكاء الاصطناعي عبر القطاعات.</div>
+          <div class="tg-fact">▪️ التصنيف: نماذج الذكاء الاصطناعي</div>
+          <div class="tg-fact">▪️ 1 دقيقة قراءة</div>
+          <div class="tg-cta">👉 اقرأ التحليل</div>
+          <div class="tg-hash">#سوق_العمل #مستقبل_الوظائف</div>
+        </div>
+      </div>
+    </div>
+    <p class="ba-why">Why: source article is short (1-minute read) — the "after" doesn't pad it with invented highlights, just states the finding directly instead of two stacked questions ("هل...؟" then "فكيف...؟") back to back.</p>
+  </div>
+
+  <div class="ba-item">
+    <div class="ba-tag"><span class="n">07</span> can-physical-video-models-transform-ai · أدوات الذكاء الاصطناعي</div>
+    <div class="ba-cols">
+      <div>
+        <div class="ba-col-label before"><span class="sw"></span>Before — sent 2026‑07‑24</div>
+        <div class="tg-bubble before">
+          <div class="tg-title">📰 هل يمكن لنماذج الفيديو الفعلية أن تعيد تشكيل الذكاء الاصطناعي؟</div>
+          <div class="tg-body">نموذج LingBot-VA 2.0 يقدم رؤية جديدة للتفاعل مع العالم المادي عبر الذكاء الاصطناعي. في الوقت نفسه، تواجه نماذج اللغة الكبيرة تحديات بسبب الذاكرة المتزايدة. كيف يمكن للتقنيات الجديدة أن تحدث تغييرًا جذ</div>
+          <div class="tg-link">🔗 lumiq.news/reviews/can-physical-video-models-transform-ai</div>
+        </div>
+      </div>
+      <div>
+        <div class="ba-col-label after"><span class="sw"></span>After</div>
+        <div class="tg-bubble after">
+          <span class="tg-tag">🛠 أداة</span>
+          <div class="tg-title">LingBot-VA 2.0: عندما يتعلم الذكاء الاصطناعي رؤية العالم المادي</div>
+          <div class="tg-body">النموذج الجديد يمنح الذكاء الاصطناعي قدرة تفاعل مباشرة مع البيئة المادية، بينما تصارع نماذج اللغة الكبيرة قيود الذاكرة المتنامية.</div>
+          <div class="tg-fact">▪️ التصنيف: أدوات الذكاء الاصطناعي</div>
+          <div class="tg-fact">▪️ 2 دقيقة قراءة</div>
+          <div class="tg-cta">👉 تعرّف إلى الأداة</div>
+          <div class="tg-hash">#LingBot_VA #نماذج_الفيديو</div>
+        </div>
+      </div>
+    </div>
+    <p class="ba-why">Why: the actual news is a named product (LingBot-VA 2.0) — leading with its name instead of burying it mid-paragraph gives readers something concrete to recognize and search for.</p>
+  </div>
+
+  <div class="ba-item">
+    <div class="ba-tag"><span class="n">08</span> ai-impact-on-education-integrity · الشركات</div>
+    <div class="ba-cols">
+      <div>
+        <div class="ba-col-label before"><span class="sw"></span>Before — sent 2026‑07‑24</div>
+        <div class="tg-bubble before">
+          <div class="tg-title">📰 كيف يتحول الذكاء الاصطناعي من أداة تعليمية إلى سلاح في يد المحتالين؟</div>
+          <div class="tg-body">عندما أعلنت جامعة براون عن فضيحة الغش باستخدام الذكاء الاصطناعي، كان السؤال الحقيقي: ما هو أثر هذه التكنولوجيا على مستقبل التعليم والتقييم؟ في ظل تصاعد الاتهامات ضد xAI فيما يتعلق بالصور الجنسية، يبدو</div>
+          <div class="tg-link">🔗 lumiq.news/reviews/ai-impact-on-education-integrity</div>
+        </div>
+      </div>
+      <div>
+        <div class="ba-col-label after"><span class="sw"></span>After</div>
+        <div class="tg-bubble after">
+          <span class="tg-tag">🚨 عاجل</span>
+          <div class="tg-title">فضيحة غش بالذكاء الاصطناعي تهز جامعة براون</div>
+          <div class="tg-body">جامعة براون تكشف فضيحة غش واسعة باستخدام الذكاء الاصطناعي، في وقت تتصاعد فيه اتهامات منفصلة ضد xAI — يعيد الحادثان فتح ملف الرقابة على التعليم.</div>
+          <div class="tg-fact">▪️ مبني على مصدر: جامعة براون</div>
+          <div class="tg-fact">▪️ 3 دقائق قراءة</div>
+          <div class="tg-cta">👉 تابع آخر التطورات</div>
+          <div class="tg-hash">#جامعة_براون #نزاهة_أكاديمية #xAI</div>
+        </div>
+      </div>
+    </div>
+    <p class="ba-why">Why: this is a same-day scandal story — a clear 🚨 breaking case — but the "كيف" framing buried the actual news (a named university, a named company) two sentences deep instead of leading with it.</p>
+  </div>
+
+  <div class="ba-item">
+    <div class="ba-tag"><span class="n">09</span> ai-redefining-scientific-research · نماذج الذكاء الاصطناعي</div>
+    <div class="ba-cols">
+      <div>
+        <div class="ba-col-label before"><span class="sw"></span>Before — sent 2026‑07‑24</div>
+        <div class="tg-bubble before">
+          <div class="tg-title">📰 هل يمكن للذكاء الاصطناعي أن يعيد تشكيل البحث العلمي؟</div>
+          <div class="tg-body">تتسارع وتيرة الأبحاث العلمية بفضل أدوات الذكاء الاصطناعي التي تعزز جاهزية البيانات وتتيح التكرار الآلي. مع ذلك، يبقى السؤال الأكبر: هل ستتمكن هذه الأدوات من تجاوز القيود الحالية في مجال التحقق العلمي </div>
+          <div class="tg-link">🔗 lumiq.news/reviews/ai-redefining-scientific-research</div>
+        </div>
+      </div>
+      <div>
+        <div class="ba-col-label after"><span class="sw"></span>After</div>
+        <div class="tg-bubble after">
+          <span class="tg-tag">📊 تحليل وأبحاث</span>
+          <div class="tg-title">الذكاء الاصطناعي يسرّع الأبحاث العلمية — لكن التحقق لا يزال العائق</div>
+          <div class="tg-body">أدوات الذكاء الاصطناعي تعزز جاهزية البيانات وتتيح التكرار الآلي في الأبحاث، فيما يبقى التحقق العلمي القيد الحقيقي أمام اعتمادها الكامل.</div>
+          <div class="tg-fact">▪️ التصنيف: نماذج الذكاء الاصطناعي</div>
+          <div class="tg-fact">▪️ 3 دقائق قراءة</div>
+          <div class="tg-cta">👉 الأرقام والنتائج كاملة</div>
+          <div class="tg-hash">#البحث_العلمي #التحقق_العلمي</div>
+        </div>
+      </div>
+    </div>
+    <p class="ba-why">Why: "declarative + tension" headline states both the gain (speed) and the limit (verification) up front — richer than a yes/no question, and it's the same information already sitting in the source paragraph.</p>
+  </div>
+
+  <div class="ba-item">
+    <div class="ba-tag"><span class="n">10</span> impact-ai-legal-industry · أدوات الذكاء الاصطناعي</div>
+    <div class="ba-cols">
+      <div>
+        <div class="ba-col-label before"><span class="sw"></span>Before — sent 2026‑07‑24</div>
+        <div class="tg-bubble before">
+          <div class="tg-title">📰 كيف تغيّر طبقات الذكاء الاصطناعي القانونية صناعة المحاماة؟</div>
+          <div class="tg-body">أداة جديدة من Perplexity تستهدف تقليل الوقت الضائع في المهام الإدارية القانونية. توفر الأداة طبقة تنظيمية تدمج نماذج متعددة لمساعدة المحامين في أداء مهامهم بشكل أسرع وأكثر دقة. لكن السؤال يظل: هل ستغي</div>
+          <div class="tg-link">🔗 lumiq.news/reviews/impact-ai-legal-industry</div>
+        </div>
+      </div>
+      <div>
+        <div class="ba-col-label after"><span class="sw"></span>After</div>
+        <div class="tg-bubble after">
+          <span class="tg-tag">🛠 أداة</span>
+          <div class="tg-title">Perplexity تستهدف الأعمال الإدارية في المحاماة بأداة جديدة</div>
+          <div class="tg-body">الأداة الجديدة تدمج نماذج متعددة في طبقة تنظيمية واحدة، تختصر الوقت الضائع في المهام الإدارية القانونية للمحامين.</div>
+          <div class="tg-fact">▪️ مبني على مصدر: Perplexity</div>
+          <div class="tg-fact">▪️ 2 دقيقة قراءة</div>
+          <div class="tg-cta">👉 جرّبها بنفسك</div>
+          <div class="tg-hash">#Perplexity #قانون_وذكاء_اصطناعي</div>
+        </div>
+      </div>
+    </div>
+    <p class="ba-why">Why: Perplexity is the actual news — a named company shipping a named product — so it leads the headline instead of appearing only in the cut-off body text.</p>
+  </div>
+</section>
+
+<section id="score">
+  <div class="sec-head"><span class="sec-num">08</span><h2>Telegram Channel Score — Detail</h2></div>
+  <p class="sec-dek">57/100. Brutally: the channel is trustworthy and functional, but not yet premium. It reads like a well-built RSS-to-Telegram bridge, not an edited publication.</p>
+  <div class="weak-grid">
+    <div class="weak-card"><span class="sev med">71</span><h3>Trust</h3><p>Highest score — no fabricated facts anywhere in the sample, sourcing is real, HTML escaping means nothing renders broken. The content is honest even when the presentation isn't polished.</p></div>
+    <div class="weak-card"><span class="sev med">66</span><h3>Mobile friendliness</h3><p>Short lines, RTL correct, emoji render fine. Loses points only to the mid-sentence cutoffs, which look worse on a small screen where the dangling clause is the last visible thing.</p></div>
+    <div class="weak-card"><span class="sev med">54</span><h3>Click motivation</h3><p>Questions do generate curiosity — that's not fake. But 94 near-identical hooks in a row trains readers to skim past the headline entirely, which is the opposite of the intended effect at scale.</p></div>
+    <div class="weak-card"><span class="sev med">52</span><h3>Visual quality</h3><p>Single emoji + bold title + paragraph, no hierarchy. The new template (highlights, CTA line, hashtag row) is a real visual upgrade — it's just live on 7% of the sample.</p></div>
+    <div class="weak-card"><span class="sev med">48</span><h3>Editorial quality</h3><p>Good analytical instinct in the underlying articles undercut by a mechanical headline pattern and truncation that makes even strong writing look unfinished mid-post.</p></div>
+    <div class="weak-card"><span class="sev high">45</span><h3>Readability</h3><p>No scannable structure in 93/100 posts — one dense paragraph, no bullets, no reading time. Lowest score after brand consistency.</p></div>
+    <div class="weak-card"><span class="sev high">38</span><h3>Brand consistency</h3><p>Lowest score. Two link domains, two caption formats, six of seven planned content identities never having fired — a reader scrolling back a week sees at least three different "versions" of this channel.</p></div>
+  </div>
+</section>
+
+<section id="refinements">
+  <div class="sec-head"><span class="sec-num">09</span><h2>Recommended Final Refinements</h2></div>
+  <p class="sec-dek">Ordered by leverage — what closes the gap between the audited baseline and the channel this sprint's own template system already proves is possible.</p>
+  <div class="refine-list">
+    <div class="refine-item">
+      <span class="pr p0">P0</span>
+      <div><h4>Backfill is the highest-leverage fix available</h4><p>The new template system already solves headline structure, truncation, and hashtag quality — it's just live on 7 of 100 posts. Nothing in this audit needs "inventing"; it needs the existing Sprint 2/3 system reaching the other 93%. (Presentation-only — re-sending isn't in scope here, but regenerating stored captions for reference/QA is.)</p></div>
+    </div>
+    <div class="refine-item">
+      <span class="pr p0">P0</span>
+      <div><h4>Add headline-shape rotation to the drafting prompt</h4><p>One line change to <code class="inline">lib/review-openai.ts</code>'s title instruction: replace "pose the deeper question" with a rotating set of 3–4 named shapes (declarative-stance, named-tension, stakes-led, question) so "هل/كيف" stops being the only pattern the model reaches for.</p></div>
+    </div>
+    <div class="refine-item">
+      <span class="pr p1">P1</span>
+      <div><h4>Fix the 2 broken article links</h4><p>Trace why <code class="inline">slug</code> reached <code class="inline">approveReview</code> empty for one review — likely an editor-side validation gap, not a Telegram-layer bug. Outside this sprint's presentation scope but worth a ticket.</p></div>
+    </div>
+    <div class="refine-item">
+      <span class="pr p1">P1</span>
+      <div><h4>Expand the CTA and hashtag pools from 1→3 per template</h4><p>Both engines are already deterministic and correctly typed — this is additive data, not new logic. See Sections 04–05 for the specific phrases.</p></div>
+    </div>
+    <div class="refine-item">
+      <span class="pr p1">P1</span>
+      <div><h4>Loosen comparison/research template triggers</h4><p><code class="inline">classifyReviewTemplate()</code> requires an explicit <code class="inline">[[compare:]]</code> token for the ⚖️ template — Example 05 shows a genuine two-model comparison that never got tagged with one. Consider also matching on "مقابل" / "مقارنة بـ" in the title as a secondary signal.</p></div>
+    </div>
+    <div class="refine-item">
+      <span class="pr p1">P1</span>
+      <div><h4>Send the OG image directly, not just via link preview</h4><p>Switching the provider call from <code class="inline">sendMessage</code> to <code class="inline">sendPhoto</code> (caption as the photo caption, same escaped HTML) guarantees the premium visual actually reaches every reader instead of depending on Telegram's own preview crawler. This does touch the provider file, so treat it as a distinct, reviewable follow-up rather than bundling it into this presentation-only sprint.</p></div>
+    </div>
+    <div class="refine-item">
+      <span class="pr p1">P1</span>
+      <div><h4>Normalize legacy links to lumiq.news</h4><p>10 posts still point at ai-news-ar.vercel.app. A redirect at the domain level (if not already in place) neutralizes this without touching any Telegram code at all.</p></div>
+    </div>
+    <div class="refine-item">
+      <span class="pr p1">P1</span>
+      <div><h4>Add reading-time and a tighter summary to the OG image</h4><p>Reuses <code class="inline">estimateReadingMinutes()</code> and <code class="inline">truncateSummary()</code>, both of which already exist for Telegram — pure reuse, no new computation.</p></div>
+    </div>
+  </div>
+</section>
+
+</div>

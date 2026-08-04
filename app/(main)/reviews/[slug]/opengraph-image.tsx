@@ -1,11 +1,21 @@
 import { ImageResponse } from "next/og";
 import { prisma } from "@/lib/db";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { truncateSummary } from "@/lib/social/telegram-format";
+import { estimateReadingMinutes } from "@/lib/social/telegram-message";
 
 export const runtime = "nodejs";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const revalidate = 3600;
+
+/** Sprint 5 OG image refinements: sentence-aware title/summary truncation
+ *  (reuses the same truncateSummary() the Telegram caption uses, instead of
+ *  a raw mid-word .slice()), a reading-time chip computed from real content
+ *  (estimateReadingMinutes(), shared with the Telegram message so both
+ *  surfaces agree), and a 3rd title-size tier so very long headlines still
+ *  fit without an aggressive 80-char hard cut. */
+const TITLE_MAX_CHARS = 100;
 
 export default async function OgImage({
   params,
@@ -18,6 +28,7 @@ export default async function OgImage({
   let category = "ذكاء اصطناعي";
   let summary = "";
   let imageUrl: string | null = null;
+  let readingMinutes = 0;
 
   try {
     const review = await prisma.review.findUnique({
@@ -25,6 +36,7 @@ export default async function OgImage({
       select: {
         titleAr: true,
         summary: true,
+        content: true,
         imageUrl: true,
         category: { select: { nameAr: true } },
       },
@@ -33,14 +45,16 @@ export default async function OgImage({
     if (review) {
       title = review.titleAr;
       category = review.category?.nameAr ?? "ذكاء اصطناعي";
-      summary = review.summary?.slice(0, 120) ?? "";
+      summary = truncateSummary(review.summary ?? "", 120);
       imageUrl = review.imageUrl ?? null;
+      readingMinutes = estimateReadingMinutes(review.content ?? "");
     }
   } catch {
     // fallback to defaults
   }
 
-  const titleSize = title.length > 60 ? "38px" : "46px";
+  const displayTitle = title.length > TITLE_MAX_CHARS ? title.slice(0, TITLE_MAX_CHARS - 1).trimEnd() + "…" : title;
+  const titleSize = displayTitle.length > 80 ? "32px" : displayTitle.length > 60 ? "38px" : "46px";
 
   return new ImageResponse(
     (
@@ -163,20 +177,47 @@ export default async function OgImage({
               style={{
                 display: "flex",
                 marginRight: "auto",
-                background: "rgba(99,102,241,0.2)",
-                border: "1px solid rgba(99,102,241,0.4)",
-                borderRadius: "20px",
-                padding: "4px 16px",
-                color: "#a5b4fc",
-                fontSize: "15px",
-                fontWeight: "600",
+                gap: "8px",
               }}
             >
-              {category}
+              {readingMinutes > 0 && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    background: "rgba(148,163,184,0.12)",
+                    border: "1px solid rgba(148,163,184,0.3)",
+                    borderRadius: "20px",
+                    padding: "4px 14px",
+                    color: "#cbd5e1",
+                    fontSize: "15px",
+                    fontWeight: "600",
+                  }}
+                >
+                  {readingMinutes} د
+                </div>
+              )}
+              <div
+                style={{
+                  display: "flex",
+                  background: "rgba(99,102,241,0.2)",
+                  border: "1px solid rgba(99,102,241,0.4)",
+                  borderRadius: "20px",
+                  padding: "4px 16px",
+                  color: "#a5b4fc",
+                  fontSize: "15px",
+                  fontWeight: "600",
+                }}
+              >
+                {category}
+              </div>
             </div>
           </div>
 
-          {/* Title + summary */}
+          {/* Title + summary — capped to a width that stays inside the
+              ~60% left zone Telegram/WhatsApp actually keep visible when
+              they crop a link-preview thumbnail, so identity never depends
+              on the right-hand image strip alone. */}
           <div
             style={{
               display: "flex",
@@ -185,6 +226,7 @@ export default async function OgImage({
               flex: 1,
               justifyContent: "center",
               padding: "24px 0",
+              maxWidth: imageUrl ? "620px" : "1000px",
             }}
           >
             <div
@@ -196,7 +238,7 @@ export default async function OgImage({
                 textShadow: "0 2px 20px rgba(0,0,0,0.5)",
               }}
             >
-              {title.length > 80 ? title.slice(0, 80) + "…" : title}
+              {displayTitle}
             </div>
             {summary && (
               <div
@@ -206,7 +248,7 @@ export default async function OgImage({
                   lineHeight: 1.55,
                 }}
               >
-                {summary.length > 110 ? summary.slice(0, 110) + "…" : summary}
+                {summary}
               </div>
             )}
           </div>
