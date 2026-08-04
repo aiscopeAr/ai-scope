@@ -13,23 +13,25 @@ datasource db {
 // ─── News Sources ─────────────────────────────────────────────────────────────
 
 model Source {
-  id           String        @id @default(cuid())
+  id           String      @id @default(cuid())
   name         String
   rssUrl       String
   website      String?
-  enabled      Boolean       @default(true)
-  priority     Int           @default(5)
+  enabled      Boolean     @default(true)
+  priority     Int         @default(5)
   lastSyncedAt DateTime?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
   newsItems    NewsItem[]
   runs         SourceRun[]
 
   @@index([enabled])
 }
 
-/** Per-source outcome of each fetch-news cron run — lastSyncedAt alone can't
- *  distinguish "synced and found nothing" from "synced and everything got filtered". */
+/**
+ * Per-source outcome of each fetch-news cron run — lastSyncedAt alone can't
+ * distinguish "synced and found nothing" from "synced and everything got filtered".
+ */
 model SourceRun {
   id        String   @id @default(cuid())
   sourceId  String
@@ -45,19 +47,19 @@ model SourceRun {
 
 // Raw RSS item — fetched, waiting to be clustered
 model NewsItem {
-  id          String    @id @default(cuid())
-  sourceUrl   String    @unique
+  id          String       @id @default(cuid())
+  sourceUrl   String       @unique
   title       String
-  content     String    @db.Text
+  content     String       @db.Text
   publishedAt DateTime?
   sourceName  String
   sourceId    String?
-  source      Source?   @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  source      Source?      @relation(fields: [sourceId], references: [id], onDelete: SetNull)
   imageUrl    String?
-  status      String    @default("pending") // "pending" | "clustered" | "skipped"
+  status      String       @default("pending") // "pending" | "clustered" | "skipped"
   clusterId   String?
   cluster     ReviewQueue? @relation(fields: [clusterId], references: [id], onDelete: SetNull)
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime     @default(now())
 
   @@index([status])
   @@index([clusterId])
@@ -67,31 +69,31 @@ model NewsItem {
 
 // A cluster of related news items → becomes one deep review
 model ReviewQueue {
-  id              String     @id @default(cuid())
-  topic           String     // e.g. "GPT-5 release"
-  authorSlug      String     // "zayd" | "lina"
-  newsItems       NewsItem[]
+  id                  String     @id @default(cuid())
+  topic               String // e.g. "GPT-5 release"
+  authorSlug          String // "zayd" | "lina"
+  newsItems           NewsItem[]
   // AI-generated review draft
-  titleAr         String?
-  contentAr       String?    @db.Text  // Markdown, 1500–3000 words
-  summaryAr       String?    @db.Text
-  tags            String[]
-  keywords        String[]
-  faq             Json?
-  imageAlt        String?
-  seoTitle        String?
-  seoDescription  String?
-  slug            String?
-  imageUrl        String?
+  titleAr             String?
+  contentAr           String?    @db.Text // Markdown, 1500–3000 words
+  summaryAr           String?    @db.Text
+  tags                String[]
+  keywords            String[]
+  faq                 Json?
+  imageAlt            String?
+  seoTitle            String?
+  seoDescription      String?
+  slug                String?
+  imageUrl            String?
   featuredImagePrompt String?
   // Pipeline state
-  status          String     @default("pending") // "pending" | "processing" | "processed" | "approved" | "rejected" | "failed"
-  retryCount      Int        @default(0)
-  failureReason   String?
-  processedAt     DateTime?
-  approvedAt      DateTime?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @default(now()) @updatedAt
+  status              String     @default("pending") // "pending" | "processing" | "processed" | "approved" | "rejected" | "failed"
+  retryCount          Int        @default(0)
+  failureReason       String?
+  processedAt         DateTime?
+  approvedAt          DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @default(now()) @updatedAt
 
   @@index([status])
   @@index([authorSlug])
@@ -99,34 +101,34 @@ model ReviewQueue {
 
 // Published deep review — the main content unit
 model Review {
-  id            String   @id @default(cuid())
-  title         String   // fallback English
-  titleAr       String
-  slug          String   @unique
-  summary       String   @db.Text   // 2–3 sentence lede
-  content       String   @db.Text   // Full Markdown, 1500–3000 words
-  authorSlug    String   // "zayd" | "lina"
-  categoryId    String
-  category      Category @relation(fields: [categoryId], references: [id])
-  tags          String[]
-  keywords      String[]
-  faq           Json?
-  imageUrl      String?
-  imageAlt      String?
-  seoTitle      String?
-  seoDescription String?
-  sources       Json     @default("[]") // [{title, url, name}]
-  relatedIds    String[]               // other Review ids referenced in this piece
-  viewCount     Int      @default(0)
-  published     Boolean  @default(false)
-  publishedAt   DateTime?
+  id               String                       @id @default(cuid())
+  title            String // fallback English
+  titleAr          String
+  slug             String                       @unique
+  summary          String                       @db.Text // 2–3 sentence lede
+  content          String                       @db.Text // Full Markdown, 1500–3000 words
+  authorSlug       String // "zayd" | "lina"
+  categoryId       String
+  category         Category                     @relation(fields: [categoryId], references: [id])
+  tags             String[]
+  keywords         String[]
+  faq              Json?
+  imageUrl         String?
+  imageAlt         String?
+  seoTitle         String?
+  seoDescription   String?
+  sources          Json                         @default("[]") // [{title, url, name}]
+  relatedIds       String[] // other Review ids referenced in this piece
+  viewCount        Int                          @default(0)
+  published        Boolean                      @default(false)
+  publishedAt      DateTime?
   // pgvector — 1536-dim OpenAI text-embedding-3-small
-  embedding     Unsupported("vector(1536)")?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  socialPosts   SocialPost[]
+  embedding        Unsupported("vector(1536)")?
+  createdAt        DateTime                     @default(now())
+  updatedAt        DateTime                     @updatedAt
+  socialPosts      SocialPost[]
   syndicationPosts SyndicationPost[]
-  metrics       ReviewMetrics?
+  metrics          ReviewMetrics?
 
   @@index([published, publishedAt])
   @@index([authorSlug])
@@ -150,7 +152,7 @@ model Category {
 
 model SocialAccount {
   id          String       @id @default(cuid())
-  platform    String       // "twitter" | "instagram" | "telegram" | "facebook" | "tiktok"
+  platform    String // "twitter" | "instagram" | "telegram" | "facebook" | "tiktok"
   name        String
   enabled     Boolean      @default(false)
   credentials String       @db.Text // JSON — API keys
@@ -175,11 +177,11 @@ model SocialPost {
   createdAt         DateTime      @default(now())
   // Reliability fields (Telegram Stabilization Sprint 1) — all additive/nullable/defaulted,
   // safe for existing rows which read these as 0/null and behave exactly as before.
-  attemptCount      Int           @default(0)    // number of send attempts made so far
-  nextAttemptAt     DateTime?     // earliest time the cron should retry a failed-but-retryable post; null = eligible now
-  sendingAt         DateTime?     // set atomically when a worker claims the post (approved -> sending); used to detect stale claims from a crashed run
-  lastAttemptAt     DateTime?     // timestamp of the most recent send attempt, success or failure
-  externalMessageId String?       // Telegram's result.message_id (or equivalent) once sent, for auditability
+  attemptCount      Int           @default(0) // number of send attempts made so far
+  nextAttemptAt     DateTime? // earliest time the cron should retry a failed-but-retryable post; null = eligible now
+  sendingAt         DateTime? // set atomically when a worker claims the post (approved -> sending); used to detect stale claims from a crashed run
+  lastAttemptAt     DateTime? // timestamp of the most recent send attempt, success or failure
+  externalMessageId String? // Telegram's result.message_id (or equivalent) once sent, for auditability
 
   @@index([status])
   @@index([reviewId])
@@ -193,17 +195,63 @@ model SyndicationPost {
   id           String    @id @default(cuid())
   reviewId     String
   review       Review    @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  target       String    // "wordpress:sonara" — identifies which destination
-  remotePostId String?   // ID returned by the destination once published
-  remoteUrl    String?   // public URL of the syndicated post
+  target       String // "wordpress:sonara" — identifies which destination
+  remotePostId String? // ID returned by the destination once published
+  remoteUrl    String? // public URL of the syndicated post
   status       String    @default("pending") // "pending" | "sent" | "failed"
   errorMsg     String?
   sentAt       DateTime?
   createdAt    DateTime  @default(now())
 
+  @@unique([reviewId, target]) // don't syndicate the same review twice to the same target
   @@index([status])
   @@index([reviewId])
-  @@unique([reviewId, target]) // don't syndicate the same review twice to the same target
+}
+
+// ─── Distribution Engine ───────────────────────────────────────────────────────
+// Sprint 4: persistence for the generic Distribution Engine (see lib/distribution/*).
+// Additive only — SyndicationPost/SocialPost above are untouched and remain the
+// live path for their respective targets until a future cutover sprint retires
+// them. See docs/distribution-engine-foundation.md and
+// docs/distribution-engine-sprint4.md for the full architecture.
+
+model DistributionTarget {
+  id          String             @id @default(cuid())
+  name        String // human-readable label, e.g. "Sonara"
+  targetType  String // "wordpress" | future: "ghost" | "rss" | ...
+  enabled     Boolean            @default(false)
+  config      String             @db.Text // JSON — DistributionTargetConfig (mode, categoryFilter, extra); no secrets
+  credentials String             @db.Text // JSON — secret material (API keys, tokens); never selected in ordinary reads, see lib/distribution/persistence/target.ts
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  tasks       DistributionTask[]
+
+  @@index([targetType, enabled])
+}
+
+model DistributionTask {
+  id              String             @id @default(cuid())
+  targetId        String
+  target          DistributionTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  contentType     String // "review" today; generic so future content models can reuse this table
+  contentId       String
+  idempotencyKey  String             @unique // deterministic (targetId, contentType, contentId) key — see lib/distribution/wordpress/idempotency.ts
+  status          String             @default("pending") // "pending" | "sending" | "published" | "failed" | "skipped"
+  attemptCount    Int                @default(0)
+  nextAttemptAt   DateTime?
+  sendingAt       DateTime? // set while a worker holds the claim; used for stale-claim recovery
+  lastAttemptAt   DateTime?
+  sentAt          DateTime?
+  externalId      String? // reference returned by the target once published (e.g. a WordPress post ID)
+  externalUrl     String? // public URL of the published content on the target
+  errorMsg        String?
+  payloadSnapshot String?            @db.Text // JSON snapshot of the formatted payload at last attempt — audit trail, never contains credentials
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([targetId])
+  @@index([contentType, contentId])
 }
 
 // ─── Ads ─────────────────────────────────────────────────────────────────────
@@ -224,44 +272,44 @@ model AdSlot {
 // ─── AI Tools Directory (kept as-is) ─────────────────────────────────────────
 
 model AITool {
-  id              String           @id @default(cuid())
-  name            String
-  slug            String           @unique
-  tagline         String?
-  descriptionAr   String           @db.Text
-  contentAr       String?          @db.Text
-  website         String?
-  logoUrl         String?
-  screenshots     String[]
-  toolCategory    String           @default("other")
-  category        String           @default("other")
-  pricing         String           @default("freemium")
-  monthlyPrice    Float?
-  pricingDetails  String?          @db.Text
-  pros            String[]
-  cons            String[]
-  useCases        String[]
-  arabicSupport   Boolean          @default(false)
-  hasApi          Boolean          @default(false)
-  tags            String[]
-  faq             Json?
-  seoTitle        String?
-  seoDescription  String?
-  imageAlt        String?
-  relatedTopics   String[]
-  featured        Boolean          @default(false)
-  editorPick      Boolean          @default(false)
-  featuredAt      DateTime?
-  published       Boolean          @default(true)
-  viewCount       Int              @default(0)
-  likes           Int              @default(0)
-  releaseDate     DateTime?
-  lastUpdated     DateTime?
-  sourceUrl       String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  comparisons     ComparisonSide[]
-  prompts         Prompt[]
+  id             String           @id @default(cuid())
+  name           String
+  slug           String           @unique
+  tagline        String?
+  descriptionAr  String           @db.Text
+  contentAr      String?          @db.Text
+  website        String?
+  logoUrl        String?
+  screenshots    String[]
+  toolCategory   String           @default("other")
+  category       String           @default("other")
+  pricing        String           @default("freemium")
+  monthlyPrice   Float?
+  pricingDetails String?          @db.Text
+  pros           String[]
+  cons           String[]
+  useCases       String[]
+  arabicSupport  Boolean          @default(false)
+  hasApi         Boolean          @default(false)
+  tags           String[]
+  faq            Json?
+  seoTitle       String?
+  seoDescription String?
+  imageAlt       String?
+  relatedTopics  String[]
+  featured       Boolean          @default(false)
+  editorPick     Boolean          @default(false)
+  featuredAt     DateTime?
+  published      Boolean          @default(true)
+  viewCount      Int              @default(0)
+  likes          Int              @default(0)
+  releaseDate    DateTime?
+  lastUpdated    DateTime?
+  sourceUrl      String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  comparisons    ComparisonSide[]
+  prompts        Prompt[]
 
   @@index([toolCategory, published])
   @@index([slug])
@@ -270,19 +318,19 @@ model AITool {
 }
 
 model Comparison {
-  id           String           @id @default(cuid())
-  slug         String           @unique
-  title        String
-  summaryAr    String           @db.Text
-  verdict      String?          @db.Text
-  criteria     Json?
-  methodology  String?          @db.Text // how the comparison was tested/scored — optional, renders only when present
-  reviewedAt   DateTime?        // last time an editor verified this comparison is still accurate (distinct from updatedAt, which changes on any edit)
-  published    Boolean          @default(true)
-  viewCount    Int              @default(0)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  sides        ComparisonSide[]
+  id          String           @id @default(cuid())
+  slug        String           @unique
+  title       String
+  summaryAr   String           @db.Text
+  verdict     String?          @db.Text
+  criteria    Json?
+  methodology String?          @db.Text // how the comparison was tested/scored — optional, renders only when present
+  reviewedAt  DateTime? // last time an editor verified this comparison is still accurate (distinct from updatedAt, which changes on any edit)
+  published   Boolean          @default(true)
+  viewCount   Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  sides       ComparisonSide[]
 
   @@index([slug])
   @@index([published])
@@ -299,7 +347,7 @@ model ComparisonSide {
   strengths         String[]
   weaknesses        String[]
   bestFor           String?
-  notRecommendedFor String?    // who should skip this tool — optional, renders only when present
+  notRecommendedFor String? // who should skip this tool — optional, renders only when present
 
   @@unique([comparisonId, toolId])
   @@index([comparisonId])
@@ -309,7 +357,7 @@ model ComparisonSide {
 model ToolEvent {
   id        String   @id @default(cuid())
   toolId    String
-  type      String   // "view" | "like" | "click"
+  type      String // "view" | "like" | "click"
   createdAt DateTime @default(now())
 
   @@index([toolId, type])
@@ -335,10 +383,10 @@ model TrendingKeyword {
 model AuthorMemory {
   id         String   @id @default(cuid())
   authorSlug String
-  type       String   // "style_note" | "topic_expertise" | "past_stance" | "source_preference"
+  type       String // "style_note" | "topic_expertise" | "past_stance" | "source_preference"
   content    String   @db.Text
   weight     Float    @default(1.0) // עולה עם אישור אנושי / views גבוהים
-  sourceId   String?  // Review שממנו נלמד
+  sourceId   String? // Review שממנו נלמד
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -351,11 +399,11 @@ model ReviewMetrics {
   id           String   @id @default(cuid())
   reviewId     String   @unique
   review       Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  avgReadTime  Int?     // שניות ממוצע
-  bounceRate   Float?   // 0-1
-  scrollDepth  Float?   // 0-1 — עד כמה קרא הגולש
+  avgReadTime  Int? // שניות ממוצע
+  bounceRate   Float? // 0-1
+  scrollDepth  Float? // 0-1 — עד כמה קרא הגולש
   shareCount   Int      @default(0)
-  qualityScore Float?   // 0-1 — חישוב אוטומטי מהמדדים
+  qualityScore Float? // 0-1 — חישוב אוטומטי מהמדדים
   trainingUsed Boolean  @default(false) // האם שימש כבר לאימון
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -367,12 +415,12 @@ model ReviewMetrics {
 // ─── Newsletter ───────────────────────────────────────────────────────────────
 
 model NewsletterSubscriber {
-  id          String    @id @default(cuid())
-  email       String    @unique
-  status      String    @default("active") // "active" | "unsubscribed"
-  source      String    @default("website") // "website" | "popup" | "admin"
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  email     String   @unique
+  status    String   @default("active") // "active" | "unsubscribed"
+  source    String   @default("website") // "website" | "popup" | "admin"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([createdAt])
@@ -384,11 +432,11 @@ model Prompt {
   id          String   @id @default(cuid())
   title       String
   titleAr     String
-  body        String   @db.Text        // the prompt text (English)
-  bodyAr      String?  @db.Text        // Arabic version (optional)
-  description String?  @db.Text        // short explanation of what it does
-  category    String                   // "image" | "writing" | "code" | "marketing" | "general"
-  toolId      String?                  // nullable FK → AITool
+  body        String   @db.Text // the prompt text (English)
+  bodyAr      String?  @db.Text // Arabic version (optional)
+  description String?  @db.Text // short explanation of what it does
+  category    String // "image" | "writing" | "code" | "marketing" | "general"
+  toolId      String? // nullable FK → AITool
   tool        AITool?  @relation(fields: [toolId], references: [id], onDelete: SetNull)
   tags        String[]
   slug        String   @unique
@@ -408,34 +456,34 @@ model Prompt {
 
 // Daily snapshot — one row per day
 model DailyStats {
-  id              String   @id @default(cuid())
-  date            DateTime @unique // midnight UTC
-  pageViews       Int      @default(0)
-  uniqueArticles  Int      @default(0) // distinct articles viewed
-  promptsCopied   Int      @default(0) // from viewCount delta on prompts
-  toolClicks      Int      @default(0) // from viewCount delta on tools
-  articlesPublished Int    @default(0)
-  promptsGenerated Int     @default(0)
-  topArticleSlug  String?
-  topArticleViews Int      @default(0)
-  topPromptSlug   String?
-  topPromptViews  Int      @default(0)
-  createdAt       DateTime @default(now())
+  id                String   @id @default(cuid())
+  date              DateTime @unique // midnight UTC
+  pageViews         Int      @default(0)
+  uniqueArticles    Int      @default(0) // distinct articles viewed
+  promptsCopied     Int      @default(0) // from viewCount delta on prompts
+  toolClicks        Int      @default(0) // from viewCount delta on tools
+  articlesPublished Int      @default(0)
+  promptsGenerated  Int      @default(0)
+  topArticleSlug    String?
+  topArticleViews   Int      @default(0)
+  topPromptSlug     String?
+  topPromptViews    Int      @default(0)
+  createdAt         DateTime @default(now())
 
   @@index([date])
 }
 
 // Weekly AI-generated report
 model WeeklyReport {
-  id          String   @id @default(cuid())
-  weekStart   DateTime // Monday midnight UTC
-  weekEnd     DateTime // Sunday midnight UTC
-  summary     String   @db.Text  // AI-generated Arabic summary
-  insights    Json     // array of {title, body, type: "win"|"warning"|"tip"}
-  topContent  Json     // top articles + prompts of the week
-  stats       Json     // aggregated numbers for the week
-  sentAt      DateTime?
-  createdAt   DateTime @default(now())
+  id         String    @id @default(cuid())
+  weekStart  DateTime // Monday midnight UTC
+  weekEnd    DateTime // Sunday midnight UTC
+  summary    String    @db.Text // AI-generated Arabic summary
+  insights   Json // array of {title, body, type: "win"|"warning"|"tip"}
+  topContent Json // top articles + prompts of the week
+  stats      Json // aggregated numbers for the week
+  sentAt     DateTime?
+  createdAt  DateTime  @default(now())
 
   @@index([weekStart])
 }
@@ -443,7 +491,7 @@ model WeeklyReport {
 // ─── System Settings ─────────────────────────────────────────────────────────
 
 model SystemSetting {
-  key       String   @id   // e.g. "pipeline.dailyPublishLimit"
-  value     String         // stored as string, parsed by consumer
+  key       String   @id // e.g. "pipeline.dailyPublishLimit"
+  value     String // stored as string, parsed by consumer
   updatedAt DateTime @updatedAt
 }

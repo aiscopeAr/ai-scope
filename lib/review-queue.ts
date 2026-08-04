@@ -5,6 +5,7 @@ import type { AuthorSlug } from "@/lib/authors";
 import { embedReview } from "@/lib/embeddings";
 import { extractMemoryFromReview } from "@/lib/author-memory";
 import { syndicateReviewToWordPress } from "@/lib/wordpress";
+import { createWordPressTasksForReviewId } from "@/lib/distribution/wordpress/task-creation";
 import { CACHE_TAGS, revalidateNow } from "@/lib/cache";
 import { buildTrackedArticleUrl } from "@/lib/social/url";
 import { buildReviewTelegramMessage } from "@/lib/social/telegram-message";
@@ -191,10 +192,23 @@ export async function approveReview(
       console.error(`[approveReview] memory extraction failed for review=${review.id}:`, err instanceof Error ? err.message : err);
     });
 
-    // Cross-post to partner WordPress site (no-op if not configured yet)
+    // Cross-post to partner WordPress site (no-op if not configured yet).
+    // Legacy path — lib/wordpress.ts, env-var configured. Coexists with the
+    // Distribution Engine path below during the dark-launch period; only one
+    // of the two is ever enabled for Sonara at a time (see
+    // docs/distribution-engine-sprint4.md's "Legacy Syndication Coexistence"
+    // section for the exact guarantee and the Sprint 5 retirement checklist).
     syndicateReviewToWordPress(review.id).catch((err) => {
       // syndication is best-effort; failures are recorded in SyndicationPost.status
       console.error(`[approveReview] WordPress syndication failed for review=${review.id}:`, err instanceof Error ? err.message : err);
+    });
+
+    // Distribution Engine path — creates DistributionTask rows for any
+    // enabled WordPress DistributionTarget matching this review's category.
+    // No-op if no WordPress target is configured/enabled yet (dark launch).
+    // Best-effort, same posture as every other side effect in this block.
+    createWordPressTasksForReviewId(review.id, overrides.categoryId).catch((err) => {
+      console.error(`[approveReview] Distribution Engine task creation failed for review=${review.id}:`, err instanceof Error ? err.message : err);
     });
 
     // Auto-draft social posts. Best-effort — a drafting failure must never

@@ -7,6 +7,9 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/embeddings", () => ({ embedReview: vi.fn().mockResolvedValue(undefined) }));
 vi.mock("@/lib/author-memory", () => ({ extractMemoryFromReview: vi.fn().mockResolvedValue(undefined) }));
 vi.mock("@/lib/wordpress", () => ({ syndicateReviewToWordPress: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/distribution/wordpress/task-creation", () => ({
+  createWordPressTasksForReviewId: vi.fn().mockResolvedValue({ targetsConsidered: 0, tasksCreated: 0, tasksAlreadyExisted: 0 }),
+}));
 vi.mock("@/lib/cache", () => ({ CACHE_TAGS: { reviews: "reviews", categories: "categories" }, revalidateNow: vi.fn() }));
 
 const reviewQueueFindUniqueOrThrow = vi.fn();
@@ -83,6 +86,24 @@ describe("approveReview — drafting failure is logged, never silent, and never 
       expect(joined.toLowerCase()).not.toContain("bottoken");
       expect(joined.toLowerCase()).not.toContain("credentials");
     }
+
+    errorSpy.mockRestore();
+  });
+
+  it("Distribution Engine task-creation failure is logged with review id context and never blocks publish", async () => {
+    const { createWordPressTasksForReviewId } = await import("@/lib/distribution/wordpress/task-creation");
+    vi.mocked(createWordPressTasksForReviewId).mockRejectedValueOnce(new Error("target table unreachable"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { approveReview } = await import("./review-queue");
+
+    const reviewId = await approveReview("queue-1", { categoryId: "cat-1", slug: "test-slug", published: true });
+
+    expect(reviewId).toBe("review-1");
+
+    const distributionLog = errorSpy.mock.calls.find((call) => String(call[0]).includes("Distribution Engine task creation failed"));
+    expect(distributionLog).toBeDefined();
+    expect(String(distributionLog![0])).toContain("review-1");
 
     errorSpy.mockRestore();
   });
