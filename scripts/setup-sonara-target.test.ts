@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildSonaraUpsertInput, requireEnv, SONARA_TARGET_NAME, SONARA_PARTNER_ID } from "./setup-sonara-target";
+import { buildSonaraUpsertInput, requireEnv, resolveActivatedAt, SONARA_TARGET_NAME, SONARA_PARTNER_ID } from "./setup-sonara-target";
 
 function baseEnv(overrides: Record<string, string | undefined> = {}): NodeJS.ProcessEnv {
   return {
@@ -122,5 +122,67 @@ describe("buildSonaraUpsertInput", () => {
   it("passes the real credential values through to the returned input (not redacted here — redaction happens at read/log boundaries only)", () => {
     const input = buildSonaraUpsertInput(baseEnv());
     expect(input.credentials).toEqual({ username: "editor", applicationPassword: "abcd 1234 efgh 5678" });
+  });
+});
+
+describe("resolveActivatedAt — no-backfill boundary across re-runs", () => {
+  const now = new Date("2026-08-05T12:00:00.000Z");
+
+  it("sets activatedAt to now on a genuine disabled -> enabled transition", () => {
+    const result = resolveActivatedAt({ wasEnabled: false, willBeEnabled: true, previousActivatedAt: undefined, now });
+    expect(result).toBe("2026-08-05T12:00:00.000Z");
+  });
+
+  it("never re-stamps activatedAt when the target was already enabled — a re-run must not move the no-backfill boundary forward", () => {
+    const result = resolveActivatedAt({ wasEnabled: true, willBeEnabled: true, previousActivatedAt: "2026-08-01T00:00:00.000Z", now });
+    expect(result).toBe("2026-08-01T00:00:00.000Z");
+  });
+
+  it("preserves the previous activatedAt when disabling the target (history is not cleared)", () => {
+    const result = resolveActivatedAt({ wasEnabled: true, willBeEnabled: false, previousActivatedAt: "2026-08-01T00:00:00.000Z", now });
+    expect(result).toBe("2026-08-01T00:00:00.000Z");
+  });
+
+  it("stays undefined when the target was and remains disabled (never activated)", () => {
+    const result = resolveActivatedAt({ wasEnabled: false, willBeEnabled: false, previousActivatedAt: undefined, now });
+    expect(result).toBeUndefined();
+  });
+
+  it("defaults `now` to the real current time when not supplied", () => {
+    const before = Date.now();
+    const result = resolveActivatedAt({ wasEnabled: false, willBeEnabled: true, previousActivatedAt: undefined });
+    const after = Date.now();
+    expect(result).toBeDefined();
+    const resultMs = new Date(result!).getTime();
+    expect(resultMs).toBeGreaterThanOrEqual(before);
+    expect(resultMs).toBeLessThanOrEqual(after);
+  });
+});
+
+describe("buildSonaraUpsertInput — activatedAt integration", () => {
+  it("sets config.activatedAt when enabling for the first time (no previous state)", () => {
+    const input = buildSonaraUpsertInput(baseEnv({ SONARA_WORDPRESS_ENABLED: "true" }));
+    expect(input.config.activatedAt).toBeDefined();
+  });
+
+  it("does not set config.activatedAt when creating a disabled target", () => {
+    const input = buildSonaraUpsertInput(baseEnv());
+    expect(input.config.activatedAt).toBeUndefined();
+  });
+
+  it("preserves an existing activatedAt across a re-run while already enabled", () => {
+    const input = buildSonaraUpsertInput(baseEnv({ SONARA_WORDPRESS_ENABLED: "true" }), {
+      enabled: true,
+      activatedAt: "2026-08-01T00:00:00.000Z",
+    });
+    expect(input.config.activatedAt).toBe("2026-08-01T00:00:00.000Z");
+  });
+
+  it("sets a fresh activatedAt when transitioning from previously-disabled to enabled", () => {
+    const input = buildSonaraUpsertInput(baseEnv({ SONARA_WORDPRESS_ENABLED: "true" }), {
+      enabled: false,
+      activatedAt: undefined,
+    });
+    expect(input.config.activatedAt).toBeDefined();
   });
 });

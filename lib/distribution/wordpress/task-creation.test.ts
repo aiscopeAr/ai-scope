@@ -22,13 +22,13 @@ vi.mock("@/lib/db", () => ({
 import { createWordPressTasksForReview } from "./task-creation";
 import { buildWordPressIdempotencyKey } from "./idempotency";
 
-function wpTargetSummary(overrides: Partial<{ id: string; enabled: boolean; targetType: string; categoryFilter: string[] }> = {}) {
+function wpTargetSummary(overrides: Partial<{ id: string; enabled: boolean; targetType: string; categoryFilter: string[]; activatedAt: string }> = {}) {
   return {
     id: overrides.id ?? "target-1",
     name: "Sonara",
     targetType: overrides.targetType ?? "wordpress",
     enabled: overrides.enabled ?? true,
-    config: { mode: "automatic" as const, categoryFilter: overrides.categoryFilter },
+    config: { mode: "automatic" as const, categoryFilter: overrides.categoryFilter, activatedAt: overrides.activatedAt },
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -121,5 +121,37 @@ describe("createWordPressTasksForReview", () => {
 
     expect(result.targetsConsidered).toBe(2);
     expect(mockCreateTaskIfAbsent).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("createWordPressTasksForReview — no-backfill guard", () => {
+  it("creates no task when the target's activatedAt is in the future relative to now (the moment this Review is being approved)", async () => {
+    const oneHourFromNow = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    mockListTargetSummaries.mockResolvedValue([wpTargetSummary({ id: "target-1", activatedAt: oneHourFromNow })]);
+
+    const result = await createWordPressTasksForReview({ id: "review-1", categorySlug: "ai-news" });
+
+    expect(result.targetsConsidered).toBe(0);
+    expect(mockCreateTaskIfAbsent).not.toHaveBeenCalled();
+  });
+
+  it("creates a task when the target's activatedAt is in the past — a newly-approved Review is eligible", async () => {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    mockListTargetSummaries.mockResolvedValue([wpTargetSummary({ id: "target-1", activatedAt: oneHourAgo })]);
+    mockCreateTaskIfAbsent.mockResolvedValue({ id: "task-1", created: true });
+
+    const result = await createWordPressTasksForReview({ id: "review-1", categorySlug: "ai-news" });
+
+    expect(result.targetsConsidered).toBe(1);
+    expect(mockCreateTaskIfAbsent).toHaveBeenCalledTimes(1);
+  });
+
+  it("creates a task when the target has no activatedAt set at all (guard is additive, not required)", async () => {
+    mockListTargetSummaries.mockResolvedValue([wpTargetSummary({ id: "target-1" })]);
+    mockCreateTaskIfAbsent.mockResolvedValue({ id: "task-1", created: true });
+
+    const result = await createWordPressTasksForReview({ id: "review-1", categorySlug: "ai-news" });
+
+    expect(result.targetsConsidered).toBe(1);
   });
 });

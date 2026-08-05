@@ -69,11 +69,34 @@ interface WordPressPostResponse {
 }
 
 /**
+ * Sprint 6 kill-switch: Sonara publishing now happens exclusively through
+ * the Distribution Engine (lib/distribution/wordpress/*). This legacy path
+ * is retired but deliberately NOT deleted — SyndicationPost's historical
+ * rows and this module's logic remain available for rollback (see
+ * docs/distribution-engine-sprint4.md's retirement checklist) without
+ * requiring a schema change or data migration to bring back.
+ *
+ * This guard is a permanent `true`, independent of environment
+ * configuration — WORDPRESS_* env vars being unset already caused
+ * getConfig() to no-op, but that was an environmental accident, not a
+ * code guarantee: if those vars were ever set again for any reason (a
+ * different future integration reusing the same names, a restored old
+ * .env, etc.), this function would silently resume making real live
+ * WordPress publish requests with no coordination with the Distribution
+ * Engine's own idempotency/activation guards. This constant is the actual
+ * guarantee — flip it back to `false` only as part of a deliberate,
+ * reviewed rollback of the Distribution Engine cutover, never by accident.
+ */
+const LEGACY_SONARA_PATH_DISABLED = true;
+
+/**
  * Publish one Review to the partner WordPress site.
  * Idempotent per (reviewId, target) — call syncSyndicationStatus first if re-running.
  * Throws on failure; callers should treat this as best-effort and catch.
  */
 export async function syndicateReviewToWordPress(reviewId: string): Promise<void> {
+  if (LEGACY_SONARA_PATH_DISABLED) return;
+
   const config = getConfig();
   if (!config) return; // not configured yet — silently skip, not an error
 

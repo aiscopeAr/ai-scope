@@ -35,7 +35,7 @@
  * credential value.
  */
 
-import { upsertDistributionTarget, type UpsertTargetInput } from "@/lib/distribution/persistence/target";
+import { upsertDistributionTarget, listTargetSummaries, type UpsertTargetInput } from "@/lib/distribution/persistence/target";
 import { validateWordPressTarget } from "@/lib/distribution/wordpress/config";
 import { WORDPRESS_TARGET_TYPE } from "@/lib/distribution/wordpress/formatter";
 import { normalizePartnerId } from "@/lib/distribution/attribution";
@@ -58,12 +58,36 @@ export function requireEnv(env: NodeJS.ProcessEnv, name: string): string {
 }
 
 /**
+ * Decides the `activatedAt` value for this run — set to "now" only on a
+ * genuine disabled→enabled transition; preserved unchanged on every other
+ * re-run (already enabled, or staying disabled). Re-running this script
+ * while the target is already enabled must NEVER bump activatedAt forward,
+ * since that would retroactively make the no-backfill guard (see
+ * lib/distribution/resolution.ts) exclude Reviews approved between the
+ * original activation and this later run — the opposite of what
+ * activatedAt is for. Pure — takes the previous state as a parameter
+ * rather than querying for it, so it's independently testable.
+ */
+export function resolveActivatedAt(params: { wasEnabled: boolean; willBeEnabled: boolean; previousActivatedAt: string | undefined; now?: Date }): string | undefined {
+  if (!params.willBeEnabled) return params.previousActivatedAt; // disabling never clears history
+  if (params.wasEnabled) return params.previousActivatedAt; // already enabled — never re-stamp
+  return (params.now ?? new Date()).toISOString(); // the actual disabled -> enabled transition
+}
+
+/**
  * Pure: reads and validates the required Sonara env vars, returning the
  * exact UpsertTargetInput setup-sonara-target would pass to
  * upsertDistributionTarget(). Separated from main() so this logic is
  * testable without a real database or process.exit side effect.
+ *
+ * `previousTargetState` carries what's currently persisted (if anything) —
+ * needed only to compute activatedAt correctly across re-runs; omit it for
+ * a first-ever run (no existing target).
  */
-export function buildSonaraUpsertInput(env: NodeJS.ProcessEnv): UpsertTargetInput {
+export function buildSonaraUpsertInput(
+  env: NodeJS.ProcessEnv,
+  previousTargetState?: { enabled: boolean; activatedAt: string | undefined },
+): UpsertTargetInput {
   const baseUrl = requireEnv(env, "SONARA_WORDPRESS_BASE_URL");
   const username = requireEnv(env, "SONARA_WORDPRESS_USERNAME");
   const applicationPassword = requireEnv(env, "SONARA_WORDPRESS_APPLICATION_PASSWORD");
@@ -87,10 +111,17 @@ export function buildSonaraUpsertInput(env: NodeJS.ProcessEnv): UpsertTargetInpu
 
   const uploadFeaturedImage = env.SONARA_WORDPRESS_UPLOAD_FEATURED_IMAGE !== "false";
 
+  const activatedAt = resolveActivatedAt({
+    wasEnabled: previousTargetState?.enabled ?? false,
+    willBeEnabled: enabled,
+    previousActivatedAt: previousTargetState?.activatedAt,
+  });
+
   const credentials = { username, applicationPassword };
   const config = {
     mode: "automatic" as const,
     partnerId: SONARA_PARTNER_ID,
+    ...(activatedAt ? { activatedAt } : {}),
     extra: {
       baseUrl,
       categoryIds: [categoryId],
@@ -112,7 +143,11 @@ export function buildSonaraUpsertInput(env: NodeJS.ProcessEnv): UpsertTargetInpu
 }
 
 async function main() {
-  const input = buildSonaraUpsertInput(process.env);
+  const existingTargets = await listTargetSummaries();
+  const existing = existingTargets.find((t) => t.name === SONARA_TARGET_NAME && t.targetType === WORDPRESS_TARGET_TYPE);
+  const previousTargetState = existing ? { enabled: existing.enabled, activatedAt: existing.config.activatedAt } : undefined;
+
+  const input = buildSonaraUpsertInput(process.env, previousTargetState);
   const result = await upsertDistributionTarget(input);
 
   // Never print the credentials object — only the non-secret outcome.
@@ -121,6 +156,9 @@ async function main() {
   console.log(
     `[setup-sonara-target] ${result.created ? "created" : "updated"} target id=${result.id} enabled=${input.enabled} categoryIds=${categoryIds} baseUrl=${baseUrl}`,
   );
+  if (input.config.activatedAt) {
+    console.log(`[setup-sonara-target] activatedAt=${input.config.activatedAt} (no-backfill boundary — content approved before this timestamp will never be queued for this target)`);
+  }
   if (!input.enabled) {
     console.log("[setup-sonara-target] Target created in DISABLED (dark-launch) state. Set SONARA_WORDPRESS_ENABLED=true to enable dispatch once validated.");
   }

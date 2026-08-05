@@ -60,7 +60,16 @@ export async function createWordPressTasksForReview(review: { id: string; catego
     credentials: {},
   }));
 
-  const matched = resolveDistributionTargets({ contentType: CONTENT_TYPE_REVIEW, category: review.categorySlug }, candidates);
+  // "now" is used as the content's eligibility timestamp rather than
+  // threading Review.publishedAt through from approveReview() — this
+  // function runs synchronously inside the same approval call that sets
+  // publishedAt to `new Date()`, so the two are effectively identical, and
+  // this keeps the no-backfill guard entirely inside the Distribution
+  // Engine's own code without touching review-queue.ts's call signature.
+  const matched = resolveDistributionTargets(
+    { contentType: CONTENT_TYPE_REVIEW, category: review.categorySlug, contentTimestamp: new Date() },
+    candidates,
+  );
 
   let tasksCreated = 0;
   let tasksAlreadyExisted = 0;

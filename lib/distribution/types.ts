@@ -68,6 +68,17 @@ export interface DistributionTargetConfig {
    *  lib/distribution/attribution.ts. Optional so targets that don't (yet)
    *  need attribution links keep working unchanged. */
   partnerId?: string;
+  /** ISO 8601 timestamp of the moment this target was switched on for
+   *  automatic dispatch. Set once, explicitly, by whatever enables the
+   *  target (a setup script, a future admin action) — never inferred from
+   *  `updatedAt`, since that column changes on any config edit, not just
+   *  activation. Content published/approved strictly before this boundary
+   *  must never be eligible for a new DistributionTask against this
+   *  target — see lib/distribution/wordpress/task-creation.ts's no-backfill
+   *  guard. Undefined means "never activated" (a target that has always
+   *  been disabled, or was enabled without this being set — task creation
+   *  treats a missing boundary as "not activated", not as "always eligible"). */
+  activatedAt?: string;
   /** Escape hatch for target-specific settings not modeled generically
    *  (title templates, tag-mapping tables, canonical-link footer copy,
    *  etc.) — read only by that target's own Formatter/Transport. */
