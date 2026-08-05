@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildSonaraUpsertInput, requireEnv, SONARA_TARGET_NAME } from "./setup-sonara-target";
+import { buildSonaraUpsertInput, requireEnv, SONARA_TARGET_NAME, SONARA_PARTNER_ID } from "./setup-sonara-target";
 
 function baseEnv(overrides: Record<string, string | undefined> = {}): NodeJS.ProcessEnv {
   return {
@@ -45,6 +45,12 @@ describe("buildSonaraUpsertInput", () => {
     const input = buildSonaraUpsertInput(baseEnv());
     expect(input.name).toBe(SONARA_TARGET_NAME);
     expect(input.targetType).toBe("wordpress");
+  });
+
+  it("sets config.partnerId to the deterministic, lowercase normalization of the target name ('sonara')", () => {
+    const input = buildSonaraUpsertInput(baseEnv());
+    expect(input.config.partnerId).toBe("sonara");
+    expect(SONARA_PARTNER_ID).toBe("sonara");
   });
 
   it("defaults defaultStatus to 'draft' when SONARA_WORDPRESS_DEFAULT_STATUS is unset — a target must opt into publish explicitly, never by omission", () => {

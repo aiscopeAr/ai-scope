@@ -12,6 +12,7 @@ import type { DistributableContent, Formatter, FormattedContent } from "../forma
 import type { DistributionTargetConfig } from "../types";
 import { buildWordPressBodyHtml } from "./html";
 import { validateWordPressConfig, type WordPressTargetConfig } from "./config";
+import { buildArticleAttributionUrl, buildHomepageAttributionUrl } from "../attribution";
 
 export const WORDPRESS_TARGET_TYPE = "wordpress";
 
@@ -71,6 +72,21 @@ export function readWordPressTargetConfig(config: DistributionTargetConfig): Wor
   return extra as unknown as WordPressTargetConfig;
 }
 
+/** Extracts the Lumiq article's own slug (the `/reviews/<slug>` path
+ *  segment) from its canonical URL, rather than re-deriving one — the UTM
+ *  standard requires the *real* Lumiq article slug (both as the link path
+ *  and as utm_content), which is a different thing from the WordPress
+ *  destination post's own title-derived slug computed below. Throws if
+ *  canonicalUrl isn't shaped like a Lumiq review URL, since a malformed
+ *  slug would silently produce a broken/untracked attribution link. */
+function extractReviewSlug(canonicalUrl: string): string {
+  const match = /\/reviews\/([^/?#]+)\/?(?:[?#]|$)/.exec(canonicalUrl);
+  if (!match) {
+    throw new Error(`Cannot extract a review slug from canonicalUrl "${canonicalUrl}" — expected a /reviews/<slug> path`);
+  }
+  return match[1];
+}
+
 export const wordPressFormatter: Formatter = {
   targetType: WORDPRESS_TARGET_TYPE,
 
@@ -80,8 +96,15 @@ export const wordPressFormatter: Formatter = {
     if (!content.canonicalUrl) {
       throw new Error("DistributableContent.canonicalUrl is required to build the WordPress attribution footer");
     }
+    if (!config.partnerId) {
+      throw new Error("DistributionTargetConfig.partnerId is required to build UTM-tagged attribution links");
+    }
 
-    const contentHtml = buildWordPressBodyHtml(content.body, content.canonicalUrl);
+    const reviewSlug = extractReviewSlug(content.canonicalUrl);
+    const articleAttributionUrl = buildArticleAttributionUrl(config.partnerId, reviewSlug);
+    const homepageAttributionUrl = buildHomepageAttributionUrl(config.partnerId);
+
+    const contentHtml = buildWordPressBodyHtml(content.body, articleAttributionUrl, homepageAttributionUrl);
 
     return {
       kind: "wordpress-post",

@@ -48,57 +48,67 @@ describe("markdownToHtml", () => {
 });
 
 describe("buildAttributionFooter", () => {
-  const articleUrl = "https://www.lumiq.news/reviews/example-review";
+  const articleUrl = "https://www.lumiq.news/reviews/example-review?utm_source=sonara&utm_medium=referral&utm_campaign=partner_distribution&utm_content=example-review";
+  const homepageUrl = "https://www.lumiq.news/?utm_source=sonara&utm_medium=referral&utm_campaign=partner_distribution&utm_content=homepage";
 
   it("contains the exact required Arabic attribution text", () => {
-    const footer = buildAttributionFooter(articleUrl);
+    const footer = buildAttributionFooter(articleUrl, homepageUrl);
     expect(footer).toContain("المصدر:");
     expect(footer).toContain("للمزيد من التحليلات وأخبار الذكاء الاصطناعي:");
   });
 
-  it("links 'لوميك' directly to the original article URL", () => {
-    const footer = buildAttributionFooter(articleUrl);
-    expect(footer).toMatch(new RegExp(`<a href="${articleUrl}"[^>]*>لوميك</a>`));
+  it("links 'Lumiq' (not لوميك) directly to the UTM-tagged original article URL", () => {
+    const footer = buildAttributionFooter(articleUrl, homepageUrl);
+    // href attributes are HTML-escaped (& -> &amp;), so compare against the
+    // escaped form — the underlying URL (once a browser/WordPress parses
+    // the attribute) is unchanged, this is standard, correct HTML escaping.
+    const escapedArticleUrl = articleUrl.replace(/&/g, "&amp;");
+    expect(footer).toContain(`<a href="${escapedArticleUrl}" target="_blank" rel="noopener">Lumiq</a>`);
+    expect(footer).not.toContain("لوميك");
   });
 
-  it("includes the general lumiq.news URL as a second, separate link", () => {
-    const footer = buildAttributionFooter(articleUrl);
-    expect(footer).toContain('<a href="https://lumiq.news"');
-    expect(footer).toContain(">https://lumiq.news<");
+  it("includes the UTM-tagged homepage URL as a second, separate visible link", () => {
+    const footer = buildAttributionFooter(articleUrl, homepageUrl);
+    const escapedHomepageUrl = homepageUrl.replace(/&/g, "&amp;");
+    expect(footer).toContain(`<a href="${escapedHomepageUrl}"`);
+    expect(footer).toContain(`>${escapedHomepageUrl}<`);
   });
 
   it("does not contain 'بالتعاون مع' or any sponsorship wording", () => {
-    const footer = buildAttributionFooter(articleUrl);
+    const footer = buildAttributionFooter(articleUrl, homepageUrl);
     expect(footer).not.toContain("بالتعاون مع");
     expect(footer).not.toMatch(/sponsor|sponsored|إعلان مدفوع/i);
   });
 
   it("contains a clear separator before the footer", () => {
-    const footer = buildAttributionFooter(articleUrl);
+    const footer = buildAttributionFooter(articleUrl, homepageUrl);
     expect(footer.trimStart().startsWith("<hr")).toBe(true);
   });
 
   it("does not hide any link (no display:none, no zero-size, no rel=nofollow link cloaking)", () => {
-    const footer = buildAttributionFooter(articleUrl);
+    const footer = buildAttributionFooter(articleUrl, homepageUrl);
     expect(footer).not.toMatch(/display:\s*none/i);
     expect(footer).not.toContain("nofollow");
   });
 
   it("escapes an articleUrl containing HTML-significant characters", () => {
-    const footer = buildAttributionFooter('https://www.lumiq.news/reviews/x"><script>alert(1)</script>');
+    const footer = buildAttributionFooter('https://www.lumiq.news/reviews/x"><script>alert(1)</script>', homepageUrl);
     expect(footer).not.toContain("<script>");
   });
 
-  it("has exactly two anchor tags — the article link and the general lumiq.news link", () => {
-    const footer = buildAttributionFooter(articleUrl);
+  it("has exactly two anchor tags — the article link and the homepage link", () => {
+    const footer = buildAttributionFooter(articleUrl, homepageUrl);
     const anchorCount = (footer.match(/<a /g) ?? []).length;
     expect(anchorCount).toBe(2);
   });
 });
 
 describe("buildWordPressBodyHtml", () => {
+  const articleUrl = "https://www.lumiq.news/reviews/x?utm_source=sonara&utm_medium=referral&utm_campaign=partner_distribution&utm_content=x";
+  const homepageUrl = "https://www.lumiq.news/?utm_source=sonara&utm_medium=referral&utm_campaign=partner_distribution&utm_content=homepage";
+
   it("combines the rendered markdown body with the attribution footer", () => {
-    const html = buildWordPressBodyHtml("Some **content**.", "https://www.lumiq.news/reviews/x");
+    const html = buildWordPressBodyHtml("Some **content**.", articleUrl, homepageUrl);
     expect(html).toContain("<strong>content</strong>");
     expect(html).toContain("المصدر:");
     expect(html.indexOf("<strong>content</strong>")).toBeLessThan(html.indexOf("المصدر:"));
@@ -106,7 +116,7 @@ describe("buildWordPressBodyHtml", () => {
 
   it("keeps the full original body content (no truncation or summarization)", () => {
     const longBody = Array.from({ length: 20 }, (_, i) => `Paragraph number ${i}.`).join("\n\n");
-    const html = buildWordPressBodyHtml(longBody, "https://www.lumiq.news/reviews/x");
+    const html = buildWordPressBodyHtml(longBody, articleUrl, homepageUrl);
     for (let i = 0; i < 20; i++) {
       expect(html).toContain(`Paragraph number ${i}.`);
     }

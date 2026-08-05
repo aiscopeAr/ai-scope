@@ -59,6 +59,15 @@ export interface DistributionTargetConfig {
   /** Optional allow-list of content categories this target accepts. An
    *  empty/undefined list means "no filter — accept everything". */
   categoryFilter?: string[];
+  /** Deterministic partner identifier used for outbound attribution/UTM
+   *  tracking (e.g. "sonara", "cnn_arabic") — lowercase, stable, safe to
+   *  place in a URL query string unencoded. This lives on the generic
+   *  config (not inside a target-type's `extra` bag) so every Formatter,
+   *  for every current and future target type, can build UTM-tagged
+   *  backlinks identically without any target-specific code — see
+   *  lib/distribution/attribution.ts. Optional so targets that don't (yet)
+   *  need attribution links keep working unchanged. */
+  partnerId?: string;
   /** Escape hatch for target-specific settings not modeled generically
    *  (title templates, tag-mapping tables, canonical-link footer copy,
    *  etc.) — read only by that target's own Formatter/Transport. */

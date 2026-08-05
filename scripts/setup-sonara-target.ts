@@ -38,8 +38,16 @@
 import { upsertDistributionTarget, type UpsertTargetInput } from "@/lib/distribution/persistence/target";
 import { validateWordPressTarget } from "@/lib/distribution/wordpress/config";
 import { WORDPRESS_TARGET_TYPE } from "@/lib/distribution/wordpress/formatter";
+import { normalizePartnerId } from "@/lib/distribution/attribution";
 
 export const SONARA_TARGET_NAME = "Sonara";
+
+/** Deterministic partner identifier for UTM attribution — derived from the
+ *  target's own name (normalizePartnerId("Sonara") === "sonara"), not a
+ *  separate env var, since the two must always agree and there is no
+ *  scenario where a target's UTM identity should differ from its own
+ *  display name. */
+export const SONARA_PARTNER_ID = normalizePartnerId(SONARA_TARGET_NAME);
 
 export function requireEnv(env: NodeJS.ProcessEnv, name: string): string {
   const value = env[name];
@@ -82,6 +90,7 @@ export function buildSonaraUpsertInput(env: NodeJS.ProcessEnv): UpsertTargetInpu
   const credentials = { username, applicationPassword };
   const config = {
     mode: "automatic" as const,
+    partnerId: SONARA_PARTNER_ID,
     extra: {
       baseUrl,
       categoryIds: [categoryId],

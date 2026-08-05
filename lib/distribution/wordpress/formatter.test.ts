@@ -3,9 +3,10 @@ import { wordPressFormatter, readWordPressTargetConfig, WORDPRESS_TARGET_TYPE, t
 import type { DistributableContent } from "../formatter";
 import type { DistributionTargetConfig } from "../types";
 
-function buildConfig(extra: Record<string, unknown> = {}): DistributionTargetConfig {
+function buildConfig(extra: Record<string, unknown> = {}, partnerId = "sonara"): DistributionTargetConfig {
   return {
     mode: "automatic",
+    partnerId,
     extra: {
       baseUrl: "https://sonara.example.com",
       categoryIds: [12],
@@ -72,11 +73,20 @@ describe("wordPressFormatter", () => {
     expect(result.body.sourceUrl).toBe("https://www.lumiq.news/reviews/best-ai-tools-2026");
   });
 
-  it("embeds the full body content and the required attribution footer in contentHtml", () => {
+  it("embeds the full body content and the required UTM-tagged attribution footer in contentHtml", () => {
     const result = wordPressFormatter.format(buildContent(), buildConfig()) as WordPressFormattedContent;
     expect(result.body.contentHtml).toContain("محتوى تجريبي");
     expect(result.body.contentHtml).toContain("المصدر:");
-    expect(result.body.contentHtml).toContain("https://www.lumiq.news/reviews/best-ai-tools-2026");
+    expect(result.body.contentHtml).toContain(">Lumiq</a>");
+    expect(result.body.contentHtml).not.toContain("لوميك");
+    expect(result.body.contentHtml).toContain("https://www.lumiq.news/reviews/best-ai-tools-2026?utm_source=sonara&amp;utm_medium=referral&amp;utm_campaign=partner_distribution&amp;utm_content=best-ai-tools-2026");
+    expect(result.body.contentHtml).toContain("https://www.lumiq.news/?utm_source=sonara&amp;utm_medium=referral&amp;utm_campaign=partner_distribution&amp;utm_content=homepage");
+  });
+
+  it("uses the target's own partnerId (not a hardcoded value) as utm_source — proven with an arbitrary future partner", () => {
+    const result = wordPressFormatter.format(buildContent(), buildConfig({}, "cnn_arabic")) as WordPressFormattedContent;
+    expect(result.body.contentHtml).toContain("utm_source=cnn_arabic");
+    expect(result.body.contentHtml).not.toContain("utm_source=sonara");
   });
 
   it("does not include 'بالتعاون مع' anywhere in the formatted output", () => {
@@ -86,6 +96,11 @@ describe("wordPressFormatter", () => {
 
   it("throws when canonicalUrl is missing (footer cannot be built without it)", () => {
     expect(() => wordPressFormatter.format(buildContent({ canonicalUrl: undefined }), buildConfig())).toThrow(/canonicalUrl/);
+  });
+
+  it("throws when the target config has no partnerId (attribution links cannot be built without one)", () => {
+    const configWithoutPartner: DistributionTargetConfig = { mode: "automatic", extra: buildConfig().extra };
+    expect(() => wordPressFormatter.format(buildContent(), configWithoutPartner)).toThrow(/partnerId/);
   });
 
   it("throws when the target config's extra bag is not a valid WordPress config", () => {

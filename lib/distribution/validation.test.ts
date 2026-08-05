@@ -38,6 +38,21 @@ describe("validateTargetConfig", () => {
   it("accepts a populated categoryFilter", () => {
     expect(validateTargetConfig({ mode: "manual", categoryFilter: ["ai-news", "reviews"] }).valid).toBe(true);
   });
+
+  it("accepts a config with no partnerId at all (optional at this generic level)", () => {
+    expect(validateTargetConfig({ mode: "automatic" }).valid).toBe(true);
+  });
+
+  it("accepts a valid non-empty partnerId", () => {
+    expect(validateTargetConfig({ mode: "automatic", partnerId: "sonara" }).valid).toBe(true);
+    expect(validateTargetConfig({ mode: "automatic", partnerId: "cnn_arabic" }).valid).toBe(true);
+  });
+
+  it("rejects an empty-string partnerId", () => {
+    const result = validateTargetConfig({ mode: "automatic", partnerId: "" });
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.includes("partnerId"))).toBe(true);
+  });
 });
 
 describe("validateTarget", () => {

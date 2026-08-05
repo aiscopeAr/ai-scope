@@ -96,44 +96,48 @@ export function markdownToHtml(markdown: string): string {
   return html.join("\n");
 }
 
-const LUMIQ_GENERAL_URL = "https://lumiq.news";
-
 /**
  * Builds the required Arabic attribution footer:
  *
  *   ―――――――――――――――
- *   المصدر: <a href="{articleUrl}">لوميك</a>
+ *   المصدر:
+ *   Lumiq
  *   للمزيد من التحليلات وأخبار الذكاء الاصطناعي:
- *   https://lumiq.news
+ *   https://www.lumiq.news/?utm_source=...
  *
- * "لوميك" links to the specific original article (articleUrl); the plain
- * lumiq.news URL is a second, separate link to the general site. No
- * sponsorship language, no "بالتعاون مع", no hidden links — every href is
- * visibly rendered as anchor text or a literal URL in the body text, and
- * both links carry rel="noopener" (an external outbound link from a
- * partner site) without nofollow, since this is genuine source
- * attribution rather than a link scheme.
+ * "Lumiq" links to the specific original article (articleUrl); the visible
+ * homepage URL is a second, separate link (homepageUrl) to the general
+ * site — both URLs are expected to already carry GA4 UTM parameters,
+ * built by the caller via lib/distribution/attribution.ts, since this
+ * module has no knowledge of which partner is publishing. No sponsorship
+ * language, no "بالتعاون مع", no hidden links — every href is visibly
+ * rendered as anchor text or a literal URL in the body text, and both
+ * links carry rel="noopener" (an external outbound link from a partner
+ * site) without nofollow, since this is genuine source attribution rather
+ * than a link scheme.
  *
- * `articleUrl` must be an absolute https URL already produced by the
- * canonical Lumiq article link (e.g. via lib/seo.ts's absoluteUrl) —
- * this function does not construct or validate that URL itself, since
- * mapping a Review into an articleUrl is a future sprint's concern.
+ * `articleUrl`/`homepageUrl` must be absolute https URLs already produced
+ * by the caller — this function does not construct or validate them
+ * itself, since mapping a Review + partner into those URLs is the
+ * Formatter's concern (see lib/distribution/wordpress/formatter.ts).
  */
-export function buildAttributionFooter(articleUrl: string): string {
+export function buildAttributionFooter(articleUrl: string, homepageUrl: string): string {
   const safeArticleUrl = escapeHtml(articleUrl);
+  const safeHomepageUrl = escapeHtml(homepageUrl);
 
   return [
     "<hr />",
     "<p><em>",
-    `المصدر: <a href="${safeArticleUrl}" target="_blank" rel="noopener">لوميك</a><br />`,
+    `المصدر:<br />`,
+    `<a href="${safeArticleUrl}" target="_blank" rel="noopener">Lumiq</a><br />`,
     "للمزيد من التحليلات وأخبار الذكاء الاصطناعي:<br />",
-    `<a href="${LUMIQ_GENERAL_URL}" target="_blank" rel="noopener">${LUMIQ_GENERAL_URL}</a>`,
+    `<a href="${safeHomepageUrl}" target="_blank" rel="noopener">${safeHomepageUrl}</a>`,
     "</em></p>",
   ].join("\n");
 }
 
 /** Combines the rendered body with the attribution footer, separated by
  *  the required clear separator (the footer's own leading <hr />). */
-export function buildWordPressBodyHtml(markdownBody: string, articleUrl: string): string {
-  return `${markdownToHtml(markdownBody)}\n${buildAttributionFooter(articleUrl)}`;
+export function buildWordPressBodyHtml(markdownBody: string, articleUrl: string, homepageUrl: string): string {
+  return `${markdownToHtml(markdownBody)}\n${buildAttributionFooter(articleUrl, homepageUrl)}`;
 }

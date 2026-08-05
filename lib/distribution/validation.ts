@@ -42,6 +42,15 @@ export function validateTargetConfig(config: DistributionTargetConfig): Validati
     }
   }
 
+  // partnerId is optional at this generic level — not every target type
+  // needs outbound attribution links — but when present it must be a
+  // usable, non-empty string; a target-type's own Formatter (e.g.
+  // WordPress's) is responsible for requiring it when *that* type's
+  // output actually needs a UTM-tagged backlink.
+  if (config.partnerId !== undefined && (typeof config.partnerId !== "string" || config.partnerId.trim() === "")) {
+    errors.push("config.partnerId must be a non-empty string when present");
+  }
+
   return errors.length === 0 ? ok() : fail(...errors);
 }
 
