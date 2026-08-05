@@ -33,27 +33,67 @@ function renderInline(text: string): string {
 /** Same subset supported by lib/wordpress.ts today: paragraphs, ##/###
  *  headings, unordered lists, and bold/italic/code inline formatting.
  *  Intentionally does not attempt full CommonMark — only what Lumiq's own
- *  AI-generated review content actually produces. */
+ *  AI-generated review content actually produces.
+ *
+ *  A "block" (text between blank lines) can itself start with a heading
+ *  line immediately followed by list items with no blank line separating
+ *  them — real AI-generated FAQ sections do this ("## FAQ\n- question..."
+ *  with no blank line before the first bullet). Splitting only on blank
+ *  lines would swallow that first bullet into the heading's <h2>; each
+ *  block is therefore split again on its own line breaks so a leading
+ *  heading line and subsequent list lines render as separate elements. */
 export function markdownToHtml(markdown: string): string {
-  const paragraphs = markdown
+  const blocks = markdown
     .split(/\n\n+/)
-    .map((p) => p.trim())
+    .map((b) => b.trim())
     .filter(Boolean);
 
-  return paragraphs
-    .map((p) => {
-      if (p.startsWith("### ")) return `<h3>${renderInline(p.slice(4))}</h3>`;
-      if (p.startsWith("## ")) return `<h2>${renderInline(p.slice(3))}</h2>`;
-      if (/^[-*]\s+/.test(p)) {
-        const items = p
-          .split("\n")
-          .map((line) => `<li>${renderInline(line.replace(/^[-*]\s+/, ""))}</li>`)
-          .join("");
-        return `<ul>${items}</ul>`;
+  const html: string[] = [];
+
+  for (const block of blocks) {
+    const lines = block.split("\n");
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i];
+
+      if (line.startsWith("### ")) {
+        html.push(`<h3>${renderInline(line.slice(4))}</h3>`);
+        i++;
+        continue;
       }
-      return `<p>${renderInline(p)}</p>`;
-    })
-    .join("\n");
+      if (line.startsWith("## ")) {
+        html.push(`<h2>${renderInline(line.slice(3))}</h2>`);
+        i++;
+        continue;
+      }
+      if (/^[-*]\s+/.test(line)) {
+        // A bullet, and any immediately-following non-bullet lines up to
+        // the next heading/bullet/blank, each become their own <li> — this
+        // preserves the established rendering for "- **question**\n  answer"
+        // pairs (an indented continuation line, not a nested bullet) as two
+        // list items, matching how every other list in this document already
+        // renders regardless of whether the list is glued to a heading.
+        const items: string[] = [];
+        while (i < lines.length && (/^[-*]\s+/.test(lines[i]) || (items.length > 0 && lines[i].trim() !== "" && !lines[i].startsWith("## ") && !lines[i].startsWith("### ")))) {
+          items.push(`<li>${renderInline(lines[i].replace(/^[-*]\s+/, ""))}</li>`);
+          i++;
+        }
+        html.push(`<ul>${items.join("")}</ul>`);
+        continue;
+      }
+
+      // Plain text line(s) up to the next heading/list line form one paragraph.
+      const paragraphLines: string[] = [];
+      while (i < lines.length && !lines[i].startsWith("## ") && !lines[i].startsWith("### ") && !/^[-*]\s+/.test(lines[i])) {
+        paragraphLines.push(lines[i]);
+        i++;
+      }
+      html.push(`<p>${renderInline(paragraphLines.join(" ").trim())}</p>`);
+    }
+  }
+
+  return html.join("\n");
 }
 
 const LUMIQ_GENERAL_URL = "https://lumiq.news";

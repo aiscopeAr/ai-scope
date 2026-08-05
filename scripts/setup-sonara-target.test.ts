@@ -47,11 +47,34 @@ describe("buildSonaraUpsertInput", () => {
     expect(input.targetType).toBe("wordpress");
   });
 
-  it("sets defaultStatus to 'publish' and uploadFeaturedImage to true, per the sprint's expected Sonara config", () => {
+  it("defaults defaultStatus to 'draft' when SONARA_WORDPRESS_DEFAULT_STATUS is unset — a target must opt into publish explicitly, never by omission", () => {
     const input = buildSonaraUpsertInput(baseEnv());
     const extra = input.config.extra as Record<string, unknown>;
-    expect(extra.defaultStatus).toBe("publish");
-    expect(extra.uploadFeaturedImage).toBe(true);
+    expect(extra.defaultStatus).toBe("draft");
+  });
+
+  it("respects an explicit SONARA_WORDPRESS_DEFAULT_STATUS=publish", () => {
+    const input = buildSonaraUpsertInput(baseEnv({ SONARA_WORDPRESS_DEFAULT_STATUS: "publish" }));
+    expect((input.config.extra as Record<string, unknown>).defaultStatus).toBe("publish");
+  });
+
+  it("respects an explicit SONARA_WORDPRESS_DEFAULT_STATUS=draft", () => {
+    const input = buildSonaraUpsertInput(baseEnv({ SONARA_WORDPRESS_DEFAULT_STATUS: "draft" }));
+    expect((input.config.extra as Record<string, unknown>).defaultStatus).toBe("draft");
+  });
+
+  it("throws for an invalid SONARA_WORDPRESS_DEFAULT_STATUS value", () => {
+    expect(() => buildSonaraUpsertInput(baseEnv({ SONARA_WORDPRESS_DEFAULT_STATUS: "scheduled" }))).toThrow(/must be "draft" or "publish"/);
+  });
+
+  it("defaults uploadFeaturedImage to true when SONARA_WORDPRESS_UPLOAD_FEATURED_IMAGE is unset", () => {
+    const input = buildSonaraUpsertInput(baseEnv());
+    expect((input.config.extra as Record<string, unknown>).uploadFeaturedImage).toBe(true);
+  });
+
+  it("disables uploadFeaturedImage only when SONARA_WORDPRESS_UPLOAD_FEATURED_IMAGE is exactly 'false'", () => {
+    expect((buildSonaraUpsertInput(baseEnv({ SONARA_WORDPRESS_UPLOAD_FEATURED_IMAGE: "false" })).config.extra as Record<string, unknown>).uploadFeaturedImage).toBe(false);
+    expect((buildSonaraUpsertInput(baseEnv({ SONARA_WORDPRESS_UPLOAD_FEATURED_IMAGE: "true" })).config.extra as Record<string, unknown>).uploadFeaturedImage).toBe(true);
   });
 
   it("maps SONARA_WORDPRESS_CATEGORY_ID into a single-element categoryIds array", () => {

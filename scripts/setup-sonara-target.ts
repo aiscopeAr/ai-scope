@@ -17,6 +17,11 @@
  *   SONARA_WORDPRESS_ENABLED            "true" to enable on creation/update;
  *                                       defaults to "false" (dark launch —
  *                                       see docs/distribution-engine-sprint4.md).
+ *   SONARA_WORDPRESS_DEFAULT_STATUS     "draft" or "publish"; defaults to
+ *                                       "draft" — a target must be
+ *                                       explicitly opted into publishing
+ *                                       live, never by omission.
+ *   SONARA_WORDPRESS_UPLOAD_FEATURED_IMAGE  "true"/"false"; defaults to "true".
  *   SONARA_WORDPRESS_AUTHOR_ID
  *   SONARA_WORDPRESS_TIMEOUT_MS
  *
@@ -64,14 +69,24 @@ export function buildSonaraUpsertInput(env: NodeJS.ProcessEnv): UpsertTargetInpu
   const authorId = env.SONARA_WORDPRESS_AUTHOR_ID ? Number(env.SONARA_WORDPRESS_AUTHOR_ID) : undefined;
   const timeoutMs = env.SONARA_WORDPRESS_TIMEOUT_MS ? Number(env.SONARA_WORDPRESS_TIMEOUT_MS) : undefined;
 
+  // Defaults to "draft" — a target must be explicitly switched to "publish"
+  // by an operator, never end up there because this variable was unset.
+  const defaultStatusRaw = env.SONARA_WORDPRESS_DEFAULT_STATUS ?? "draft";
+  if (defaultStatusRaw !== "draft" && defaultStatusRaw !== "publish") {
+    throw new Error(`SONARA_WORDPRESS_DEFAULT_STATUS must be "draft" or "publish", got "${defaultStatusRaw}"`);
+  }
+  const defaultStatus = defaultStatusRaw;
+
+  const uploadFeaturedImage = env.SONARA_WORDPRESS_UPLOAD_FEATURED_IMAGE !== "false";
+
   const credentials = { username, applicationPassword };
   const config = {
     mode: "automatic" as const,
     extra: {
       baseUrl,
       categoryIds: [categoryId],
-      defaultStatus: "publish" as const,
-      uploadFeaturedImage: true,
+      defaultStatus,
+      uploadFeaturedImage,
       ...(authorId ? { authorId } : {}),
       ...(timeoutMs ? { timeoutMs } : {}),
     },

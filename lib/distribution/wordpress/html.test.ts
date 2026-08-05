@@ -20,6 +20,21 @@ describe("markdownToHtml", () => {
     expect(result).toBe("<ul><li>one</li><li>two</li></ul>");
   });
 
+  it("splits a heading from a list item that immediately follows it with no blank line — real AI-generated FAQ sections do this (regression: Sonara draft #136606 rendered the first FAQ bullet inside the <h2>)", () => {
+    const result = markdownToHtml("## الأسئلة المتداولة (FAQ)\n- **سؤال؟**\n  جواب.");
+    expect(result).toBe("<h2>الأسئلة المتداولة (FAQ)</h2>\n<ul><li><strong>سؤال؟</strong></li><li>  جواب.</li></ul>");
+  });
+
+  it("splits a heading from plain-text lines that immediately follow it with no blank line", () => {
+    const result = markdownToHtml("## Heading\nBody line one\nBody line two");
+    expect(result).toBe("<h2>Heading</h2>\n<p>Body line one Body line two</p>");
+  });
+
+  it("handles multiple heading+list groups within the same blank-line-delimited block", () => {
+    const result = markdownToHtml("## First\n- a\n## Second\n- b");
+    expect(result).toBe("<h2>First</h2>\n<ul><li>a</li></ul>\n<h2>Second</h2>\n<ul><li>b</li></ul>");
+  });
+
   it("escapes HTML-significant characters so markdown input cannot inject markup", () => {
     const result = markdownToHtml("<script>alert(1)</script>");
     expect(result).not.toContain("<script>");
