@@ -54,7 +54,8 @@ describe("buildAttributionFooter", () => {
   it("contains the exact required Arabic attribution text", () => {
     const footer = buildAttributionFooter(articleUrl, homepageUrl);
     expect(footer).toContain("المصدر:");
-    expect(footer).toContain("للمزيد من التحليلات وأخبار الذكاء الاصطناعي:");
+    expect(footer).toContain("للمزيد من أخبار وتحليلات الذكاء الاصطناعي، ");
+    expect(footer).toContain("اقرأ المزيد على Lumiq");
   });
 
   it("links 'Lumiq' (not لوميك) directly to the UTM-tagged original article URL", () => {
@@ -67,11 +68,22 @@ describe("buildAttributionFooter", () => {
     expect(footer).not.toContain("لوميك");
   });
 
-  it("includes the UTM-tagged homepage URL as a second, separate visible link", () => {
+  it("links 'اقرأ المزيد على Lumiq' to the UTM-tagged homepage URL as clean anchor text", () => {
     const footer = buildAttributionFooter(articleUrl, homepageUrl);
     const escapedHomepageUrl = homepageUrl.replace(/&/g, "&amp;");
-    expect(footer).toContain(`<a href="${escapedHomepageUrl}"`);
-    expect(footer).toContain(`>${escapedHomepageUrl}<`);
+    expect(footer).toContain(`<a href="${escapedHomepageUrl}" target="_blank" rel="noopener">اقرأ المزيد على Lumiq</a>`);
+  });
+
+  it("never renders a raw URL or UTM query string as visible anchor text", () => {
+    const footer = buildAttributionFooter(articleUrl, homepageUrl);
+    // Strip every href="..." attribute value, then check what's left (the
+    // visible text and remaining markup) contains no raw URL/UTM tokens —
+    // those are only allowed to live inside an href, never as visible text.
+    const withoutHrefValues = footer.replace(/href="[^"]*"/g, 'href="…"');
+    expect(withoutHrefValues).not.toContain("https://");
+    expect(withoutHrefValues).not.toContain("http://");
+    expect(withoutHrefValues).not.toContain("?utm_");
+    expect(withoutHrefValues).not.toMatch(/utm_source|utm_medium|utm_campaign|utm_content/);
   });
 
   it("does not contain 'بالتعاون مع' or any sponsorship wording", () => {

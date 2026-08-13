@@ -100,21 +100,20 @@ export function markdownToHtml(markdown: string): string {
  * Builds the required Arabic attribution footer:
  *
  *   ―――――――――――――――
- *   المصدر:
- *   Lumiq
- *   للمزيد من التحليلات وأخبار الذكاء الاصطناعي:
- *   https://www.lumiq.news/?utm_source=...
+ *   المصدر: Lumiq
+ *   للمزيد من أخبار وتحليلات الذكاء الاصطناعي، اقرأ المزيد على Lumiq
  *
- * "Lumiq" links to the specific original article (articleUrl); the visible
- * homepage URL is a second, separate link (homepageUrl) to the general
- * site — both URLs are expected to already carry GA4 UTM parameters,
- * built by the caller via lib/distribution/attribution.ts, since this
- * module has no knowledge of which partner is publishing. No sponsorship
- * language, no "بالتعاون مع", no hidden links — every href is visibly
- * rendered as anchor text or a literal URL in the body text, and both
- * links carry rel="noopener" (an external outbound link from a partner
- * site) without nofollow, since this is genuine source attribution rather
- * than a link scheme.
+ * "Lumiq" in the source line links to the specific original article
+ * (articleUrl); "اقرأ المزيد على Lumiq" is a second, separate link
+ * (homepageUrl) to the general site — both URLs are expected to already
+ * carry GA4 UTM parameters, built by the caller via
+ * lib/distribution/attribution.ts, since this module has no knowledge of
+ * which partner is publishing. Anchor text is always clean Arabic/"Lumiq"
+ * wording — the raw URL (and therefore its UTM query string) is never
+ * rendered as visible text, only as the href. No sponsorship language, no
+ * "بالتعاون مع", no hidden links — both links carry rel="noopener" (an
+ * external outbound link from a partner site) without nofollow, since
+ * this is genuine source attribution rather than a link scheme.
  *
  * `articleUrl`/`homepageUrl` must be absolute https URLs already produced
  * by the caller — this function does not construct or validate them
@@ -128,10 +127,8 @@ export function buildAttributionFooter(articleUrl: string, homepageUrl: string):
   return [
     "<hr />",
     "<p><em>",
-    `المصدر:<br />`,
-    `<a href="${safeArticleUrl}" target="_blank" rel="noopener">Lumiq</a><br />`,
-    "للمزيد من التحليلات وأخبار الذكاء الاصطناعي:<br />",
-    `<a href="${safeHomepageUrl}" target="_blank" rel="noopener">${safeHomepageUrl}</a>`,
+    `المصدر: <a href="${safeArticleUrl}" target="_blank" rel="noopener">Lumiq</a><br />`,
+    `للمزيد من أخبار وتحليلات الذكاء الاصطناعي، <a href="${safeHomepageUrl}" target="_blank" rel="noopener">اقرأ المزيد على Lumiq</a>`,
     "</em></p>",
   ].join("\n");
 }
