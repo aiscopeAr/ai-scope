@@ -11,6 +11,6 @@
     { "path": "/api/cron/daily-stats",      "schedule": "0 1 * * *"  },
     { "path": "/api/cron/weekly-report",    "schedule": "0 8 * * 1"  },
     { "path": "/api/cron/monthly-tutorial", "schedule": "0 10 1 * *" },
-    { "path": "/api/cron/distribution-queue", "schedule": "0 */2 * * *"  }
+    { "path": "/api/cron/distribution-queue", "schedule": "0 10 * * *"  }
   ]
 }
