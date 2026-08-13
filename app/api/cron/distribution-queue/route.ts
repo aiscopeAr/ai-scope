@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getFormatter } from "@/lib/distribution/formatter";
 import { getTransport } from "@/lib/distribution/transport";
+import { registerWordPressTarget } from "@/lib/distribution/wordpress/register";
 import { getTargetWithCredentials } from "@/lib/distribution/persistence/target";
 import {
   recoverStaleSendingTasks,
@@ -18,6 +19,12 @@ import type { DistributionError } from "@/lib/distribution/types";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+
+// Registers the WordPress Formatter/Transport into the Distribution
+// Engine's registries — idempotent, so safe on every invocation. Without
+// this, getFormatter/getTransport("wordpress") return undefined and every
+// WordPress task fails with "No Formatter/Transport registered".
+registerWordPressTarget();
 
 /** Same batch size as social-queue — bounds one invocation's work so it
  *  stays well within maxDuration regardless of external API latency. */

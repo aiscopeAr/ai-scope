@@ -32,6 +32,10 @@ vi.mock("@/lib/distribution/transport", () => ({
   getTransport: (...args: unknown[]) => getTransport(...args),
 }));
 
+vi.mock("@/lib/distribution/wordpress/register", () => ({
+  registerWordPressTarget: vi.fn(),
+}));
+
 vi.mock("@/lib/db", () => ({
   prisma: {
     review: {
