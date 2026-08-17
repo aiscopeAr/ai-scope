@@ -14,6 +14,7 @@ const primaryNav = [
 ];
 
 const moreNav = [
+  { href: "/tools",        label: "أدوات",            icon: "✎" },
   { href: "/author/zayd",  label: "زيد",             icon: "✦" },
   { href: "/author/lina",  label: "لينا",             icon: "✦" },
   { href: "/author/tariq", label: "طارق",             icon: "✦" },
