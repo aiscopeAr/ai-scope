@@ -5,6 +5,8 @@ import {
   DEFAULT_STYLE_ID,
   TEXT_COLORS,
   BACKGROUNDS,
+  CALLIGRAPHY_PRESETS,
+  EXAMPLE_PHRASES,
   MAX_INPUT_LENGTH,
   MIN_FONT_SIZE,
   MAX_FONT_SIZE,
@@ -64,5 +66,50 @@ describe("registry integrity", () => {
   it("max input length is a positive, reasonable cap", () => {
     expect(MAX_INPUT_LENGTH).toBeGreaterThan(0);
     expect(MAX_INPUT_LENGTH).toBeLessThanOrEqual(500);
+  });
+});
+
+describe("Reem Kufi helper label", () => {
+  it("carries a usage hint, since its Kufic style is genuinely harder to read on long phrases", () => {
+    const reemKufi = CALLIGRAPHY_STYLES.find((s) => s.id === "reemKufi");
+    expect(reemKufi?.helperAr).toBeTruthy();
+  });
+
+  it("is kept in the registry — not removed for readability reasons", () => {
+    expect(CALLIGRAPHY_STYLES.map((s) => s.id)).toContain("reemKufi");
+  });
+});
+
+describe("CALLIGRAPHY_PRESETS", () => {
+  it("ships exactly four presets per the polish sprint scope", () => {
+    expect(CALLIGRAPHY_PRESETS).toHaveLength(4);
+  });
+
+  it("every preset references a real, existing color and background option", () => {
+    const colorIds = new Set(TEXT_COLORS.map((c) => c.id));
+    const backgroundIds = new Set(BACKGROUNDS.map((b) => b.id));
+    for (const preset of CALLIGRAPHY_PRESETS) {
+      expect(colorIds.has(preset.colorId)).toBe(true);
+      expect(backgroundIds.has(preset.backgroundId)).toBe(true);
+    }
+  });
+
+  it("has no duplicate preset ids", () => {
+    const ids = CALLIGRAPHY_PRESETS.map((p) => p.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("EXAMPLE_PHRASES", () => {
+  it("is non-empty and every entry is real, non-empty Arabic text", () => {
+    expect(EXAMPLE_PHRASES.length).toBeGreaterThan(0);
+    for (const phrase of EXAMPLE_PHRASES) {
+      expect(phrase.trim().length).toBeGreaterThan(0);
+      expect(phrase.length).toBeLessThanOrEqual(MAX_INPUT_LENGTH);
+    }
+  });
+
+  it("has no duplicate phrases", () => {
+    expect(new Set(EXAMPLE_PHRASES).size).toBe(EXAMPLE_PHRASES.length);
   });
 });

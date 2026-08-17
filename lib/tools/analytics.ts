@@ -23,6 +23,10 @@ export function trackToolExport(toolSlug: string, exportFormat: "png") {
   track("tool_export", { tool_slug: toolSlug, export_format: exportFormat });
 }
 
+export function trackToolPresetChange(toolSlug: string, presetId: string) {
+  track("tool_preset_change", { tool_slug: toolSlug, preset_id: presetId });
+}
+
 export function trackToolShare(toolSlug: string, method: "web_share" | "copy_link") {
   track("tool_share", { tool_slug: toolSlug, method });
 }

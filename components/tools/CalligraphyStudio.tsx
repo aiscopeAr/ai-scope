@@ -5,6 +5,8 @@ import {
   CALLIGRAPHY_STYLES,
   TEXT_COLORS,
   BACKGROUNDS,
+  CALLIGRAPHY_PRESETS,
+  EXAMPLE_PHRASES,
   DEFAULT_STYLE_ID,
   DEFAULT_TEXT_COLOR_ID,
   DEFAULT_BACKGROUND_ID,
@@ -16,25 +18,41 @@ import {
   MAX_INPUT_LENGTH,
   getStyleById,
   type AlignmentId,
+  type TextColorId,
+  type BackgroundId,
 } from "@/lib/tools/calligraphy-styles";
 import { buildCalligraphyExportFilename } from "@/lib/tools/export-filename";
 import {
   trackToolStyleChange,
   trackToolExport,
   trackToolShare,
+  trackToolPresetChange,
 } from "@/lib/tools/analytics";
 
 const TOOL_SLUG = "arabic-calligraphy";
 
 type ExportState = "idle" | "exporting" | "done" | "error";
 
+// Fixed light-neutral checker (not a theme-relative opacity over
+// --bg-surface) so "transparent" reads as visibly transparent in both
+// light and dark mode — an opacity-based checker over a dark surface was
+// nearly invisible and made the default black swatch unreadable against it.
+const CHECKERBOARD_STYLE = {
+  backgroundColor: "#e8e8e8",
+  backgroundImage:
+    "linear-gradient(45deg, #ffffff 25%, transparent 25%), linear-gradient(-45deg, #ffffff 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ffffff 75%), linear-gradient(-45deg, transparent 75%, #ffffff 75%)",
+  backgroundSize: "20px 20px",
+  backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0px",
+};
+
 export default function CalligraphyStudio() {
   const [text, setText] = useState(DEFAULT_TEXT);
   const [styleId, setStyleId] = useState(DEFAULT_STYLE_ID);
   const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
-  const [colorId, setColorId] = useState(DEFAULT_TEXT_COLOR_ID);
-  const [backgroundId, setBackgroundId] = useState(DEFAULT_BACKGROUND_ID);
+  const [colorId, setColorId] = useState<TextColorId>(DEFAULT_TEXT_COLOR_ID);
+  const [backgroundId, setBackgroundId] = useState<BackgroundId>(DEFAULT_BACKGROUND_ID);
   const [alignment, setAlignment] = useState<AlignmentId>(DEFAULT_ALIGNMENT);
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [exportState, setExportState] = useState<ExportState>("idle");
   const [showSharePrompt, setShowSharePrompt] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -44,10 +62,39 @@ export default function CalligraphyStudio() {
   const style = getStyleById(styleId);
   const color = TEXT_COLORS.find((c) => c.id === colorId) ?? TEXT_COLORS[0];
   const background = BACKGROUNDS.find((b) => b.id === backgroundId) ?? BACKGROUNDS[0];
+  const previewText = text.trim() || "اكتب نصًا لمعاينته هنا";
 
   function handleStyleChange(id: typeof styleId) {
     startTransition(() => setStyleId(id));
     trackToolStyleChange(TOOL_SLUG, id);
+  }
+
+  function handlePresetSelect(presetId: string) {
+    const preset = CALLIGRAPHY_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+    startTransition(() => {
+      setColorId(preset.colorId);
+      setBackgroundId(preset.backgroundId);
+      setActivePresetId(presetId);
+    });
+    trackToolPresetChange(TOOL_SLUG, presetId);
+  }
+
+  // Manual color/background changes stop treating any preset as "active" —
+  // the preset row is a shortcut into the same controls, not a separate
+  // mode, so its highlight must only track an exact match, not a sticky flag.
+  function handleColorSelect(id: TextColorId) {
+    setColorId(id);
+    setActivePresetId(null);
+  }
+
+  function handleBackgroundSelect(id: BackgroundId) {
+    setBackgroundId(id);
+    setActivePresetId(null);
+  }
+
+  function handleExampleClick(phrase: string) {
+    setText(phrase);
   }
 
   async function handleExport() {
@@ -86,98 +133,190 @@ export default function CalligraphyStudio() {
     }
   }
 
-  // Fixed light/dark-neutral squares (not a theme-relative opacity over
-  // --bg-surface) so the "transparent" checkerboard stays visibly a
-  // checkerboard in both themes — an opacity-based checker over the dark
-  // surface color was nearly invisible in dark mode, which also made the
-  // default black text swatch unreadable against it.
-  const checkerboardBg =
-    background.value === null
-      ? {
-          backgroundColor: "#e8e8e8",
-          backgroundImage:
-            "linear-gradient(45deg, #ffffff 25%, transparent 25%), linear-gradient(-45deg, #ffffff 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ffffff 75%), linear-gradient(-45deg, transparent 75%, #ffffff 75%)",
-          backgroundSize: "20px 20px",
-          backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0px",
-        }
-      : { backgroundColor: background.value ?? undefined };
+  const checkerboardBg = background.value === null ? CHECKERBOARD_STYLE : { backgroundColor: background.value };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_1.2fr]" dir="rtl">
-      {/* Controls */}
-      <div className="order-2 flex flex-col gap-6 lg:order-1">
-        <div>
-          <label htmlFor="calligraphy-text" className="mb-2 block text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-            النص
-          </label>
-          <textarea
-            id="calligraphy-text"
-            value={text}
-            onChange={(e) => setText(e.target.value.slice(0, MAX_INPUT_LENGTH))}
-            dir="rtl"
-            rows={3}
-            maxLength={MAX_INPUT_LENGTH}
-            placeholder="اكتب اسمًا أو عبارة..."
-            className="w-full resize-none rounded-[6px] border px-4 py-3 text-lg outline-none transition focus:ring-2"
+    <div className="calligraphy-grid grid gap-8 lg:items-start" dir="rtl">
+      {/* grid-template-areas is parsed left-to-right regardless of dir —
+          but under dir="rtl" the FIRST named column still renders on the
+          visual RIGHT (RTL's reading-start side), confirmed empirically
+          by screenshot. So listing "preview" first here is already
+          correct for an RTL reader; do not swap the area-name order to
+          "chase" the visual side, it moves the wrong direction. */}
+      <style>{`
+        .calligraphy-grid {
+          grid-template-areas:
+            "preview"
+            "text"
+            "styles"
+            "presets"
+            "size"
+            "controls"
+            "download"
+            "examples"
+            "privacy";
+        }
+        @media (min-width: 1024px) {
+          .calligraphy-grid {
+            grid-template-columns: 1.6fr 1fr;
+            grid-template-areas:
+              "preview text"
+              "preview styles"
+              "preview presets"
+              "preview size"
+              "preview controls"
+              "preview download"
+              "examples examples"
+              "privacy privacy";
+          }
+        }
+      `}</style>
+      {/* ── Preview — the visual hero. Mobile: first. Desktop: large left column spanning every control row. ── */}
+      <div
+        style={{ gridArea: "preview", borderColor: "var(--border-subtle)", ...checkerboardBg }}
+        className="flex min-h-[280px] items-center justify-center overflow-hidden rounded-[8px] border p-6 shadow-editorial sm:min-h-[360px] lg:sticky lg:top-20 lg:min-h-[480px] lg:self-start"
+      >
+        <div
+          ref={previewRef}
+          dir="rtl"
+          className="flex w-full items-center justify-center px-6 py-10"
+          style={background.value === null ? undefined : { backgroundColor: background.value }}
+        >
+          <p
+            className="w-full whitespace-pre-wrap break-words"
             style={{
-              borderColor: "var(--border-medium)",
-              backgroundColor: "var(--bg-surface)",
-              color: "var(--text-primary)",
-              fontFamily: "var(--font-sans)",
+              fontFamily: `var(${style.cssVar})`,
+              fontSize: `${fontSize}px`,
+              lineHeight: style.lineHeight,
+              color: color.value,
+              textAlign: alignment,
+              opacity: isPending ? 0.6 : 1,
+              transition: "opacity 0.15s ease",
             }}
-          />
-          {/* dir="ltr" + isolate: without it, the RTL context reorders
-              "14 / 200" into "200 / 14" via the browser's bidi algorithm */}
-          <p className="mt-1 text-xs" dir="ltr" style={{ color: "var(--text-muted)", unicodeBidi: "isolate" }}>
-            {text.length} / {MAX_INPUT_LENGTH}
+          >
+            {previewText}
           </p>
         </div>
+      </div>
 
-        <fieldset>
-          <legend className="mb-2 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>النمط</legend>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {CALLIGRAPHY_STYLES.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => handleStyleChange(s.id)}
-                aria-pressed={s.id === styleId}
-                className="rounded-[6px] border px-3 py-3 text-center transition"
-                style={{
-                  borderColor: s.id === styleId ? "var(--accent)" : "var(--border-subtle)",
-                  backgroundColor: s.id === styleId ? "var(--accent-bg)" : "var(--bg-surface)",
-                  color: "var(--text-primary)",
-                }}
+      {/* ── Text input ── */}
+      <div style={{ gridArea: "text" }}>
+        <label htmlFor="calligraphy-text" className="mb-2 block text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+          النص
+        </label>
+        <textarea
+          id="calligraphy-text"
+          value={text}
+          onChange={(e) => setText(e.target.value.slice(0, MAX_INPUT_LENGTH))}
+          dir="rtl"
+          rows={2}
+          maxLength={MAX_INPUT_LENGTH}
+          placeholder="اكتب اسمًا أو عبارة..."
+          className="w-full resize-none rounded-[6px] border px-4 py-3 text-lg outline-none transition focus:ring-2"
+          style={{
+            borderColor: "var(--border-medium)",
+            backgroundColor: "var(--bg-surface)",
+            color: "var(--text-primary)",
+            fontFamily: "var(--font-sans)",
+          }}
+        />
+        {/* dir="ltr" + isolate: without it, the RTL context reorders
+            "14 / 200" into "200 / 14" via the browser's bidi algorithm */}
+        <p className="mt-1 text-xs" dir="ltr" style={{ color: "var(--text-muted)", unicodeBidi: "isolate" }}>
+          {text.length} / {MAX_INPUT_LENGTH}
+        </p>
+      </div>
+
+      {/* ── Visual style selector — each card renders the user's own text ── */}
+      <fieldset style={{ gridArea: "styles" }}>
+        <legend className="mb-3 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+          اختر الخط الذي يعجبك
+        </legend>
+        <div className="grid grid-cols-2 gap-2.5">
+          {CALLIGRAPHY_STYLES.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => handleStyleChange(s.id)}
+              aria-pressed={s.id === styleId}
+              className="flex min-h-[92px] flex-col items-center justify-center gap-0.5 rounded-[6px] border px-2 py-3 text-center transition"
+              style={{
+                borderColor: s.id === styleId ? "var(--accent)" : "var(--border-subtle)",
+                borderWidth: s.id === styleId ? "2px" : "1px",
+                backgroundColor: s.id === styleId ? "var(--accent-bg)" : "var(--bg-surface)",
+                color: "var(--text-primary)",
+              }}
+            >
+              <span
+                className="line-clamp-2 block w-full break-words text-base leading-tight"
+                style={{ fontFamily: `var(${s.cssVar})` }}
               >
-                <span
-                  className="block truncate text-xl leading-none"
-                  style={{ fontFamily: `var(${s.cssVar})` }}
-                >
-                  {text.trim() || "أبجد"}
+                {text.trim() || "أبجد"}
+              </span>
+              <span className="mt-1 block text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>
+                {s.labelAr}
+              </span>
+              {s.helperAr && (
+                <span className="block text-[10px] leading-tight" style={{ color: "var(--text-muted)" }}>
+                  {s.helperAr}
                 </span>
-                <span className="mt-1.5 block text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>
-                  {s.labelAr}
-                </span>
-              </button>
-            ))}
-          </div>
-        </fieldset>
-
-        <div>
-          <label htmlFor="calligraphy-size" className="mb-2 block text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-            الحجم
-          </label>
-          <input
-            id="calligraphy-size"
-            type="range"
-            min={MIN_FONT_SIZE}
-            max={MAX_FONT_SIZE}
-            value={fontSize}
-            onChange={(e) => setFontSize(Number(e.target.value))}
-            className="w-full accent-[var(--accent)]"
-          />
+              )}
+            </button>
+          ))}
         </div>
+      </fieldset>
 
+      {/* ── Quick presets ── */}
+      <fieldset style={{ gridArea: "presets" }}>
+        <legend className="mb-2 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+          تنسيقات جاهزة
+        </legend>
+        <div className="flex flex-wrap gap-2">
+          {CALLIGRAPHY_PRESETS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => handlePresetSelect(p.id)}
+              aria-pressed={activePresetId === p.id}
+              className="flex items-center gap-2 rounded-[6px] border px-3 py-2 text-sm font-medium transition"
+              style={{
+                borderColor: activePresetId === p.id ? "var(--accent)" : "var(--border-subtle)",
+                backgroundColor: activePresetId === p.id ? "var(--accent-bg)" : "var(--bg-surface)",
+                color: "var(--text-primary)",
+              }}
+            >
+              <span
+                aria-hidden="true"
+                className="h-4 w-4 shrink-0 rounded-full border"
+                style={{
+                  borderColor: "var(--border-medium)",
+                  backgroundColor: TEXT_COLORS.find((c) => c.id === p.colorId)?.value,
+                }}
+              />
+              {p.labelAr}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+
+      {/* ── Size ── */}
+      <div style={{ gridArea: "size" }}>
+        <label htmlFor="calligraphy-size" className="mb-2 block text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+          الحجم
+        </label>
+        <input
+          id="calligraphy-size"
+          type="range"
+          min={MIN_FONT_SIZE}
+          max={MAX_FONT_SIZE}
+          value={fontSize}
+          onChange={(e) => setFontSize(Number(e.target.value))}
+          className="w-full accent-[var(--accent)]"
+        />
+      </div>
+
+      {/* ── Manual color / background / alignment — still available after a preset ── */}
+      <div className="grid gap-6 sm:grid-cols-3 lg:grid-cols-1" style={{ gridArea: "controls" }}>
         <fieldset>
           <legend className="mb-2 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>لون النص</legend>
           <div className="flex flex-wrap gap-2">
@@ -185,7 +324,7 @@ export default function CalligraphyStudio() {
               <button
                 key={c.id}
                 type="button"
-                onClick={() => setColorId(c.id)}
+                onClick={() => handleColorSelect(c.id)}
                 aria-label={c.labelAr}
                 aria-pressed={c.id === colorId}
                 title={c.labelAr}
@@ -201,12 +340,12 @@ export default function CalligraphyStudio() {
 
         <fieldset>
           <legend className="mb-2 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>الخلفية</legend>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {BACKGROUNDS.map((b) => (
               <button
                 key={b.id}
                 type="button"
-                onClick={() => setBackgroundId(b.id)}
+                onClick={() => handleBackgroundSelect(b.id)}
                 aria-pressed={b.id === backgroundId}
                 className="rounded-[6px] border px-4 py-2 text-sm font-medium transition"
                 style={{
@@ -246,25 +385,31 @@ export default function CalligraphyStudio() {
             ))}
           </div>
         </fieldset>
+      </div>
 
+      {/* ── Download ── */}
+      <div style={{ gridArea: "download" }}>
         <button
           type="button"
           onClick={handleExport}
           disabled={!text.trim() || exportState === "exporting"}
-          className="mt-2 rounded-[6px] px-6 py-3.5 text-base font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-[6px] px-6 py-3.5 text-base font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
           style={{ backgroundColor: "var(--accent)" }}
         >
           {exportState === "exporting" ? "جارٍ التحميل..." : "تحميل PNG"}
         </button>
+        <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
+          بخلفية شفافة وجودة عالية
+        </p>
 
         {exportState === "error" && (
-          <p role="alert" className="text-sm" style={{ color: "var(--accent)" }}>
+          <p role="alert" className="mt-2 text-sm" style={{ color: "var(--accent)" }}>
             تعذّر إنشاء الصورة. جرّب مرة أخرى، أو أعد تحميل الصفحة إذا استمرت المشكلة.
           </p>
         )}
 
         {showSharePrompt && exportState === "done" && (
-          <div className="rounded-[6px] border p-4" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }}>
+          <div className="mt-4 rounded-[6px] border p-4" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }}>
             <p className="mb-2 text-sm font-medium" style={{ color: "var(--text-primary)" }}>
               أعجبك التصميم؟
             </p>
@@ -281,45 +426,31 @@ export default function CalligraphyStudio() {
             </button>
           </div>
         )}
-
-        <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          خصوصيتك محفوظة — النص والتصميم يتمان مباشرة على جهازك، ولا يُرفعان إلى أي خادم.
-        </p>
       </div>
 
-      {/* Preview */}
-      <div className="order-1 lg:order-2">
-        <div
-          className="flex min-h-[320px] items-center justify-center overflow-hidden rounded-[6px] border p-8 sm:min-h-[420px]"
-          style={{ borderColor: "var(--border-subtle)", ...checkerboardBg }}
-        >
-          <div
-            ref={previewRef}
-            dir="rtl"
-            className="flex w-full items-center justify-center px-6 py-10"
-            style={
-              background.value === null
-                ? undefined
-                : { backgroundColor: background.value }
-            }
-          >
-            <p
-              className="w-full whitespace-pre-wrap break-words"
-              style={{
-                fontFamily: `var(${style.cssVar})`,
-                fontSize: `${fontSize}px`,
-                lineHeight: style.lineHeight,
-                color: color.value,
-                textAlign: alignment,
-                opacity: isPending ? 0.6 : 1,
-                transition: "opacity 0.15s ease",
-              }}
+      {/* ── Clickable examples ── */}
+      <div style={{ gridArea: "examples" }}>
+        <h2 className="mb-2.5 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+          أفكار لتجربة الأداة
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {EXAMPLE_PHRASES.map((phrase) => (
+            <button
+              key={phrase}
+              type="button"
+              onClick={() => handleExampleClick(phrase)}
+              className="rounded-[3px] px-3 py-1.5 text-sm font-medium transition hover:opacity-80"
+              style={{ backgroundColor: "var(--bg-subtle)", color: "var(--text-secondary)" }}
             >
-              {text.trim() || "اكتب نصًا لمعاينته هنا"}
-            </p>
-          </div>
+              {phrase}
+            </button>
+          ))}
         </div>
       </div>
+
+      <p className="text-xs leading-relaxed" style={{ gridArea: "privacy", color: "var(--text-muted)" }}>
+        خصوصيتك محفوظة — النص والتصميم يتمان مباشرة على جهازك، ولا يُرفعان إلى أي خادم.
+      </p>
     </div>
   );
 }

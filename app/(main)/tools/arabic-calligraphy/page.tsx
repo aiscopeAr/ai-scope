@@ -83,10 +83,10 @@ export default function ArabicCalligraphyPage() {
           {tool.nameAr}
         </h1>
         <p className="mb-2 text-lg font-medium" style={{ color: "var(--text-primary)" }}>
-          حوّل كلماتك إلى تصميم عربي جميل
+          اكتب اسمك بالخط العربي وحمّله PNG مجانًا
         </p>
         <p className="mx-auto max-w-xl text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-          اكتب اسمًا، عبارة أو تهنئة، واختر النمط الذي يناسبك. عاين التصميم مباشرة وحمّله كصورة PNG بخلفية شفافة.
+          اكتب اسمك أو عبارتك، اختر الخط والتنسيق المناسب، ثم حمّل التصميم بخلفية شفافة وجاهزة للاستخدام.
         </p>
       </header>
 

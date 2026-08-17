@@ -8,6 +8,7 @@ import {
   trackToolStyleChange,
   trackToolExport,
   trackToolShare,
+  trackToolPresetChange,
 } from "./analytics";
 
 const mockedTrack = vi.mocked(track);
@@ -45,11 +46,19 @@ describe("tool analytics — never forwards free text", () => {
     });
   });
 
+  it("trackToolPresetChange sends only the tool slug and preset id, never the resulting color/background text", () => {
+    trackToolPresetChange("arabic-calligraphy", "gold-elegant");
+    const [, payload] = mockedTrack.mock.calls[0];
+    expect(payload).toEqual({ tool_slug: "arabic-calligraphy", preset_id: "gold-elegant" });
+    expect(Object.keys(payload as object)).toEqual(["tool_slug", "preset_id"]);
+  });
+
   it("every event payload is a small closed set of fields — no arbitrary/free-text key could have been added silently", () => {
     trackToolView("arabic-calligraphy");
     trackToolStyleChange("arabic-calligraphy", "amiri");
     trackToolExport("arabic-calligraphy", "png");
     trackToolShare("arabic-calligraphy", "copy_link");
+    trackToolPresetChange("arabic-calligraphy", "black-transparent");
 
     for (const call of mockedTrack.mock.calls) {
       const payload = call[1] as Record<string, unknown>;
