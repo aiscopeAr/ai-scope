@@ -33,9 +33,11 @@ function extractOutputUrl(output: unknown): string | null {
   return null;
 }
 
+type StageStatus = "start" | "prediction_created" | "processing" | "success" | "failed";
+
 function logStage(
   stage: string,
-  status: "start" | "success" | "failed",
+  status: StageStatus,
   ctx: ImagePipelineContext,
   extra?: string,
 ) {
@@ -49,6 +51,68 @@ function logStage(
   console.error(`[image-pipeline] ${parts.join(" ")}`);
 }
 
+const POLL_INTERVAL_MS = 500;
+const POLL_TIMEOUT_MS = 120_000;
+
+const TERMINAL_STATUSES = new Set(["succeeded", "failed", "canceled", "aborted"]);
+
+/**
+ * Create a prediction and poll replicate.predictions.get() directly until a
+ * genuine terminal status is reached, instead of relying on replicate.run()'s
+ * timing behavior. run() proved unreliable in production twice: its
+ * server-side blocking wait can mistake "processing" for done (fixed by
+ * requesting poll mode), and even in poll mode it returned before the
+ * prediction had actually reached "succeeded" — a race inside run() itself
+ * that isn't visible or controllable from the outside. Owning the create/get
+ * loop directly removes that dependency entirely: output is read only after
+ * this code has observed status === "succeeded" with its own eyes.
+ */
+async function pollUntilTerminal(
+  replicate: Replicate,
+  predictionId: string,
+  ctx: ImagePipelineContext,
+): Promise<{ status: string; output: unknown; error: unknown }> {
+  const deadline = Date.now() + POLL_TIMEOUT_MS;
+  let lastStatus: string | null = null;
+
+  for (;;) {
+    const prediction = await replicate.predictions.get(predictionId);
+
+    // Log status transitions only — never one line per 500ms poll.
+    if (prediction.status !== lastStatus) {
+      lastStatus = prediction.status;
+      if (prediction.status === "succeeded") {
+        logStage("replicate_generation", "success", ctx, `prediction_id=${predictionId}`);
+      } else if (prediction.status === "processing") {
+        logStage("replicate_generation", "processing", ctx, `prediction_id=${predictionId}`);
+      } else if (prediction.status === "failed" || prediction.status === "canceled" || prediction.status === "aborted") {
+        logStage(
+          "replicate_generation",
+          "failed",
+          ctx,
+          `prediction_id=${predictionId} status=${prediction.status}`,
+        );
+      }
+    }
+
+    if (TERMINAL_STATUSES.has(prediction.status)) {
+      return { status: prediction.status, output: prediction.output, error: prediction.error };
+    }
+
+    if (Date.now() >= deadline) {
+      logStage(
+        "replicate_generation",
+        "failed",
+        ctx,
+        `prediction_id=${predictionId} reason=timeout`,
+      );
+      return { status: "timeout", output: null, error: "polling timed out" };
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+  }
+}
+
 export async function generateReviewImage(
   prompt: string,
   ctx: ImagePipelineContext = {},
@@ -59,12 +123,8 @@ export async function generateReviewImage(
     const replicate = getClient();
     const safePrompt = `${prompt}, digital art, dark background, cinematic lighting, high quality, no text, no watermark`;
 
-    // Poll for a true terminal state instead of the default blocking mode:
-    // block mode's server-side synchronous wait can return early while the
-    // prediction is still "processing" (output still null) if generation
-    // takes longer than its hold window, which run() otherwise mistakes for
-    // completion.
-    const output = await replicate.run("black-forest-labs/flux-schnell", {
+    const prediction = await replicate.predictions.create({
+      model: "black-forest-labs/flux-schnell",
       input: {
         prompt: safePrompt,
         num_outputs: 1,
@@ -73,15 +133,32 @@ export async function generateReviewImage(
         output_quality: 80,
         go_fast: true,
       },
-      wait: { mode: "poll", interval: 500 },
+      wait: false,
     });
+    logStage("replicate_generation", "prediction_created", ctx, `prediction_id=${prediction.id}`);
 
-    replicateUrl = extractOutputUrl(output);
-    if (!replicateUrl) {
-      logStage("replicate_generation", "failed", ctx, "error=no output URL in response");
+    // pollUntilTerminal only returns once it has directly observed a terminal
+    // status via predictions.get() — output is never read before that.
+    const result = await pollUntilTerminal(replicate, prediction.id, ctx);
+
+    if (result.status === "timeout") {
       return null;
     }
-    logStage("replicate_generation", "success", ctx);
+    if (result.status !== "succeeded") {
+      // pollUntilTerminal already logged the failed/canceled/aborted transition.
+      return null;
+    }
+
+    replicateUrl = extractOutputUrl(result.output);
+    if (!replicateUrl) {
+      logStage(
+        "replicate_generation",
+        "failed",
+        ctx,
+        `prediction_id=${prediction.id} error=succeeded with no output URL`,
+      );
+      return null;
+    }
   } catch (err) {
     logStage(
       "replicate_generation",

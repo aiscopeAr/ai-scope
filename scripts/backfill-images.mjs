@@ -51,11 +51,33 @@ function extractOutputUrl(output) {
   return null;
 }
 
+const POLL_INTERVAL_MS = 500;
+const POLL_TIMEOUT_MS = 120_000;
+const TERMINAL_STATUSES = new Set(["succeeded", "failed", "canceled", "aborted"]);
+
+// Explicit create -> poll get() lifecycle, matching lib/images.ts. Do not use
+// replicate.run() — even in poll mode it was observed in production to
+// return before the prediction had actually reached "succeeded", a race
+// inside run() itself. Reading prediction.output only after this loop
+// directly observes status === "succeeded" removes that dependency.
+async function pollUntilTerminal(replicate, predictionId) {
+  const deadline = Date.now() + POLL_TIMEOUT_MS;
+  for (;;) {
+    const prediction = await replicate.predictions.get(predictionId);
+    if (TERMINAL_STATUSES.has(prediction.status)) {
+      return { status: prediction.status, output: prediction.output, error: prediction.error };
+    }
+    if (Date.now() >= deadline) {
+      return { status: "timeout", output: null, error: "polling timed out" };
+    }
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+  }
+}
+
 async function generateImage(prompt) {
   const replicate = createReplicateClient();
-  // Poll for a true terminal state — default block mode can return early
-  // while the prediction is still "processing" (output still null).
-  const output = await replicate.run("black-forest-labs/flux-schnell", {
+  const prediction = await replicate.predictions.create({
+    model: "black-forest-labs/flux-schnell",
     input: {
       prompt: `${prompt}, digital art, dark background, cinematic lighting, high quality, no text, no watermark`,
       num_outputs: 1,
@@ -64,11 +86,18 @@ async function generateImage(prompt) {
       output_quality: 80,
       go_fast: true,
     },
-    wait: { mode: "poll", interval: 500 },
+    wait: false,
   });
 
-  const replicateUrl = extractOutputUrl(output);
+  const result = await pollUntilTerminal(replicate, prediction.id);
+  if (result.status !== "succeeded") {
+    console.error(`Replicate prediction ${prediction.id} did not succeed: status=${result.status}`);
+    return null;
+  }
+
+  const replicateUrl = extractOutputUrl(result.output);
   if (!replicateUrl) {
+    console.error(`Replicate prediction ${prediction.id} succeeded with no output URL`);
     return null;
   }
 
