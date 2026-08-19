@@ -35,7 +35,12 @@ export async function POST() {
     return NextResponse.json({ ok: true, message: "No images to fix", fixed: 0 });
   }
 
-  const PROMPTS: Record<string, string> = {
+  // Fallback prompts for old tutorial slugs that predate ReviewQueue's
+  // featuredImagePrompt column. Anything with a real featuredImagePrompt
+  // (the article's actual curated prompt, set at write time) always takes
+  // priority — falling back to a generic prompt produced off-topic images
+  // for reviews that already had a specific one available.
+  const FALLBACK_PROMPTS: Record<string, string> = {
     "what-is-claude-ai-anthropic-guide":            "Claude AI assistant Anthropic, glowing amber neural interface, dark background, futuristic digital art",
     "what-is-microsoft-copilot-productivity-guide": "Microsoft Copilot AI productivity, blue holographic interface, office workspace, cinematic lighting",
     "what-is-midjourney-ai-image-guide":            "Midjourney AI image generation, colorful creative art bursting from screen, dark studio, dramatic lighting",
@@ -52,7 +57,14 @@ export async function POST() {
   const results: { slug: string; status: string; url?: string }[] = [];
 
   for (const review of reviews) {
-    const prompt = PROMPTS[review.slug] ?? `${review.titleAr}, artificial intelligence, futuristic dark background`;
+    const queueItem = await prisma.reviewQueue.findFirst({
+      where: { slug: review.slug },
+      select: { id: true, featuredImagePrompt: true },
+    });
+    const prompt =
+      queueItem?.featuredImagePrompt ??
+      FALLBACK_PROMPTS[review.slug] ??
+      `${review.titleAr}, artificial intelligence, futuristic dark background`;
 
     try {
       const imageUrl = await generateReviewImage(prompt);
@@ -61,6 +73,9 @@ export async function POST() {
         continue;
       }
       await prisma.review.update({ where: { id: review.id }, data: { imageUrl } });
+      if (queueItem) {
+        await prisma.reviewQueue.update({ where: { id: queueItem.id }, data: { imageUrl } });
+      }
       results.push({ slug: review.slug, status: "ok", url: imageUrl });
     } catch (e) {
       results.push({ slug: review.slug, status: "error: " + (e instanceof Error ? e.message : String(e)) });
