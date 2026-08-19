@@ -11,13 +11,19 @@ export async function POST() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Find all published reviews with broken/missing images
+  // Find all published reviews with broken/missing images.
+  // "Stale" includes both the historical replicate.delivery CDN and the
+  // newer signed R2/Cloudflare gateway Replicate switched to — either one
+  // means a temporary Replicate URL got persisted instead of a permanent
+  // Cloudinary one.
   const reviews = await prisma.review.findMany({
     where: {
       published: true,
       OR: [
         { imageUrl: null },
         { imageUrl: { startsWith: "https://replicate.delivery/" } },
+        { imageUrl: { contains: ".replicate.delivery/" } },
+        { imageUrl: { contains: ".r2.cloudflarestorage.com/" } },
       ],
     },
     select: { id: true, slug: true, titleAr: true, imageUrl: true },

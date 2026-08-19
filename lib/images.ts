@@ -34,6 +34,7 @@ function extractOutputUrl(output: unknown): string | null {
 }
 
 export async function generateReviewImage(prompt: string): Promise<string | null> {
+  let replicateUrl: string | null;
   try {
     const replicate = getClient();
     const safePrompt = `${prompt}, digital art, dark background, cinematic lighting, high quality, no text, no watermark`;
@@ -49,26 +50,25 @@ export async function generateReviewImage(prompt: string): Promise<string | null
       },
     });
 
-    const replicateUrl = extractOutputUrl(output);
+    replicateUrl = extractOutputUrl(output);
     if (!replicateUrl) {
-      console.error("[images] Replicate returned no output URL");
+      console.error("[images] stage=replicate_generation error=no output URL in response");
       return null;
     }
-
-    try {
-      const cloudinaryUrl = await uploadImageFromUrl(replicateUrl, "aiscope/reviews");
-      if (cloudinaryUrl) return cloudinaryUrl;
-    } catch (cloudErr) {
-      console.error(
-        "[images] Cloudinary upload failed, falling back to Replicate URL:",
-        cloudErr instanceof Error ? cloudErr.message : cloudErr,
-      );
-    }
-
-    // Fallback to the Replicate URL instead of losing the image entirely.
-    return replicateUrl;
   } catch (err) {
-    console.error("[images] Review image generation failed:", err instanceof Error ? err.message : err);
+    console.error(
+      `[images] stage=replicate_generation error=${err instanceof Error ? err.message : "generation failed"}`,
+    );
     return null;
   }
+
+  // uploadImageFromUrl fetches the bytes itself and only ever returns a
+  // permanent res.cloudinary.com URL or null — never the temporary/signed
+  // Replicate URL, which can expire or reject probing (e.g. HEAD 403).
+  const cloudinaryUrl = await uploadImageFromUrl(replicateUrl, "aiscope/reviews");
+  if (!cloudinaryUrl) {
+    console.error("[images] stage=image_persist error=no permanent URL produced");
+    return null;
+  }
+  return cloudinaryUrl;
 }

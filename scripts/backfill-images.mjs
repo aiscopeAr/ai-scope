@@ -69,22 +69,51 @@ async function generateImage(prompt) {
     return null;
   }
 
-  if (configureCloudinary()) {
-    try {
-      const uploaded = await cloudinary.uploader.upload(replicateUrl, {
-        folder: "aiscope/reviews",
-        resource_type: "image",
-        overwrite: true,
-        format: "webp",
-        quality: "auto:good",
-      });
-      return uploaded.secure_url;
-    } catch (err) {
-      console.error("Cloudinary upload failed, using Replicate URL instead:", err.message);
-    }
+  if (!configureCloudinary()) {
+    return null;
   }
 
-  return replicateUrl;
+  // Fetch the bytes ourselves rather than handing Cloudinary the remote URL:
+  // some Replicate output URLs (signed R2/Cloudflare gateway) reject the
+  // HEAD/probe request Cloudinary's remote-fetch uploader makes, even though
+  // GET succeeds.
+  const response = await fetch(replicateUrl, { method: "GET" });
+  if (!response.ok) {
+    console.error(`Replicate output fetch failed: status=${response.status}`);
+    return null;
+  }
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.startsWith("image/")) {
+    console.error(`Replicate output fetch failed: unexpected content-type "${contentType}"`);
+    return null;
+  }
+  const buffer = Buffer.from(await response.arrayBuffer());
+
+  try {
+    const uploaded = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: "aiscope/reviews",
+          resource_type: "image",
+          overwrite: true,
+          format: "webp",
+          quality: "auto:good",
+        },
+        (error, result) => {
+          if (error || !result) {
+            reject(error ?? new Error("Cloudinary upload returned no result"));
+            return;
+          }
+          resolve(result);
+        },
+      );
+      uploadStream.end(buffer);
+    });
+    return uploaded.secure_url;
+  } catch (err) {
+    console.error("Cloudinary upload failed:", err.message);
+    return null;
+  }
 }
 
 async function main() {
@@ -94,6 +123,8 @@ async function main() {
       OR: [
         { imageUrl: null },
         { imageUrl: { startsWith: "https://replicate.delivery/" } },
+        { imageUrl: { contains: ".replicate.delivery/" } },
+        { imageUrl: { contains: ".r2.cloudflarestorage.com/" } },
       ],
     },
     orderBy: { publishedAt: "desc" },
