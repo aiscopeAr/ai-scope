@@ -1,5 +1,5 @@
 import Replicate from "replicate";
-import { uploadImageFromUrl } from "@/lib/cloudinary";
+import { uploadImageFromUrl, type ImagePipelineContext } from "@/lib/cloudinary";
 
 let client: Replicate | null = null;
 
@@ -33,8 +33,28 @@ function extractOutputUrl(output: unknown): string | null {
   return null;
 }
 
-export async function generateReviewImage(prompt: string): Promise<string | null> {
+function logStage(
+  stage: string,
+  status: "start" | "success" | "failed",
+  ctx: ImagePipelineContext,
+  extra?: string,
+) {
+  const parts = [
+    `stage=${stage}`,
+    `status=${status}`,
+    `correlation_id=${ctx.correlationId ?? "-"}`,
+    `review_id=${ctx.reviewId ?? "-"}`,
+  ];
+  if (extra) parts.push(extra);
+  console.error(`[image-pipeline] ${parts.join(" ")}`);
+}
+
+export async function generateReviewImage(
+  prompt: string,
+  ctx: ImagePipelineContext = {},
+): Promise<string | null> {
   let replicateUrl: string | null;
+  logStage("replicate_generation", "start", ctx);
   try {
     const replicate = getClient();
     const safePrompt = `${prompt}, digital art, dark background, cinematic lighting, high quality, no text, no watermark`;
@@ -52,12 +72,16 @@ export async function generateReviewImage(prompt: string): Promise<string | null
 
     replicateUrl = extractOutputUrl(output);
     if (!replicateUrl) {
-      console.error("[images] stage=replicate_generation error=no output URL in response");
+      logStage("replicate_generation", "failed", ctx, "error=no output URL in response");
       return null;
     }
+    logStage("replicate_generation", "success", ctx);
   } catch (err) {
-    console.error(
-      `[images] stage=replicate_generation error=${err instanceof Error ? err.message : "generation failed"}`,
+    logStage(
+      "replicate_generation",
+      "failed",
+      ctx,
+      `error=${err instanceof Error ? err.message : "generation failed"}`,
     );
     return null;
   }
@@ -65,10 +89,13 @@ export async function generateReviewImage(prompt: string): Promise<string | null
   // uploadImageFromUrl fetches the bytes itself and only ever returns a
   // permanent res.cloudinary.com URL or null — never the temporary/signed
   // Replicate URL, which can expire or reject probing (e.g. HEAD 403).
-  const cloudinaryUrl = await uploadImageFromUrl(replicateUrl, "aiscope/reviews");
+  // It emits its own replicate_output_fetch/cloudinary_upload stage logs.
+  logStage("image_persist", "start", ctx);
+  const cloudinaryUrl = await uploadImageFromUrl(replicateUrl, "aiscope/reviews", ctx);
   if (!cloudinaryUrl) {
-    console.error("[images] stage=image_persist error=no permanent URL produced");
+    logStage("image_persist", "failed", ctx, "error=no permanent URL produced");
     return null;
   }
+  logStage("image_persist", "success", ctx, `host=${new URL(cloudinaryUrl).hostname}`);
   return cloudinaryUrl;
 }

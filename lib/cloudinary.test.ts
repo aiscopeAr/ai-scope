@@ -148,4 +148,39 @@ describe("uploadImageFromUrl", () => {
 
     expect(result).toMatch(/^https:\/\/res\.cloudinary\.com\//);
   });
+
+  it("I: stage logs include the passed correlation_id and review_id", async () => {
+    mockFetchOnce(successfulImageResponse());
+    stubUploadSuccess("https://res.cloudinary.com/demo/image/upload/v1/x.webp");
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { uploadImageFromUrl } = await import("./cloudinary");
+    await uploadImageFromUrl(R2_SIGNED_URL, "aiscope/reviews", {
+      correlationId: "img_test123",
+      reviewId: "rev_abc",
+    });
+
+    const loggedText = errorSpy.mock.calls.map((call) => call.join(" ")).join("\n");
+    expect(loggedText).toContain("correlation_id=img_test123");
+    expect(loggedText).toContain("review_id=rev_abc");
+    expect(loggedText).toContain("stage=replicate_output_fetch status=success");
+    expect(loggedText).toContain("stage=cloudinary_upload status=success");
+  });
+
+  it("J: failure-stage logs still include correlation_id/review_id and stay sanitized", async () => {
+    mockFetchOnce({ ok: false, status: 403, headers: new Headers(), arrayBuffer: async () => fakeImageBytes() });
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { uploadImageFromUrl } = await import("./cloudinary");
+    await uploadImageFromUrl(R2_SIGNED_URL, "aiscope/reviews", {
+      correlationId: "img_fail456",
+      reviewId: "rev_xyz",
+    });
+
+    const loggedText = errorSpy.mock.calls.map((call) => call.join(" ")).join("\n");
+    expect(loggedText).toContain("correlation_id=img_fail456");
+    expect(loggedText).toContain("review_id=rev_xyz");
+    expect(loggedText).toContain("stage=replicate_output_fetch status=failed");
+    expect(loggedText).not.toContain("X-Amz-Signature");
+  });
 });

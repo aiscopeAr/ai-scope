@@ -165,7 +165,11 @@ export default function ReviewEditorPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: imagePrompt }),
       });
-      if (!res.ok) throw new Error("فشل في توليد الصورة");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null) as { error?: string; correlationId?: string } | null;
+        const message = body?.error ?? "فشل في توليد الصورة";
+        throw new Error(body?.correlationId ? `${message}\nرمز التتبع: ${body.correlationId}` : message);
+      }
       const { imageUrl } = await res.json() as { imageUrl: string };
       setReview((r) => r ? { ...r, imageUrl } : r);
     } catch (e) {
@@ -695,7 +699,7 @@ export default function ReviewEditorPage() {
                   {imageError && (
                     <div className="mb-3 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
                       <AlertCircle className="h-4 w-4 shrink-0" />
-                      {imageError}
+                      <span className="whitespace-pre-line">{imageError}</span>
                     </div>
                   )}
 
