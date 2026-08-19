@@ -59,6 +59,11 @@ export async function generateReviewImage(
     const replicate = getClient();
     const safePrompt = `${prompt}, digital art, dark background, cinematic lighting, high quality, no text, no watermark`;
 
+    // Poll for a true terminal state instead of the default blocking mode:
+    // block mode's server-side synchronous wait can return early while the
+    // prediction is still "processing" (output still null) if generation
+    // takes longer than its hold window, which run() otherwise mistakes for
+    // completion.
     const output = await replicate.run("black-forest-labs/flux-schnell", {
       input: {
         prompt: safePrompt,
@@ -68,6 +73,7 @@ export async function generateReviewImage(
         output_quality: 80,
         go_fast: true,
       },
+      wait: { mode: "poll", interval: 500 },
     });
 
     replicateUrl = extractOutputUrl(output);

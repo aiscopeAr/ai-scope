@@ -53,6 +53,8 @@ function extractOutputUrl(output) {
 
 async function generateImage(prompt) {
   const replicate = createReplicateClient();
+  // Poll for a true terminal state — default block mode can return early
+  // while the prediction is still "processing" (output still null).
   const output = await replicate.run("black-forest-labs/flux-schnell", {
     input: {
       prompt: `${prompt}, digital art, dark background, cinematic lighting, high quality, no text, no watermark`,
@@ -62,6 +64,7 @@ async function generateImage(prompt) {
       output_quality: 80,
       go_fast: true,
     },
+    wait: { mode: "poll", interval: 500 },
   });
 
   const replicateUrl = extractOutputUrl(output);
