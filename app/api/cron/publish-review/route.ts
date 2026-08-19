@@ -4,7 +4,7 @@
  */
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { approveReview } from "@/lib/review-queue";
+import { approveReview, markReviewFailed } from "@/lib/review-queue";
 import { generateReviewImage } from "@/lib/images";
 import { getSetting, SETTING_KEYS } from "@/lib/settings";
 import { categorySlugCandidatesForAuthor } from "@/lib/authors";
@@ -71,6 +71,19 @@ export async function GET(request: Request) {
   const published: string[] = [];
   for (const item of items) {
     try {
+      // slug: { not: null } in the query above only excludes NULL — an
+      // empty or whitespace-only string still passes that filter and would
+      // otherwise reach approveReview() and become a Review with a blank
+      // slug (proven to have happened once in production). Guard here,
+      // before any side effect — image generation, Review creation,
+      // Distribution/SocialPost/Telegram — can occur for this item.
+      const normalizedSlug = item.slug?.trim();
+      if (!normalizedSlug) {
+        console.error(`[publish-review] Skipping queue item ${item.id}: blank/whitespace-only slug.`);
+        await markReviewFailed(item.id, "Blank or whitespace-only slug — cannot auto-publish");
+        continue;
+      }
+
       // Generate image if missing
       let imageUrl = item.imageUrl ?? undefined;
       if (!imageUrl && item.featuredImagePrompt) {
@@ -89,7 +102,7 @@ export async function GET(request: Request) {
 
       const reviewId = await approveReview(item.id, {
         categoryId,
-        slug: item.slug!,
+        slug: normalizedSlug,
         published: true,
         imageUrl,
       });
