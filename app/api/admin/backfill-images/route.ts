@@ -57,12 +57,25 @@ export async function POST() {
   const results: { slug: string; status: string; url?: string }[] = [];
 
   for (const review of reviews) {
-    const queueItem = await prisma.reviewQueue.findFirst({
-      where: { slug: review.slug },
-      select: { id: true, featuredImagePrompt: true },
-    });
+    // ReviewQueue.slug has no uniqueness guarantee, so an empty/whitespace
+    // slug can match multiple (or the wrong) queue rows via findFirst — a
+    // Review's own slug must be a real value before we trust it as a lookup
+    // key at all.
+    const normalizedSlug = review.slug?.trim();
+    const queueItem = normalizedSlug
+      ? await prisma.reviewQueue.findFirst({
+          where: { slug: normalizedSlug },
+          select: { id: true, featuredImagePrompt: true },
+        })
+      : null;
+    if (!normalizedSlug) {
+      results.push({ slug: review.slug, status: "skipped_blank_slug" });
+      continue;
+    }
+
+    const queuePrompt = queueItem?.featuredImagePrompt?.trim();
     const prompt =
-      queueItem?.featuredImagePrompt ??
+      (queuePrompt ? queuePrompt : undefined) ??
       FALLBACK_PROMPTS[review.slug] ??
       `${review.titleAr}, artificial intelligence, futuristic dark background`;
 

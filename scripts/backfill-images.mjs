@@ -176,18 +176,29 @@ async function main() {
   console.log(`Found ${rows.length} published reviews that need image backfill.`);
 
   for (const review of rows) {
+    // ReviewQueue.slug has no uniqueness guarantee, so an empty/whitespace
+    // slug can match multiple (or the wrong) queue rows via findFirst — a
+    // Review's own slug must be a real value before we trust it as a lookup
+    // key at all.
+    const normalizedSlug = review.slug?.trim();
+    if (!normalizedSlug) {
+      console.log(`Skipping ${review.slug || "(blank slug)"}: Review has no usable slug.`);
+      continue;
+    }
+
     const queueItem = await prisma.reviewQueue.findFirst({
-      where: { slug: review.slug },
+      where: { slug: normalizedSlug },
       select: { id: true, featuredImagePrompt: true },
     });
 
-    if (!queueItem?.featuredImagePrompt) {
+    const prompt = queueItem?.featuredImagePrompt?.trim();
+    if (!prompt) {
       console.log(`Skipping ${review.slug}: no featuredImagePrompt found.`);
       continue;
     }
 
     console.log(`Generating image for ${review.slug}...`);
-    const imageUrl = await generateImage(queueItem.featuredImagePrompt);
+    const imageUrl = await generateImage(prompt);
 
     if (!imageUrl) {
       console.log(`Failed for ${review.slug}: generator returned null.`);

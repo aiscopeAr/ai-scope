@@ -141,3 +141,94 @@ describe("POST /api/admin/backfill-images — auth", () => {
     expect(mockReviewFindMany).not.toHaveBeenCalled();
   });
 });
+
+describe("POST /api/admin/backfill-images — blank-slug and blank-prompt guards", () => {
+  it("A: never queries ReviewQueue when the Review's slug is an empty string", async () => {
+    mockReviewFindMany.mockResolvedValue([
+      { id: "rev1", slug: "", titleAr: "عنوان", imageUrl: null },
+    ]);
+
+    const res = await callRouteFlushingTimers();
+    const body = await res.json();
+
+    expect(mockReviewQueueFindFirst).not.toHaveBeenCalled();
+    expect(mockGenerateReviewImage).not.toHaveBeenCalled();
+    expect(body.results[0].status).toBe("skipped_blank_slug");
+  });
+
+  it("B: whitespace-only slug is treated the same as empty — never queries ReviewQueue", async () => {
+    mockReviewFindMany.mockResolvedValue([
+      { id: "rev1", slug: "   ", titleAr: "عنوان", imageUrl: null },
+    ]);
+
+    const res = await callRouteFlushingTimers();
+    const body = await res.json();
+
+    expect(mockReviewQueueFindFirst).not.toHaveBeenCalled();
+    expect(mockGenerateReviewImage).not.toHaveBeenCalled();
+    expect(body.results[0].status).toBe("skipped_blank_slug");
+  });
+
+  it("C: empty-string featuredImagePrompt is treated as missing — falls back rather than generating from an empty prompt", async () => {
+    mockReviewFindMany.mockResolvedValue([
+      { id: "rev1", slug: "some-review", titleAr: "موضوع عام", imageUrl: null },
+    ]);
+    mockReviewQueueFindFirst.mockResolvedValue({ id: "q1", featuredImagePrompt: "" });
+    mockGenerateReviewImage.mockResolvedValue("https://res.cloudinary.com/demo/x.webp");
+
+    await callRouteFlushingTimers();
+
+    const promptUsed = mockGenerateReviewImage.mock.calls[0][0] as string;
+    expect(promptUsed).not.toBe("");
+    expect(promptUsed).toContain("موضوع عام");
+  });
+
+  it("D: whitespace-only featuredImagePrompt is treated as missing — falls back", async () => {
+    mockReviewFindMany.mockResolvedValue([
+      { id: "rev1", slug: "some-review", titleAr: "موضوع عام", imageUrl: null },
+    ]);
+    mockReviewQueueFindFirst.mockResolvedValue({ id: "q1", featuredImagePrompt: "   " });
+    mockGenerateReviewImage.mockResolvedValue("https://res.cloudinary.com/demo/x.webp");
+
+    await callRouteFlushingTimers();
+
+    const promptUsed = mockGenerateReviewImage.mock.calls[0][0] as string;
+    expect(promptUsed).not.toBe("   ");
+    expect(promptUsed).toContain("موضوع عام");
+  });
+
+  it("E: a valid slug and a valid prompt preserve current behavior unchanged", async () => {
+    mockReviewFindMany.mockResolvedValue([
+      { id: "rev1", slug: "a-real-slug", titleAr: "عنوان", imageUrl: null },
+    ]);
+    mockReviewQueueFindFirst.mockResolvedValue({ id: "q1", featuredImagePrompt: "a real curated prompt" });
+    mockGenerateReviewImage.mockResolvedValue("https://res.cloudinary.com/demo/x.webp");
+
+    await callRouteFlushingTimers();
+
+    expect(mockReviewQueueFindFirst).toHaveBeenCalledWith({
+      where: { slug: "a-real-slug" },
+      select: { id: true, featuredImagePrompt: true },
+    });
+    expect(mockGenerateReviewImage).toHaveBeenCalledWith("a real curated prompt");
+  });
+
+  it("F: duplicate/blank queue rows cannot leak another Review's prompt — blank slug skips the lookup entirely, never selecting an arbitrary row", async () => {
+    // Simulates the real-world scenario: multiple ReviewQueue rows share
+    // slug: "". Even though the mock would happily return one if queried,
+    // the route must never issue that query in the first place for a
+    // blank-slug Review.
+    mockReviewFindMany.mockResolvedValue([
+      { id: "rev1", slug: "", titleAr: "موضوع فارغ", imageUrl: null },
+    ]);
+    mockReviewQueueFindFirst.mockResolvedValue({
+      id: "wrong-queue-row",
+      featuredImagePrompt: "an unrelated review's prompt",
+    });
+
+    await callRouteFlushingTimers();
+
+    expect(mockReviewQueueFindFirst).not.toHaveBeenCalled();
+    expect(mockGenerateReviewImage).not.toHaveBeenCalled();
+  });
+});
