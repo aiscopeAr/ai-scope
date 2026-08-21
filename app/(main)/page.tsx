@@ -7,8 +7,7 @@ import NewsletterInline from "@/components/NewsletterInline";
 import AdSlot from "@/components/AdSlot";
 import { prisma } from "@/lib/db";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
-import { Scale, ArrowLeft, Sparkles } from "lucide-react";
-import PromptCard from "@/components/PromptCard";
+import { ArrowLeft } from "lucide-react";
 
 export const revalidate = 60;
 
@@ -153,133 +152,31 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Tutorials — presented as AI Guides */}
-      {tutorialReviews.length > 0 && (
+      {/* DIAGNOSTIC VARIANT C — AI Guides + Prompts Library replaced with static deterministic placeholder. Not for merge. */}
+      {(tutorialReviews.length > 0 || featuredPrompts.length > 0) && (
         <section className="mb-14 md:mb-16">
           <div className="mb-7 flex items-end justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-                style={{ backgroundColor: "var(--brand-bg)" }}
-              >
-                <Sparkles className="h-5 w-5" style={{ color: "var(--brand)" }} />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>أدلة الذكاء الاصطناعي</h2>
-                <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>شروحات خطوة بخطوة — محتوى يبقى مفيداً</p>
-              </div>
-            </div>
-            <Link href="/category/tutorials" className="text-sm font-semibold transition hover:opacity-70" style={{ color: "var(--brand)" }}>
-              عرض الكل ←
-            </Link>
+            <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>DIAGNOSTIC PLACEHOLDER</h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {tutorialReviews.map((r) => (
-              <Link
-                key={r.id}
-                href={`/reviews/${r.slug}`}
-                className="group flex h-full flex-col rounded-[10px] p-5 transition-all duration-200 hover:-translate-y-0.5"
-                style={{ backgroundColor: "var(--brand-bg)" }}
-              >
-                <h3 className="mb-2 line-clamp-2 text-[15px] font-bold leading-snug transition-opacity group-hover:opacity-80"
-                  style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
-                  {r.titleAr}
-                </h3>
-                <p className="mb-4 line-clamp-2 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>{r.summary}</p>
-                <span className="mt-auto flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--brand)" }}>
-                  اقرأ الدليل
-                  <svg className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l-7 7 7 7" />
-                  </svg>
-                </span>
-              </Link>
-            ))}
+            <div className="h-40 rounded-[10px]" style={{ backgroundColor: "var(--brand-bg)" }} />
+            <div className="h-40 rounded-[10px]" style={{ backgroundColor: "var(--brand-bg)" }} />
+            <div className="h-40 rounded-[10px]" style={{ backgroundColor: "var(--brand-bg)" }} />
+            <div className="h-40 rounded-[10px]" style={{ backgroundColor: "var(--brand-bg)" }} />
           </div>
         </section>
       )}
 
-      {/* Prompts Library */}
-      {featuredPrompts.length > 0 && (
-        <section className="mb-14 md:mb-16">
-          <div className="mb-7 flex items-end justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5" style={{ color: "var(--accent)" }} />
-              <div>
-                <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
-                  مكتبة البرومبتس
-                </h2>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>جاهزة للنسخ والاستخدام — مجاناً</p>
-              </div>
-            </div>
-            <Link href="/prompts" className="text-sm font-semibold transition hover:opacity-70" style={{ color: "var(--brand)" }}>
-              عرض الكل ←
-            </Link>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredPrompts.map((p) => (
-              <PromptCard key={p.id} prompt={p} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Comparisons strip */}
+      {/* DIAGNOSTIC VARIANT C — Comparisons strip replaced with static deterministic placeholder (removes cross-origin favicon <img> preloads). Not for merge. */}
       {latestComparisons.length > 0 && (
         <section className="mb-14 md:mb-16">
           <div className="mb-7 flex items-end justify-between">
-            <div className="flex items-center gap-2">
-              <Scale className="h-5 w-5" style={{ color: "var(--accent)" }} />
-              <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
-                مقارنات الأدوات
-              </h2>
-            </div>
-            <Link href="/compare" className="flex items-center gap-1 text-sm font-semibold transition hover:opacity-70" style={{ color: "var(--brand)" }}>
-              عرض الكل <ArrowLeft className="h-3.5 w-3.5" />
-            </Link>
+            <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>DIAGNOSTIC PLACEHOLDER 2</h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
-            {latestComparisons.map((comp) => (
-              <Link
-                key={comp.id}
-                href={`/compare/${comp.slug}`}
-                className="group flex flex-col gap-3 rounded-[10px] border p-4 transition-all duration-200 hover:-translate-y-0.5"
-                style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface)" }}
-              >
-                {/* Tools row */}
-                <div className="flex items-center gap-2">
-                  {comp.sides.map((side, i) => (
-                    <div key={side.id} className="flex items-center gap-1.5">
-                      {i > 0 && (
-                        <span className="rounded px-1 py-0.5 text-[10px] font-black"
-                          style={{ background: "var(--brand-bg)", color: "var(--brand)" }}>VS</span>
-                      )}
-                      {side.tool.logoUrl ? (
-                        <img src={side.tool.logoUrl} alt={side.tool.name}
-                          className="h-7 w-7 rounded-lg object-contain"
-                          style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: 3 }} />
-                      ) : (
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-white"
-                          style={{ background: "var(--brand)" }}>
-                          {side.tool.name[0]}
-                        </div>
-                      )}
-                      <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
-                        {side.tool.name}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                {/* Title */}
-                <p className="text-sm font-bold leading-snug group-hover:opacity-75 transition-opacity line-clamp-2"
-                  style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
-                  {comp.title}
-                </p>
-                <span className="mt-auto text-xs font-semibold" style={{ color: "var(--brand)" }}>
-                  قرأ المقارنة ←
-                </span>
-              </Link>
-            ))}
+            <div className="h-32 rounded-[10px] border" style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface)" }} />
+            <div className="h-32 rounded-[10px] border" style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface)" }} />
+            <div className="h-32 rounded-[10px] border" style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface)" }} />
           </div>
         </section>
       )}
