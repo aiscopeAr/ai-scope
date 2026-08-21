@@ -34,18 +34,16 @@ export default function PromptCard({ prompt }: { prompt: PromptCardData }) {
   return (
     <Link
       href={`/prompts/${prompt.slug}`}
-      className="group relative flex items-start gap-4 rounded-[10px] border p-4 transition-all duration-200"
+      className="group relative flex items-start gap-4 rounded-[12px] border p-5 transition-all duration-200"
       style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
       onMouseEnter={e => {
         const el = e.currentTarget as HTMLElement;
-        el.style.borderColor = accent + "55";
-        el.style.boxShadow = `0 4px 20px ${accent}18`;
-        el.style.transform = "translateY(-1px)";
+        el.style.borderColor = accent + "45";
+        el.style.transform = "translateY(-2px)";
       }}
       onMouseLeave={e => {
         const el = e.currentTarget as HTMLElement;
         el.style.borderColor = "var(--border-subtle)";
-        el.style.boxShadow = "none";
         el.style.transform = "translateY(0)";
       }}
     >

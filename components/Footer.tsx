@@ -46,7 +46,7 @@ export default function Footer() {
                 <li key={item.href}>
                   <Link href={item.href} className="group flex items-center gap-2 text-[13px] transition-colors"
                     style={{ color: "var(--text-secondary)" }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "var(--accent)"}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "var(--brand)"}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"}
                   >
                     <span className="h-px w-2.5 transition-colors" style={{ backgroundColor: "var(--border-medium)" }} />
@@ -71,7 +71,7 @@ export default function Footer() {
                 <li key={item.href}>
                   <Link href={item.href} className="group flex items-center gap-2 text-[13px] transition-colors"
                     style={{ color: "var(--text-secondary)" }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "var(--accent)"}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "var(--brand)"}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"}
                   >
                     <span className="h-px w-2.5" style={{ backgroundColor: "var(--border-medium)" }} />
@@ -95,7 +95,7 @@ export default function Footer() {
                 <li key={item.href}>
                   <Link href={item.href} className="flex items-center gap-2 text-[13px] transition-colors"
                     style={{ color: "var(--text-secondary)" }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "var(--accent)"}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "var(--brand)"}
                     onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"}
                   >
                     <span className="h-px w-2.5" style={{ backgroundColor: "var(--border-medium)" }} />

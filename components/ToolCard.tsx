@@ -57,52 +57,50 @@ export default function ToolCard({ tool }: { tool: ToolCardData }) {
     <Link
       href={`/ai-tools/${tool.slug}`}
       onClick={() => track("tool_click", { slug: tool.slug, category: tool.toolCategory })}
-      className="group relative flex items-start gap-4 rounded-[10px] border p-4 transition-all duration-200"
+      className="group relative flex items-start gap-4 rounded-[12px] border p-5 transition-all duration-200"
       style={{
         borderColor: "var(--border-subtle)",
         backgroundColor: "var(--bg-surface)",
       }}
       onMouseEnter={e => {
         const el = e.currentTarget as HTMLElement;
-        el.style.borderColor = accent + "55";
-        el.style.boxShadow = `0 4px 20px ${accent}18`;
-        el.style.transform = "translateY(-1px)";
+        el.style.borderColor = accent + "45";
+        el.style.transform = "translateY(-2px)";
       }}
       onMouseLeave={e => {
         const el = e.currentTarget as HTMLElement;
         el.style.borderColor = "var(--border-subtle)";
-        el.style.boxShadow = "none";
         el.style.transform = "translateY(0)";
       }}
     >
       {/* Left accent bar */}
       <div
-        className="absolute right-0 top-4 bottom-4 w-[3px] rounded-l-full opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute right-0 top-5 bottom-5 w-[3px] rounded-l-full opacity-0 group-hover:opacity-100 transition-opacity"
         style={{ backgroundColor: accent }}
       />
 
       {/* Logo */}
       <div
-        className="shrink-0 flex h-14 w-14 items-center justify-center rounded-[10px] text-xl font-black overflow-hidden"
-        style={{ background: `linear-gradient(135deg, ${accent}18, ${accent}30)`, border: `1px solid ${accent}30` }}
+        className="shrink-0 flex h-16 w-16 items-center justify-center rounded-[12px] text-xl font-black overflow-hidden"
+        style={{ background: `linear-gradient(135deg, ${accent}16, ${accent}2a)`, border: `1px solid ${accent}30` }}
       >
         {tool.logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={tool.logoUrl}
             alt={tool.name}
-            width={44}
-            height={44}
+            width={48}
+            height={48}
             loading="lazy"
-            className="h-10 w-10 object-contain"
+            className="h-11 w-11 object-contain"
             onError={e => {
               const img = e.currentTarget as HTMLImageElement;
               img.style.display = "none";
-              img.parentElement!.innerHTML = `<span style="font-size:1.3rem;font-weight:900;color:${accent}">${tool.name[0]}</span>`;
+              img.parentElement!.innerHTML = `<span style="font-size:1.4rem;font-weight:900;color:${accent}">${tool.name[0]}</span>`;
             }}
           />
         ) : (
-          <span style={{ fontSize: "1.3rem", fontWeight: 900, color: accent }}>{tool.name[0]}</span>
+          <span style={{ fontSize: "1.4rem", fontWeight: 900, color: accent }}>{tool.name[0]}</span>
         )}
       </div>
 

@@ -89,26 +89,33 @@ export default async function HomePage() {
   const { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews } = await getData();
 
   return (
-    <main className="container mx-auto max-w-6xl px-4 py-8" dir="rtl">
+    <main className="container mx-auto max-w-6xl px-4 py-10 md:px-6" dir="rtl">
+      <h1
+        className="mb-6 text-sm font-semibold tracking-wide sm:mb-8"
+        style={{ color: "var(--text-muted)" }}
+      >
+        Lumiq — أخبار وأدوات الذكاء الاصطناعي بالعربية
+      </h1>
+
       <AdSlot position="home-top" className="mb-8" />
 
       {/* Featured review */}
       {featuredReview && (
-        <section className="mb-12">
+        <section className="mb-14 md:mb-16">
           <ReviewCard review={featuredReview} featured priority />
         </section>
       )}
 
       {/* Latest reviews grid */}
       {latestReviews.length > 0 && (
-        <section className="mb-12">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>آخر التقارير</h2>
-            <Link href="/reviews" className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition hover:opacity-75 min-h-[44px]" style={{ color: "var(--accent)" }}>
+        <section className="mb-14 md:mb-16">
+          <div className="mb-7 flex items-end justify-between">
+            <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>آخر التقارير</h2>
+            <Link href="/reviews" className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition hover:opacity-75 min-h-[44px]" style={{ color: "var(--brand)" }}>
               عرض الكل ←
             </Link>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {latestReviews.map((r) => (
               <ReviewCard key={r.id} review={r} />
             ))}
@@ -116,14 +123,17 @@ export default async function HomePage() {
         </section>
       )}
 
-      <AdSlot position="home-mid" className="mb-10" />
+      <AdSlot position="home-mid" className="mb-12" />
 
       {/* AI Tools */}
       {featuredTools.length > 0 && (
-        <section className="mb-12">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>اكتشف أدوات الذكاء الاصطناعي</h2>
-            <Link href="/ai-tools" className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition hover:opacity-75 min-h-[44px]" style={{ color: "var(--accent)" }}>
+        <section className="mb-14 md:mb-16">
+          <div className="mb-7 flex items-end justify-between">
+            <div>
+              <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>أدوات الذكاء الاصطناعي</h2>
+              <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>دليل لوميك المُحدَّث لأفضل أدوات AI</p>
+            </div>
+            <Link href="/ai-tools" className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition hover:opacity-75 min-h-[44px]" style={{ color: "var(--brand)" }}>
               عرض الكل ←
             </Link>
           </div>
@@ -135,20 +145,72 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* Tool of the Week */}
+      {toolOfWeek && (
+        <section className="mb-14 md:mb-16">
+          <ToolOfTheWeek tool={toolOfWeek} />
+        </section>
+      )}
+
+      {/* Tutorials — presented as AI Guides */}
+      {tutorialReviews.length > 0 && (
+        <section className="mb-14 md:mb-16">
+          <div className="mb-7 flex items-end justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+                style={{ backgroundColor: "var(--brand-bg)" }}
+              >
+                <Sparkles className="h-5 w-5" style={{ color: "var(--brand)" }} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>أدلة الذكاء الاصطناعي</h2>
+                <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>شروحات خطوة بخطوة — محتوى يبقى مفيداً</p>
+              </div>
+            </div>
+            <Link href="/category/tutorials" className="text-sm font-semibold transition hover:opacity-70" style={{ color: "var(--brand)" }}>
+              عرض الكل ←
+            </Link>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {tutorialReviews.map((r) => (
+              <Link
+                key={r.id}
+                href={`/reviews/${r.slug}`}
+                className="group flex h-full flex-col rounded-[10px] p-5 transition-all duration-200 hover:-translate-y-0.5"
+                style={{ backgroundColor: "var(--brand-bg)" }}
+              >
+                <h3 className="mb-2 line-clamp-2 text-[15px] font-bold leading-snug transition-opacity group-hover:opacity-80"
+                  style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                  {r.titleAr}
+                </h3>
+                <p className="mb-4 line-clamp-2 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>{r.summary}</p>
+                <span className="mt-auto flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--brand)" }}>
+                  اقرأ الدليل
+                  <svg className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l-7 7 7 7" />
+                  </svg>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Prompts Library */}
       {featuredPrompts.length > 0 && (
-        <section className="mb-12">
-          <div className="mb-6 flex items-center justify-between">
+        <section className="mb-14 md:mb-16">
+          <div className="mb-7 flex items-end justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" style={{ color: "var(--accent)" }} />
               <div>
-                <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
                   مكتبة البرومبتس
                 </h2>
                 <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>جاهزة للنسخ والاستخدام — مجاناً</p>
               </div>
             </div>
-            <Link href="/prompts" className="text-sm font-semibold transition hover:opacity-70" style={{ color: "var(--accent)" }}>
+            <Link href="/prompts" className="text-sm font-semibold transition hover:opacity-70" style={{ color: "var(--brand)" }}>
               عرض الكل ←
             </Link>
           </div>
@@ -163,73 +225,67 @@ export default async function HomePage() {
 
       {/* Comparisons strip */}
       {latestComparisons.length > 0 && (
-        <section className="mb-12">
-          <div className="mb-6 flex items-center justify-between">
+        <section className="mb-14 md:mb-16">
+          <div className="mb-7 flex items-end justify-between">
             <div className="flex items-center gap-2">
               <Scale className="h-5 w-5" style={{ color: "var(--accent)" }} />
-              <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+              <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
                 مقارنات الأدوات
               </h2>
             </div>
-            <Link href="/compare" className="flex items-center gap-1 text-sm font-semibold transition hover:opacity-70" style={{ color: "var(--accent)" }}>
+            <Link href="/compare" className="flex items-center gap-1 text-sm font-semibold transition hover:opacity-70" style={{ color: "var(--brand)" }}>
               عرض الكل <ArrowLeft className="h-3.5 w-3.5" />
             </Link>
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
-            {latestComparisons.map((comp) => {
-              const [a, b] = comp.sides;
-              return (
-                <Link
-                  key={comp.id}
-                  href={`/compare/${comp.slug}`}
-                  className="group flex flex-col gap-3 rounded-2xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-md"
-                  style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface)" }}
-                >
-                  {/* Tools row */}
-                  <div className="flex items-center gap-2">
-                    {comp.sides.map((side, i) => (
-                      <div key={side.id} className="flex items-center gap-1.5">
-                        {i > 0 && (
-                          <span className="rounded px-1 py-0.5 text-[10px] font-black"
-                            style={{ background: "var(--accent-bg)", color: "var(--accent)" }}>VS</span>
-                        )}
-                        {side.tool.logoUrl ? (
-                          <img src={side.tool.logoUrl} alt={side.tool.name}
-                            className="h-7 w-7 rounded-lg object-contain"
-                            style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: 3 }} />
-                        ) : (
-                          <div className="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-white"
-                            style={{ background: "var(--accent)" }}>
-                            {side.tool.name[0]}
-                          </div>
-                        )}
-                        <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
-                          {side.tool.name}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Title */}
-                  <p className="text-sm font-bold leading-snug group-hover:opacity-75 transition-opacity line-clamp-2"
-                    style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
-                    {comp.title}
-                  </p>
-                  <span className="mt-auto text-xs font-semibold" style={{ color: "var(--accent)" }}>
-                    قرأ المقارنة ←
-                  </span>
-                </Link>
-              );
-            })}
+            {latestComparisons.map((comp) => (
+              <Link
+                key={comp.id}
+                href={`/compare/${comp.slug}`}
+                className="group flex flex-col gap-3 rounded-[10px] border p-4 transition-all duration-200 hover:-translate-y-0.5"
+                style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface)" }}
+              >
+                {/* Tools row */}
+                <div className="flex items-center gap-2">
+                  {comp.sides.map((side, i) => (
+                    <div key={side.id} className="flex items-center gap-1.5">
+                      {i > 0 && (
+                        <span className="rounded px-1 py-0.5 text-[10px] font-black"
+                          style={{ background: "var(--brand-bg)", color: "var(--brand)" }}>VS</span>
+                      )}
+                      {side.tool.logoUrl ? (
+                        <img src={side.tool.logoUrl} alt={side.tool.name}
+                          className="h-7 w-7 rounded-lg object-contain"
+                          style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: 3 }} />
+                      ) : (
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-white"
+                          style={{ background: "var(--brand)" }}>
+                          {side.tool.name[0]}
+                        </div>
+                      )}
+                      <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+                        {side.tool.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {/* Title */}
+                <p className="text-sm font-bold leading-snug group-hover:opacity-75 transition-opacity line-clamp-2"
+                  style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                  {comp.title}
+                </p>
+                <span className="mt-auto text-xs font-semibold" style={{ color: "var(--brand)" }}>
+                  قرأ المقارنة ←
+                </span>
+              </Link>
+            ))}
           </div>
         </section>
       )}
 
-      {/* Tool of the Week */}
-      {toolOfWeek && <ToolOfTheWeek tool={toolOfWeek} />}
-
-      {/* Authors intro */}
-      <section className="mb-8 rounded-[6px] border p-6" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
-        <h2 className="mb-6 text-center text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>فريق التقارير</h2>
+      {/* Editorial team */}
+      <section className="mb-14 md:mb-16">
+        <h2 className="mb-7 text-center text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>فريق التقارير</h2>
         <div className="grid gap-4 sm:grid-cols-3">
           {[
             { slug: "zayd",  name: "زيد",   title: "محلل نماذج الذكاء الاصطناعي",    accent: "#6366f1", desc: "يحلل النماذج الكبرى ويقارن قدراتها بعيناً نقدية — لا يصدق الضجيج التسويقي." },
@@ -239,44 +295,21 @@ export default async function HomePage() {
             <Link
               key={a.slug}
               href={`/author/${a.slug}`}
-              className="card-hover "
-              style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }}
+              className="flex items-start gap-4 rounded-[10px] border p-5 transition-all duration-200 hover:-translate-y-0.5"
+              style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
             >
-              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[6px]" style={{ outline: `2px solid ${a.accent}50`, outlineOffset: "2px" }}>
+              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full" style={{ outline: `2px solid ${a.accent}40`, outlineOffset: "2px" }}>
                 <img src={`/images/authors/${a.slug}.svg`} alt={a.name} className="h-full w-full object-cover" />
               </div>
               <div>
                 <p className="font-bold" style={{ color: a.accent }}>{a.name}</p>
                 <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{a.title}</p>
-                <p className="mt-1 text-xs line-clamp-2" style={{ color: "var(--text-muted)" }}>{a.desc}</p>
+                <p className="mt-1.5 text-xs leading-relaxed line-clamp-2" style={{ color: "var(--text-muted)" }}>{a.desc}</p>
               </div>
             </Link>
           ))}
         </div>
       </section>
-
-      {/* Tutorials section */}
-      {tutorialReviews.length > 0 && (
-        <section className="mb-12">
-          <div className="mb-5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/images/authors/team.svg" alt="طاقم لوميك" className="h-9 w-9 rounded-[4px] shrink-0" />
-              <div>
-                <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>شروحات الذكاء الاصطناعي</h2>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>أدلة خطوة بخطوة — محتوى يبقى مفيداً</p>
-              </div>
-            </div>
-            <Link href="/category/tutorials" className="text-sm font-semibold transition hover:opacity-70" style={{ color: "var(--accent)" }}>
-              عرض الكل ←
-            </Link>
-          </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {tutorialReviews.map((r) => (
-              <ReviewCard key={r.id} review={{ ...r, authorSlug: "team", viewCount: 0, tags: r.tags }} />
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* Newsletter */}
       <NewsletterInline />

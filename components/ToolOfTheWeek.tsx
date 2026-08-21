@@ -24,39 +24,38 @@ const PRICING_LABEL: Record<string, string> = {
 
 export default function ToolOfTheWeek({ tool }: { tool: Tool }) {
   return (
-    <section className="mb-12">
-      <div className="mb-5 flex items-center justify-between">
+    <>
+      <div className="mb-7 flex items-end justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xl">⭐</span>
-          <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+          <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
             أداة الأسبوع
           </h2>
         </div>
-        <Link href="/ai-tools" className="text-sm font-semibold transition hover-opacity" style={{ color: "var(--accent)" }}>
+        <Link href="/ai-tools" className="text-sm font-semibold transition hover-opacity" style={{ color: "var(--brand)" }}>
           جميع الأدوات ←
         </Link>
       </div>
 
       <Link href={`/ai-tools/${tool.slug}`} className="group block">
         <div
-          className="overflow-hidden rounded-[6px] border transition"
-          style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}
-          onMouseEnter={undefined}
+          className="overflow-hidden rounded-[14px] border transition-all duration-200 hover:-translate-y-0.5"
+          style={{ borderColor: "color-mix(in srgb, var(--brand) 30%, transparent)", backgroundColor: "var(--brand-bg)" }}
         >
           <div className="grid md:grid-cols-[auto_1fr] gap-0">
             {/* Left accent bar */}
-            <div className="hidden md:block w-1 rounded-r-none" style={{ backgroundColor: "var(--accent)" }} />
+            <div className="hidden md:block w-1 rounded-r-none" style={{ backgroundColor: "var(--brand)" }} />
 
-            <div className="flex flex-col sm:flex-row gap-6 p-6">
+            <div className="flex flex-col sm:flex-row gap-6 p-6 md:p-7">
               {/* Logo */}
               <div className="shrink-0">
                 {tool.logoUrl ? (
-                  <div className="relative h-20 w-20 overflow-hidden rounded-[8px] border shadow-sm" style={{ borderColor: "var(--border-medium)" }}>
+                  <div className="relative h-20 w-20 overflow-hidden rounded-[10px] border shadow-sm" style={{ borderColor: "var(--border-medium)", backgroundColor: "var(--bg-surface)" }}>
                     <Image src={tool.logoUrl} alt={tool.name} fill sizes="80px" className="object-cover" />
                   </div>
                 ) : (
-                  <div className="flex h-20 w-20 items-center justify-center rounded-[8px] text-3xl font-black"
-                    style={{ backgroundColor: "var(--accent-bg)", color: "var(--accent)" }}>
+                  <div className="flex h-20 w-20 items-center justify-center rounded-[10px] text-3xl font-black"
+                    style={{ backgroundColor: "var(--bg-surface)", color: "var(--brand)" }}>
                     {tool.name[0]}
                   </div>
                 )}
@@ -69,8 +68,8 @@ export default function ToolOfTheWeek({ tool }: { tool: Tool }) {
                     style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
                     {tool.name}
                   </h3>
-                  <span className="rounded-[3px] px-2 py-0.5 text-[11px] font-bold"
-                    style={{ backgroundColor: "var(--accent-bg)", color: "var(--accent)", border: "1px solid var(--accent)" }}>
+                  <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+                    style={{ backgroundColor: "var(--brand)", color: "#ffffff" }}>
                     اختيار المحرر ★
                   </span>
                 </div>
@@ -118,6 +117,6 @@ export default function ToolOfTheWeek({ tool }: { tool: Tool }) {
           </div>
         </div>
       </Link>
-    </section>
+    </>
   );
 }

@@ -36,7 +36,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 border-b bg-[var(--bg-page)]" style={{ borderColor: "var(--border-subtle)" }} dir="rtl">
       <div className="container mx-auto px-6 md:px-12">
-        <div className="flex h-14 items-center justify-between">
+        <div className="flex h-16 items-center justify-between">
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
@@ -61,19 +61,19 @@ export default function Header() {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="hidden items-center gap-1.5 md:flex">
             {primaryNav.map((item) => {
               const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="relative px-3 py-1.5 text-[13px] font-sans transition-colors"
-                  style={{ color: active ? "var(--accent)" : "var(--text-secondary)" }}
+                  className="relative px-3.5 py-2 text-[13px] font-sans font-medium transition-colors"
+                  style={{ color: active ? "var(--brand)" : "var(--text-secondary)" }}
                 >
                   {item.label}
                   {active && (
-                    <span className="absolute inset-x-3 bottom-0 h-px" style={{ backgroundColor: "var(--accent)" }} />
+                    <span className="absolute inset-x-3.5 bottom-0 h-[2px] rounded-full" style={{ backgroundColor: "var(--brand)" }} />
                   )}
                 </Link>
               );
@@ -84,8 +84,8 @@ export default function Header() {
               <button
                 onClick={() => setMoreOpen((v) => !v)}
                 onBlur={() => setTimeout(() => setMoreOpen(false), 150)}
-                className="flex items-center gap-1 px-3 py-1.5 text-[13px] font-sans transition-colors"
-                style={{ color: isMoreActive ? "var(--accent)" : "var(--text-secondary)" }}
+                className="flex items-center gap-1 px-3.5 py-2 text-[13px] font-sans font-medium transition-colors"
+                style={{ color: isMoreActive ? "var(--brand)" : "var(--text-secondary)" }}
               >
                 المزيد
                 <svg className={`h-3 w-3 transition-transform ${moreOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -102,7 +102,7 @@ export default function Header() {
                         key={item.href}
                         href={item.href}
                         className="flex items-center gap-2.5 px-4 py-2 text-[13px] transition-colors"
-                        style={{ color: active ? "var(--accent)" : "var(--text-secondary)", backgroundColor: active ? "var(--bg-subtle)" : "transparent" }}
+                        style={{ color: active ? "var(--brand)" : "var(--text-secondary)", backgroundColor: active ? "var(--brand-bg)" : "transparent" }}
                       >
                         <span className="text-xs" style={{ color: "var(--text-muted)" }}>{item.icon}</span>
                         <span>{item.label}</span>
@@ -119,9 +119,9 @@ export default function Header() {
             <Link
               href="/search"
               aria-label="بحث"
-              className="ms-1 flex items-center gap-1.5 rounded-[6px] border px-3 py-1.5 text-[13px] transition-colors"
+              className="ms-1 flex items-center gap-1.5 rounded-[8px] border px-3.5 py-2 text-[13px] transition-colors"
               style={{ borderColor: "var(--border-medium)", color: "var(--text-secondary)" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)"; (e.currentTarget as HTMLElement).style.color = "var(--accent)"; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--brand)"; (e.currentTarget as HTMLElement).style.color = "var(--brand)"; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border-medium)"; (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"; }}
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -158,10 +158,10 @@ export default function Header() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  className="rounded-[6px] px-3 py-3 text-[13px] font-sans transition-colors min-h-[44px] flex items-center"
+                  className="rounded-[8px] px-3 py-3 text-[13px] font-sans transition-colors min-h-[44px] flex items-center"
                   style={{
-                    color: active ? "var(--accent)" : "var(--text-secondary)",
-                    backgroundColor: active ? "var(--bg-accent-soft)" : "transparent",
+                    color: active ? "var(--brand)" : "var(--text-secondary)",
+                    backgroundColor: active ? "var(--brand-bg)" : "transparent",
                   }}
                 >
                   {"icon" in item && <span className="me-1 text-xs" style={{ color: "var(--text-muted)" }}>{(item as { icon: string }).icon}</span>}

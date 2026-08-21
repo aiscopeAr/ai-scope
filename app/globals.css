@@ -20,10 +20,17 @@
   --border-subtle:  rgba(0,0,0,0.06);
   --border-medium:  rgba(0,0,0,0.12);
 
-  /* Accent — terra red */
+  /* Accent — terra red (content accent: links, badges, buttons) */
   --accent:         #A8341E;
   --accent-hover:   #8A2B19;
   --accent-bg:      #F5E6E1;
+
+  /* Brand — Lumiq purple (logo identity, used with restraint: CTAs, active
+     nav, selected states, small accents). Matches the existing logo
+     gradient (#6366f1 → #8b5cf6) already in Header/Footer. */
+  --brand:          #6366F1;
+  --brand-hover:    #4F46E5;
+  --brand-bg:       #EEF0FE;
 
   /* Legacy aliases (keep for gradual removal) */
   --primary:        #A8341E;
@@ -50,6 +57,10 @@ html.dark {
   --accent:         #D4512E;
   --accent-hover:   #B8431F;
   --accent-bg:      #2A1A18;
+
+  --brand:          #818CF8;
+  --brand-hover:    #A5B4FC;
+  --brand-bg:       #21213A;
 
   --primary:        #D4512E;
   --bg:             #0E0E10;
@@ -236,6 +247,27 @@ h1, h2, h3, h4, h5, h6 {
   transition: background-color 0.15s, color 0.15s;
 }
 .btn-outline-accent:hover { background-color: var(--accent); color: var(--text-on-accent); }
+
+/* ── Brand (purple) — restrained use: CTAs, active states, small accents ── */
+.btn-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: var(--brand);
+  color: #ffffff;
+  transition: background 0.15s;
+  border: none;
+  cursor: pointer;
+}
+.btn-brand:hover { background: var(--brand-hover); }
+.btn-brand:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+.hover-brand:hover { color: var(--brand) !important; }
+.border-brand-hover:hover { border-color: var(--brand) !important; }
 
 /* ── Reading progress bar ────────────────────────────────────────── */
 #reading-progress {
