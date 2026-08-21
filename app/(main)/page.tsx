@@ -86,6 +86,7 @@ async function getData() {
 }
 
 export default async function HomePage() {
+  // DIAGNOSTIC BASELINE MARKER — no-op, forces a fresh Preview build. Not merged to main.
   const { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews } = await getData();
 
   return (
