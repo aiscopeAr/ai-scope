@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import ReviewCard from "@/components/ReviewCard";
-import ToolCard from "@/components/ToolCard";
-import ToolOfTheWeek from "@/components/ToolOfTheWeek";
 import NewsletterInline from "@/components/NewsletterInline";
 import AdSlot from "@/components/AdSlot";
 import { prisma } from "@/lib/db";
@@ -86,7 +83,7 @@ async function getData() {
 
 export default async function HomePage() {
   // DIAGNOSTIC BASELINE MARKER — no-op, forces a fresh Preview build. Not merged to main.
-  const { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews } = await getData();
+  const { featuredReview, latestComparisons, tutorialReviews } = await getData();
 
   return (
     <main className="container mx-auto max-w-6xl px-4 py-10 md:px-6" dir="rtl">
@@ -97,86 +94,90 @@ export default async function HomePage() {
         Lumiq — أخبار وأدوات الذكاء الاصطناعي بالعربية
       </h1>
 
-      <AdSlot position="home-top" className="mb-8" />
-
-      {/* Featured review */}
+      {/* DIAGNOSTIC VARIANT D — AdSlot, hero ReviewCard, Latest Reviews grid, AI Tools grid, Tool of the Week replaced with static placeholder. Not for merge. */}
+      <div className="mb-14 md:mb-16 h-24 rounded-[10px]" style={{ backgroundColor: "var(--bg-surface)" }} />
       {featuredReview && (
         <section className="mb-14 md:mb-16">
-          <ReviewCard review={featuredReview} featured priority />
+          <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>DIAGNOSTIC PLACEHOLDER D1 (hero+grid+tools+totw)</h2>
+          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="h-56 rounded-[10px]" style={{ backgroundColor: "var(--bg-surface)" }} />
+            <div className="h-56 rounded-[10px]" style={{ backgroundColor: "var(--bg-surface)" }} />
+            <div className="h-56 rounded-[10px]" style={{ backgroundColor: "var(--bg-surface)" }} />
+            <div className="h-56 rounded-[10px]" style={{ backgroundColor: "var(--bg-surface)" }} />
+          </div>
         </section>
       )}
 
-      {/* Latest reviews grid */}
-      {latestReviews.length > 0 && (
+      {/* AI Guides */}
+      {tutorialReviews.length > 0 && (
         <section className="mb-14 md:mb-16">
           <div className="mb-7 flex items-end justify-between">
-            <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>آخر التقارير</h2>
-            <Link href="/reviews" className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition hover:opacity-75 min-h-[44px]" style={{ color: "var(--brand)" }}>
-              عرض الكل ←
-            </Link>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {latestReviews.map((r) => (
-              <ReviewCard key={r.id} review={r} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      <AdSlot position="home-mid" className="mb-12" />
-
-      {/* AI Tools */}
-      {featuredTools.length > 0 && (
-        <section className="mb-14 md:mb-16">
-          <div className="mb-7 flex items-end justify-between">
-            <div>
-              <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>أدوات الذكاء الاصطناعي</h2>
-              <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>دليل لوميك المُحدَّث لأفضل أدوات AI</p>
-            </div>
-            <Link href="/ai-tools" className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition hover:opacity-75 min-h-[44px]" style={{ color: "var(--brand)" }}>
-              عرض الكل ←
-            </Link>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredTools.map((tool) => (
-              <ToolCard key={tool.id} tool={tool} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Tool of the Week */}
-      {toolOfWeek && (
-        <section className="mb-14 md:mb-16">
-          <ToolOfTheWeek tool={toolOfWeek} />
-        </section>
-      )}
-
-      {/* DIAGNOSTIC VARIANT C — AI Guides + Prompts Library replaced with static deterministic placeholder. Not for merge. */}
-      {(tutorialReviews.length > 0 || featuredPrompts.length > 0) && (
-        <section className="mb-14 md:mb-16">
-          <div className="mb-7 flex items-end justify-between">
-            <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>DIAGNOSTIC PLACEHOLDER</h2>
+            <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>أدلة الذكاء الاصطناعي</h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="h-40 rounded-[10px]" style={{ backgroundColor: "var(--brand-bg)" }} />
-            <div className="h-40 rounded-[10px]" style={{ backgroundColor: "var(--brand-bg)" }} />
-            <div className="h-40 rounded-[10px]" style={{ backgroundColor: "var(--brand-bg)" }} />
-            <div className="h-40 rounded-[10px]" style={{ backgroundColor: "var(--brand-bg)" }} />
+            {tutorialReviews.map((r) => (
+              <Link
+                key={r.id}
+                href={`/reviews/${r.slug}`}
+                className="group flex h-full flex-col rounded-[10px] p-5 transition-all duration-200 hover:-translate-y-0.5"
+                style={{ backgroundColor: "var(--brand-bg)" }}
+              >
+                <h3 className="mb-2 line-clamp-2 text-[15px] font-bold leading-snug transition-opacity group-hover:opacity-80"
+                  style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                  {r.titleAr}
+                </h3>
+                <p className="mb-4 line-clamp-2 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>{r.summary}</p>
+              </Link>
+            ))}
           </div>
         </section>
       )}
 
-      {/* DIAGNOSTIC VARIANT C — Comparisons strip replaced with static deterministic placeholder (removes cross-origin favicon <img> preloads). Not for merge. */}
+      {/* Comparisons strip */}
       {latestComparisons.length > 0 && (
         <section className="mb-14 md:mb-16">
           <div className="mb-7 flex items-end justify-between">
-            <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>DIAGNOSTIC PLACEHOLDER 2</h2>
+            <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+              مقارنات الأدوات
+            </h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
-            <div className="h-32 rounded-[10px] border" style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface)" }} />
-            <div className="h-32 rounded-[10px] border" style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface)" }} />
-            <div className="h-32 rounded-[10px] border" style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface)" }} />
+            {latestComparisons.map((comp) => (
+              <Link
+                key={comp.id}
+                href={`/compare/${comp.slug}`}
+                className="group flex flex-col gap-3 rounded-[10px] border p-4 transition-all duration-200 hover:-translate-y-0.5"
+                style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface)" }}
+              >
+                <div className="flex items-center gap-2">
+                  {comp.sides.map((side, i) => (
+                    <div key={side.id} className="flex items-center gap-1.5">
+                      {i > 0 && (
+                        <span className="rounded px-1 py-0.5 text-[10px] font-black"
+                          style={{ background: "var(--brand-bg)", color: "var(--brand)" }}>VS</span>
+                      )}
+                      {side.tool.logoUrl ? (
+                        <img src={side.tool.logoUrl} alt={side.tool.name}
+                          className="h-7 w-7 rounded-lg object-contain"
+                          style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: 3 }} />
+                      ) : (
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-white"
+                          style={{ background: "var(--brand)" }}>
+                          {side.tool.name[0]}
+                        </div>
+                      )}
+                      <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+                        {side.tool.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm font-bold leading-snug group-hover:opacity-75 transition-opacity line-clamp-2"
+                  style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                  {comp.title}
+                </p>
+              </Link>
+            ))}
           </div>
         </section>
       )}
