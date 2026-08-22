@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
 
@@ -79,7 +80,8 @@ async function getData() {
 }
 
 export default async function HomePage() {
-  // DIAGNOSTIC VARIANT E — entire page body reduced to h1 + one static placeholder. Not for merge.
+  // DIAGNOSTIC VARIANT F — headers() call forces genuine per-request dynamic rendering (force-dynamic alone was not sufficient — Vercel still prerendered/cached the route). Not for merge.
+  await headers();
   await getData();
 
   return (
