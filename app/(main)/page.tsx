@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
 
-export const revalidate = 60;
+// DIAGNOSTIC VARIANT F — revalidate=60 removed to isolate ISR as the causal variable. Not for merge.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: `${SITE_NAME} — ${SITE_NAME_AR}`,
