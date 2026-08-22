@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
+import { unstable_cache } from "next/cache";
 import ReviewCard from "@/components/ReviewCard";
 import ToolCard from "@/components/ToolCard";
 import ToolOfTheWeek from "@/components/ToolOfTheWeek";
@@ -9,8 +11,6 @@ import { prisma } from "@/lib/db";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
 import { Scale, ArrowLeft, Sparkles } from "lucide-react";
 import PromptCard from "@/components/PromptCard";
-
-export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: `${SITE_NAME} — ${SITE_NAME_AR}`,
@@ -24,68 +24,73 @@ export const metadata: Metadata = {
   },
 };
 
-async function getData() {
-  try {
-    const [featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews] = await Promise.all([
-      prisma.review.findFirst({
-        where: { published: true, category: { slug: { not: "tutorials" } } },
-        orderBy: { publishedAt: "desc" },
-        include: { category: true },
-      }),
-      prisma.review.findMany({
-        where: { published: true, category: { slug: { not: "tutorials" } } },
-        orderBy: { publishedAt: "desc" },
-        skip: 1,
-        take: 8,
-        include: { category: true },
-      }),
-      prisma.aITool.findMany({
-        where: { published: true },
-        orderBy: [{ featured: "desc" }, { viewCount: "desc" }],
-        take: 6,
-      }),
-      prisma.aITool.findFirst({
-        where: { published: true, editorPick: true },
-        orderBy: { updatedAt: "desc" },
-      }),
-      prisma.comparison.findMany({
-        where: { published: true },
-        orderBy: { updatedAt: "desc" },
-        take: 3,
-        include: {
-          sides: {
-            include: { tool: { select: { name: true, logoUrl: true, slug: true } } },
+const getData = unstable_cache(
+  async () => {
+    try {
+      const [featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews] = await Promise.all([
+        prisma.review.findFirst({
+          where: { published: true, category: { slug: { not: "tutorials" } } },
+          orderBy: { publishedAt: "desc" },
+          include: { category: true },
+        }),
+        prisma.review.findMany({
+          where: { published: true, category: { slug: { not: "tutorials" } } },
+          orderBy: { publishedAt: "desc" },
+          skip: 1,
+          take: 8,
+          include: { category: true },
+        }),
+        prisma.aITool.findMany({
+          where: { published: true },
+          orderBy: [{ featured: "desc" }, { viewCount: "desc" }],
+          take: 6,
+        }),
+        prisma.aITool.findFirst({
+          where: { published: true, editorPick: true },
+          orderBy: { updatedAt: "desc" },
+        }),
+        prisma.comparison.findMany({
+          where: { published: true },
+          orderBy: { updatedAt: "desc" },
+          take: 3,
+          include: {
+            sides: {
+              include: { tool: { select: { name: true, logoUrl: true, slug: true } } },
+            },
           },
-        },
-      }),
-      prisma.prompt.findMany({
-        where: { published: true },
-        orderBy: [{ featured: "desc" }, { viewCount: "desc" }],
-        take: 6,
-        select: {
-          id: true, slug: true, titleAr: true, description: true,
-          category: true, featured: true,
-          tool: { select: { name: true, slug: true, logoUrl: true } },
-        },
-      }),
-      prisma.review.findMany({
-        where: { published: true, category: { slug: "tutorials" } },
-        orderBy: { publishedAt: "desc" },
-        take: 4,
-        select: {
-          id: true, slug: true, titleAr: true, summary: true,
-          imageUrl: true, publishedAt: true, tags: true,
-          category: { select: { nameAr: true, slug: true } },
-        },
-      }),
-    ]);
-    return { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews };
-  } catch {
-    return { featuredReview: null, latestReviews: [], featuredTools: [], toolOfWeek: null, latestComparisons: [], featuredPrompts: [], tutorialReviews: [] };
-  }
-}
+        }),
+        prisma.prompt.findMany({
+          where: { published: true },
+          orderBy: [{ featured: "desc" }, { viewCount: "desc" }],
+          take: 6,
+          select: {
+            id: true, slug: true, titleAr: true, description: true,
+            category: true, featured: true,
+            tool: { select: { name: true, slug: true, logoUrl: true } },
+          },
+        }),
+        prisma.review.findMany({
+          where: { published: true, category: { slug: "tutorials" } },
+          orderBy: { publishedAt: "desc" },
+          take: 4,
+          select: {
+            id: true, slug: true, titleAr: true, summary: true,
+            imageUrl: true, publishedAt: true, tags: true,
+            category: { select: { nameAr: true, slug: true } },
+          },
+        }),
+      ]);
+      return { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews };
+    } catch {
+      return { featuredReview: null, latestReviews: [], featuredTools: [], toolOfWeek: null, latestComparisons: [], featuredPrompts: [], tutorialReviews: [] };
+    }
+  },
+  ["homepage-data"],
+  { revalidate: 60 },
+);
 
 export default async function HomePage() {
+  await connection();
   const { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews } = await getData();
 
   return (
