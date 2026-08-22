@@ -87,9 +87,12 @@ const getData = unstable_cache(
           },
         }),
       ]);
-      return { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews };
+      // DIAGNOSTIC ONLY — timestamp captured at query-execution time, to verify caching
+      // behavior (identical value across requests within the 60s window = cache hit,
+      // proving the 7 Prisma queries did not re-run). Removed before finalizing.
+      return { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews, _diagnosticFetchedAt: Date.now() };
     } catch {
-      return { featuredReview: null, latestReviews: [], featuredTools: [], toolOfWeek: null, latestComparisons: [], featuredPrompts: [], tutorialReviews: [] };
+      return { featuredReview: null, latestReviews: [], featuredTools: [], toolOfWeek: null, latestComparisons: [], featuredPrompts: [], tutorialReviews: [], _diagnosticFetchedAt: Date.now() };
     }
   },
   ["homepage-data"],
@@ -100,10 +103,12 @@ export default async function HomePage() {
   // Forces request-time rendering (opts out of static generation), per Next.js's
   // recommended dynamic-rendering API — replaces the removed `revalidate = 60`.
   await connection();
-  const { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews } = await getData();
+  const { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews, _diagnosticFetchedAt } = await getData();
 
   return (
     <main className="container mx-auto max-w-6xl px-4 py-10 md:px-6" dir="rtl">
+      {/* DIAGNOSTIC ONLY — cache verification marker, removed before finalizing */}
+      <div data-diagnostic-fetched-at={_diagnosticFetchedAt} style={{ display: "none" }} />
       <h1
         className="mb-6 text-sm font-semibold tracking-wide sm:mb-8"
         style={{ color: "var(--text-muted)" }}
