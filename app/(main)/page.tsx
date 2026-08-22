@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_DESCRIPTION_AR } from "@/lib/seo";
 
-// DIAGNOSTIC VARIANT F — revalidate=60 removed to isolate ISR as the causal variable. Not for merge.
-export const dynamic = "force-dynamic";
+// DIAGNOSTIC VARIANT G — revert to revalidate=60 (ISR) with the same minimal body, to close the causal loop (Variant F proved dynamic rendering = clean).
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: `${SITE_NAME} — ${SITE_NAME_AR}`,
@@ -80,8 +79,7 @@ async function getData() {
 }
 
 export default async function HomePage() {
-  // DIAGNOSTIC VARIANT F — headers() call forces genuine per-request dynamic rendering (force-dynamic alone was not sufficient — Vercel still prerendered/cached the route). Not for merge.
-  await headers();
+  // DIAGNOSTIC VARIANT G — revert-to-ISR proof step, same minimal body as Variant E/F. Not for merge.
   await getData();
 
   return (
