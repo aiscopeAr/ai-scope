@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { SITE_NAME_AR, absoluteUrl } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: `حالة النظام | ${SITE_NAME_AR}`,
@@ -27,7 +28,8 @@ function freshness(mins: number | null): { label: string; color: string } {
   return { label: "متوقف", color: "#be123c" };
 }
 
-async function getData() {
+const getData = unstable_cache(
+  async () => {
   try {
     const [sourcesCount, lastSyncedSource, pendingNews, clusteredNews, pendingQueue, processedQueue, publishedToday, totalPublished, lastReview, pendingSocialPosts] = await Promise.all([
       prisma.source.count({ where: { enabled: true } }),
@@ -43,7 +45,10 @@ async function getData() {
     ]);
     return { sourcesCount, lastSyncedSource, pendingNews, clusteredNews, pendingQueue, processedQueue, publishedToday, totalPublished, lastReview, pendingSocialPosts };
   } catch { return null; }
-}
+  },
+  ["status-page"],
+  { revalidate: 300 },
+);
 
 export default async function StatusPage() {
   const data = await getData();
@@ -78,7 +83,7 @@ export default async function StatusPage() {
           </div>
           <h1 className="mb-3 text-4xl font-bold md:text-5xl" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>حالة النظام</h1>
           <p style={{ color: "var(--text-secondary)" }}>
-            مراحل pipeline النشر التلقائي — تحديث فوري من قاعدة البيانات.
+            مراحل pipeline النشر التلقائي — تحديث كل 5 دقائق من قاعدة البيانات.
           </p>
         </div>
       </section>
@@ -139,7 +144,7 @@ export default async function StatusPage() {
         )}
 
         <p className="text-center text-xs" style={{ color: "var(--text-muted)" }}>
-          جميع الأوقات بتوقيت UTC · تحديث فوري عند كل زيارة
+          جميع الأوقات بتوقيت UTC · تحديث كل 5 دقائق
         </p>
       </div>
     </div>

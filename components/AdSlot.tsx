@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 
 type AdPosition =
@@ -34,11 +35,23 @@ interface Props {
   className?: string;
 }
 
+const getAds = unstable_cache(
+  async (position: AdPosition) => {
+    try {
+      return await prisma.adSlot.findMany({
+        where: { position, enabled: true },
+        orderBy: { createdAt: "asc" },
+      });
+    } catch {
+      return [];
+    }
+  },
+  ["ad-slot"],
+  { revalidate: 60 },
+);
+
 export default async function AdSlot({ position, className = "" }: Props) {
-  const ads = await prisma.adSlot.findMany({
-    where: { position, enabled: true },
-    orderBy: { createdAt: "asc" },
-  });
+  const ads = await getAds(position);
 
   if (ads.length === 0) return null;
 

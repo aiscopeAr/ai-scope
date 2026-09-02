@@ -9,7 +9,7 @@ import { prisma } from "@/lib/db";
 import { AUTHORS, type AuthorSlug } from "@/lib/authors";
 import { SITE_NAME, SITE_NAME_AR, SITE_URL, SITE_TWITTER_HANDLE, absoluteUrl } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function generateStaticParams() {
   return Object.keys(AUTHORS).map((slug) => ({ slug }));

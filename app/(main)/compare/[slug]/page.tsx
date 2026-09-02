@@ -17,7 +17,7 @@ import EditorialTrustSection from "@/components/comparison/EditorialTrustSection
 import RelatedContentSection from "@/components/comparison/RelatedContentSection";
 import { CheckCircle2, XCircle, Trophy, ArrowLeft } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 async function getComparison(slug: string) {
   try {

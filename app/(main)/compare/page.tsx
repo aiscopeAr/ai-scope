@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR } from "@/lib/seo";
 import { ArrowLeft, Zap } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: `مقارنات أدوات الذكاء الاصطناعي | ${SITE_NAME_AR}`,
