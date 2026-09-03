@@ -6,7 +6,10 @@ import { buildTagSummaries, tagToSlug } from "@/lib/tags";
 import { AUTHORS } from "@/lib/authors";
 import { getLiveTools } from "@/lib/tools/registry";
 
-export const dynamic = "force-dynamic";
+// ISR: regenerate at most once per hour instead of querying Neon on every
+// crawler request (was force-dynamic). URL, hostname, and URL set are
+// unchanged; on-demand publishes still surface within the hour.
+export const revalidate = 3600;
 
 const staticPages: MetadataRoute.Sitemap = [
   { url: SITE_URL,                  lastModified: new Date(), changeFrequency: "hourly",  priority: 1.0 },

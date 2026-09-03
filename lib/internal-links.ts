@@ -20,6 +20,10 @@
  * already exists.
  */
 
+import { unstable_cache } from "next/cache";
+import { prisma as db } from "@/lib/db";
+import { CACHE_TAGS, DEFAULT_REVALIDATE_SECONDS } from "@/lib/cache";
+
 export type InternalLinkType = "review" | "tool" | "compare" | "prompt" | "category" | "tag";
 
 const TYPE_PATH: Record<InternalLinkType, string> = {
@@ -66,28 +70,67 @@ export function isLinkTargetValid(link: ParsedInternalLink, sets: LinkableSlugSe
 }
 
 /**
- * Fetches every slug an editorial [[type:slug|label]] token could point to,
- * cached per-request via React's `cache()` (passed in by the caller) so a
- * page with many links doesn't repeat five full-table scans.
+ * The five slug lists an editorial [[type:slug|label]] token can point to,
+ * cached across requests via unstable_cache so review/tool regenerations
+ * don't each repeat five full-table scans against Neon (audit Sprint 1A).
+ *
+ * unstable_cache serializes its result as JSON, so this returns plain arrays;
+ * loadLinkableSlugSets() rebuilds the Sets. Tagged with every content type it
+ * reads, so publishing a review/tool/prompt (which already call
+ * revalidateNow(CACHE_TAGS.*)) refreshes it immediately; comparisons and
+ * categories, which have no on-demand invalidation, fall back to the
+ * conservative time-based revalidate below.
+ */
+const getLinkableSlugArrays = unstable_cache(
+  async () => {
+    const [reviews, tools, comparisons, prompts, categories] = await Promise.all([
+      db.review.findMany({ where: { published: true }, select: { slug: true } }),
+      db.aITool.findMany({ where: { published: true }, select: { slug: true } }),
+      db.comparison.findMany({ where: { published: true }, select: { slug: true } }),
+      db.prompt.findMany({ where: { published: true }, select: { slug: true } }),
+      db.category.findMany({ select: { slug: true } }),
+    ]);
+
+    return {
+      review: reviews.map((r) => r.slug),
+      tool: tools.map((t) => t.slug),
+      compare: comparisons.map((c) => c.slug),
+      prompt: prompts.map((p) => p.slug),
+      category: categories.map((c) => c.slug),
+    };
+  },
+  ["linkable-slug-sets"],
+  {
+    tags: [
+      CACHE_TAGS.reviews,
+      CACHE_TAGS.aiTools,
+      CACHE_TAGS.comparisons,
+      CACHE_TAGS.prompts,
+      CACHE_TAGS.categories,
+    ],
+    revalidate: DEFAULT_REVALIDATE_SECONDS,
+  },
+);
+
+/**
+ * Fetches every slug an editorial [[type:slug|label]] token could point to.
+ * Backed by getLinkableSlugArrays()'s unstable_cache so a page with many links
+ * doesn't repeat five full-table scans. The `prisma` argument is retained for
+ * call-site compatibility; the cached loader uses the shared singleton.
  */
 export async function loadLinkableSlugSets(
   prisma: import("@prisma/client").PrismaClient,
   linkableTags: Set<string>,
 ): Promise<LinkableSlugSets> {
-  const [reviews, tools, comparisons, prompts, categories] = await Promise.all([
-    prisma.review.findMany({ where: { published: true }, select: { slug: true } }),
-    prisma.aITool.findMany({ where: { published: true }, select: { slug: true } }),
-    prisma.comparison.findMany({ where: { published: true }, select: { slug: true } }),
-    prisma.prompt.findMany({ where: { published: true }, select: { slug: true } }),
-    prisma.category.findMany({ select: { slug: true } }),
-  ]);
+  void prisma;
+  const arrays = await getLinkableSlugArrays();
 
   return {
-    review: new Set(reviews.map((r) => r.slug)),
-    tool: new Set(tools.map((t) => t.slug)),
-    compare: new Set(comparisons.map((c) => c.slug)),
-    prompt: new Set(prompts.map((p) => p.slug)),
-    category: new Set(categories.map((c) => c.slug)),
+    review: new Set(arrays.review),
+    tool: new Set(arrays.tool),
+    compare: new Set(arrays.compare),
+    prompt: new Set(arrays.prompt),
+    category: new Set(arrays.category),
     tag: linkableTags,
   };
 }

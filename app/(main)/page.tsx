@@ -86,7 +86,7 @@ const getData = unstable_cache(
     }
   },
   ["homepage-data"],
-  { revalidate: 60 },
+  { revalidate: 600 },
 );
 
 export default async function HomePage() {
