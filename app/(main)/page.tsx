@@ -81,8 +81,16 @@ const getData = unstable_cache(
         }),
       ]);
       return { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews };
-    } catch {
-      return { featuredReview: null, latestReviews: [], featuredTools: [], toolOfWeek: null, latestComparisons: [], featuredPrompts: [], tutorialReviews: [] };
+    } catch (error) {
+      // A DB/connection failure must NOT be turned into a synthetic all-empty
+      // homepage: unstable_cache would store that empty object as a valid value
+      // and serve it to every visitor for the whole revalidate window (a
+      // "poisoned cache"). Log and rethrow so nothing is cached and the next
+      // request retries. Note: a query that SUCCEEDS but legitimately returns
+      // zero rows still returns normally above and is cached — only an actual
+      // thrown DB error reaches here.
+      console.error("[homepage getData] database query failed — rethrowing so the empty result is not cached:", error);
+      throw error;
     }
   },
   ["homepage-data"],
