@@ -47,7 +47,12 @@ const getAds = unstable_cache(
     }
   },
   ["ad-slot"],
-  { revalidate: 60 },
+  // 1h (was 60s). As a nested unstable_cache dependency of every AdSlot-bearing
+  // SSG/ISR page, a short window here collapsed those pages' effective
+  // revalidation to ~60s and forced frequent Neon regenerations under crawl.
+  // Ads change rarely, so 3600s is safe; there is no on-demand ad invalidation
+  // to preserve (admin ad edits surface within the hour).
+  { revalidate: 3600 },
 );
 
 export default async function AdSlot({ position, className = "" }: Props) {

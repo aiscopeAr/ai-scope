@@ -7,6 +7,7 @@ import { absoluteUrl, SITE_NAME_AR, truncate } from "@/lib/seo";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
 import PromptBodyTabs from "@/components/PromptBodyTabs";
 import ArticleTracker from "@/components/ArticleTracker";
+import ViewPing from "@/components/ViewPing";
 
 export const revalidate = 600;
 
@@ -71,13 +72,7 @@ const CATEGORY_BADGE: Record<string, { bg: string; color: string; border: string
 export default async function PromptPage({ params }: Props) {
   const { slug } = await params;
 
-  const [prompt] = await Promise.all([
-    getPrompt(slug),
-    prisma.prompt.update({
-      where: { slug },
-      data: { viewCount: { increment: 1 } },
-    }).catch(() => null),
-  ]);
+  const prompt = await getPrompt(slug);
 
   if (!prompt) notFound();
 
@@ -105,6 +100,7 @@ export default async function PromptPage({ params }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
 
       <ArticleTracker slug={prompt.slug} category={prompt.category} />
+      <ViewPing endpoint={`/api/prompts/${prompt.slug}/view`} />
       <main className="min-h-screen" dir="rtl">
         <div className="container mx-auto max-w-5xl px-4 py-10">
 

@@ -12,6 +12,7 @@ import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
 import AdSlot from "@/components/AdSlot";
 import ToolCard from "@/components/ToolCard";
 import ToolInteractions from "@/components/ToolInteractions";
+import ViewPing from "@/components/ViewPing";
 import { buildTagSummaries } from "@/lib/tags";
 import { loadLinkableSlugSets } from "@/lib/internal-links";
 import { renderWithInternalLinks } from "@/components/InternalLink";
@@ -180,8 +181,6 @@ export default async function AIToolPage({
   const linkableTags = await getLinkableTagSet();
   const linkableSlugs = await loadLinkableSlugSets(prisma, linkableTags);
 
-  void prisma.aITool.update({ where: { id: tool.id }, data: { viewCount: { increment: 1 } } }).catch(() => {});
-
   const catMeta = getCategoryMeta(tool.toolCategory);
   const toolUrl = absoluteUrl(`/ai-tools/${slug}`);
   const faq = (Array.isArray(tool.faq) ? (tool.faq as unknown as FaqItem[]) : []);
@@ -240,6 +239,7 @@ export default async function AIToolPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBreadcrumbJsonLd(breadcrumbItems)) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareJsonLd) }} />
       {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />}
+      <ViewPing endpoint={`/api/tools/${tool.id}/view`} />
 
       <main dir="rtl">
         <div className="container mx-auto max-w-5xl px-4 py-8">
