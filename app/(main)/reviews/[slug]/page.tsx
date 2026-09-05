@@ -162,9 +162,13 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
     .map((p) => p.trim())
     .filter(Boolean);
 
+  // NewsArticle للمحتوى الإخباري (يجعله مؤهّلاً لـ Google News / Top Stories
+  // بالتوافق مع news-sitemap.xml)، وArticle للأدلة دائمة الخضرة في تصنيف
+  // "tutorials". الشرط يعتمد على slug التصنيف (ثابت) وليس الاسم المعروض.
+  const isTutorial = review.category.slug === "tutorials";
   const articleJsonLd = {
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": isTutorial ? "Article" : "NewsArticle",
     "@id": reviewUrl,
     headline: review.titleAr,
     description: truncate(review.summary, 160),
@@ -187,7 +191,9 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
     mainEntityOfPage: { "@type": "WebPage", "@id": reviewUrl },
     articleSection: review.category.nameAr,
     keywords: review.tags.join(", "),
-    ...(review.imageUrl ? { image: { "@type": "ImageObject", url: review.imageUrl } } : {}),
+    ...(review.imageUrl
+      ? { image: { "@type": "ImageObject", url: review.imageUrl, width: 1200, height: 630 } }
+      : {}),
   };
 
   const faqJsonLd = faq.length > 0 ? {

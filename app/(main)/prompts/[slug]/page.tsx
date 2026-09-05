@@ -64,16 +64,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const prompt = await getPrompt(slug);
   if (!prompt) return {};
+  const description = truncate(prompt.description ?? prompt.body, 160);
+  // صورة OG ديناميكية للبرومبت — نفس نمط /api/og المستخدم في صفحات التقارير.
+  // تمرير category يجعل الصورة تعرض وسم "مكتبة البرومبتس" (المسار لا يدعم type=prompt).
+  const ogImage = absoluteUrl(
+    `/api/og?${new URLSearchParams({ title: prompt.titleAr, category: "مكتبة البرومبتس" }).toString()}`,
+  );
   return {
     title: `${prompt.titleAr} | ${SITE_NAME_AR}`,
-    description: truncate(prompt.description ?? prompt.body, 160),
+    description,
     alternates: { canonical: absoluteUrl(`/prompts/${prompt.slug}`) },
     openGraph: {
       title: prompt.titleAr,
-      description: truncate(prompt.description ?? prompt.body, 160),
+      description,
       locale: "ar_AR",
       type: "article",
       url: absoluteUrl(`/prompts/${prompt.slug}`),
+      images: [{ url: ogImage, width: 1200, height: 630, alt: prompt.titleAr }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: prompt.titleAr,
+      description,
+      images: [ogImage],
     },
   };
 }
