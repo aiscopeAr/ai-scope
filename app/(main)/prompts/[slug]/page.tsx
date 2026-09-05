@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, truncate } from "@/lib/seo";
+import { CACHE_TAGS } from "@/lib/cache";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
 import PromptBodyTabs from "@/components/PromptBodyTabs";
 import ArticleTracker from "@/components/ArticleTracker";
@@ -15,25 +18,47 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-async function getPrompt(slug: string) {
-  return prisma.prompt.findUnique({
-    where: { slug, published: true },
-    include: { tool: { select: { id: true, name: true, slug: true, logoUrl: true, tagline: true } } },
-  });
-}
+// Cached prompt-by-slug read. `slug` is a function argument, so unstable_cache
+// keys each slug to its own entry (no global/shared entry). generateMetadata
+// and the page both call this with the same slug → one shared cached read
+// instead of two uncached Neon queries. Tagged with CACHE_TAGS.prompts so a
+// publish/edit (which calls revalidateNow(CACHE_TAGS.prompts)) refreshes it
+// immediately; the 600s window (matching this route's `revalidate`) is only a
+// safety net. Keeps the route Dynamic — this removes per-request Neon reads,
+// not the render itself.
+const getPromptCached = unstable_cache(
+  async (slug: string) =>
+    prisma.prompt.findUnique({
+      where: { slug, published: true },
+      include: { tool: { select: { id: true, name: true, slug: true, logoUrl: true, tagline: true } } },
+    }),
+  ["prompt-by-slug"],
+  { tags: [CACHE_TAGS.prompts], revalidate: 600 },
+);
 
-async function getRelated(category: string, currentSlug: string) {
-  return prisma.prompt.findMany({
-    where: { published: true, category, slug: { not: currentSlug } },
-    orderBy: [{ featured: "desc" }, { viewCount: "desc" }],
-    take: 6,
-    select: {
-      id: true, title: true, titleAr: true, description: true,
-      category: true, slug: true, featured: true,
-      tool: { select: { name: true, slug: true, logoUrl: true } },
-    },
-  });
-}
+// React cache() dedupes the two calls within one request (generateMetadata +
+// page) so a cold entry is fetched once, not twice; unstable_cache above then
+// serves every later request from the data cache. Mirrors reviews/[slug].
+const getPrompt = cache((slug: string) => getPromptCached(slug));
+
+// Cached related-prompts read. Both `category` and `currentSlug` are function
+// arguments, so each (category, slug) pair keys its own entry. Same tag/window
+// as getPrompt; select/order/limit are unchanged.
+const getRelated = unstable_cache(
+  async (category: string, currentSlug: string) =>
+    prisma.prompt.findMany({
+      where: { published: true, category, slug: { not: currentSlug } },
+      orderBy: [{ featured: "desc" }, { viewCount: "desc" }],
+      take: 6,
+      select: {
+        id: true, title: true, titleAr: true, description: true,
+        category: true, slug: true, featured: true,
+        tool: { select: { name: true, slug: true, logoUrl: true } },
+      },
+    }),
+  ["prompt-related"],
+  { tags: [CACHE_TAGS.prompts], revalidate: 600 },
+);
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
