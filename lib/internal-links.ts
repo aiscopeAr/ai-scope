@@ -22,7 +22,17 @@
 
 import { unstable_cache } from "next/cache";
 import { prisma as db } from "@/lib/db";
-import { CACHE_TAGS, DEFAULT_REVALIDATE_SECONDS } from "@/lib/cache";
+import { CACHE_TAGS } from "@/lib/cache";
+
+// Internal-link slug sets change only when content is published/edited, and
+// every such flow that has an invalidation path already calls
+// revalidateNow(CACHE_TAGS.*) (reviews, aiTools, prompts, categories) — so this
+// TTL is only an idle-refresh ceiling, not publish latency. It is deliberately
+// LONGER than DEFAULT_REVALIDATE_SECONDS (300): because reviews/[slug] touches
+// this cache during render, a 300s TTL here was pinning the ~366-URL review
+// corpus to a 5-minute effective revalidate (Sprint 1D forensics). 3600s lets
+// that corpus reuse the slug data for up to an hour under crawl.
+const LINKABLE_SLUG_SET_TTL_SECONDS = 3600;
 
 export type InternalLinkType = "review" | "tool" | "compare" | "prompt" | "category" | "tag";
 
@@ -108,7 +118,7 @@ const getLinkableSlugArrays = unstable_cache(
       CACHE_TAGS.prompts,
       CACHE_TAGS.categories,
     ],
-    revalidate: DEFAULT_REVALIDATE_SECONDS,
+    revalidate: LINKABLE_SLUG_SET_TTL_SECONDS,
   },
 );
 
