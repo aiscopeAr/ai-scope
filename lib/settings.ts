@@ -6,10 +6,16 @@
 import { prisma } from "@/lib/db";
 
 export const SETTING_KEYS = {
-  DAILY_PUBLISH_LIMIT: "pipeline.dailyPublishLimit",
-  MAX_PER_RUN:         "pipeline.maxPerRun",
-  EDITORIAL_V2_MODE:   "pipeline.editorialV2Mode",
+  DAILY_PUBLISH_LIMIT:            "pipeline.dailyPublishLimit",
+  MAX_PER_RUN:                    "pipeline.maxPerRun",
+  EDITORIAL_V2_MODE:              "pipeline.editorialV2Mode",
+  EDITORIAL_V2_SHADOW_MAX_PER_RUN: "pipeline.editorialV2ShadowMaxPerRun",
 } as const;
+
+/** How many items per process-review run may execute the V2 shadow planner.
+ *  Independent of MAX_PER_RUN (which governs V1 throughput and is untouched). */
+export const DEFAULT_EDITORIAL_V2_SHADOW_MAX_PER_RUN = 3;
+const EDITORIAL_V2_SHADOW_MAX_CEILING = 25;
 
 // Editorial V2 rollout flag (string-valued, unlike the numeric pipeline
 // settings). "off" = V1 only (default); "shadow" = run the planner and log
@@ -47,6 +53,27 @@ export async function getEditorialV2Mode(): Promise<EditorialV2Mode> {
     // fail closed to "off"
   }
   return "off";
+}
+
+/**
+ * Shadow-sampling cap: how many items per run may run the V2 planner. Unlike
+ * the numeric getSetting() (whose `parseInt(v) || DEFAULT` coerces a stored 0
+ * back to its default), this HONORS an explicit 0 (= run the planner for zero
+ * items even in shadow), and clamps to [0, 25]. One `systemSetting.findUnique`
+ * per call — the caller reads it once per run and only when mode != off, so
+ * the default off production path adds no read.
+ */
+export async function getEditorialV2ShadowMaxPerRun(): Promise<number> {
+  try {
+    const row = await prisma.systemSetting.findUnique({ where: { key: SETTING_KEYS.EDITORIAL_V2_SHADOW_MAX_PER_RUN } });
+    if (row) {
+      const n = parseInt(row.value, 10);
+      if (Number.isFinite(n)) return Math.max(0, Math.min(n, EDITORIAL_V2_SHADOW_MAX_CEILING));
+    }
+  } catch {
+    // fall through to default
+  }
+  return DEFAULT_EDITORIAL_V2_SHADOW_MAX_PER_RUN;
 }
 
 export async function setSetting(key: string, value: number): Promise<void> {

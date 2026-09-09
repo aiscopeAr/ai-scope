@@ -11,6 +11,7 @@ const mockPlanEditorial = vi.fn();
 const mockBuildShadowDiagnostics = vi.fn();
 const mockGetSetting = vi.fn();
 const mockGetEditorialV2Mode = vi.fn();
+const mockGetShadowMax = vi.fn();
 const mockMarkProcessing = vi.fn();
 const mockMarkProcessed = vi.fn();
 const mockMarkFailed = vi.fn();
@@ -38,6 +39,7 @@ vi.mock("@/lib/images", () => ({ generateReviewImage: (...a: unknown[]) => mockG
 vi.mock("@/lib/settings", () => ({
   getSetting: (...a: unknown[]) => mockGetSetting(...a),
   getEditorialV2Mode: (...a: unknown[]) => mockGetEditorialV2Mode(...a),
+  getEditorialV2ShadowMaxPerRun: (...a: unknown[]) => mockGetShadowMax(...a),
   SETTING_KEYS: { MAX_PER_RUN: "pipeline.maxPerRun" },
 }));
 vi.mock("@/lib/editorial/planner", () => ({
@@ -68,7 +70,17 @@ beforeEach(() => {
   mockGenImage.mockResolvedValue(null);
   mockPlanEditorial.mockResolvedValue({ status: "success", plan: { sections: [] }, hint: "STANDARD_NEWS", fallbackUsed: false });
   mockBuildShadowDiagnostics.mockReturnValue({ reviewQueueId: "q1" });
+  mockGetShadowMax.mockResolvedValue(3);
 });
+
+function items(n: number) {
+  return Array.from({ length: n }, (_, i) => ({
+    id: `q${i + 1}`,
+    topic: `topic ${i + 1}`,
+    authorSlug: "zayd",
+    newsItems: [{ title: "t", content: "c", sourceUrl: `https://a/${i}`, sourceName: "TC" }],
+  }));
+}
 
 describe("process-review — editorial V2-A shadow integration", () => {
   it("M: mode=off → planner NOT called, V1 writer runs", async () => {
@@ -112,5 +124,67 @@ describe("process-review — editorial V2-A shadow integration", () => {
     expect(draftArg).not.toHaveProperty("plan");
     // reviewQueue.update is never used to write a plan in the happy path
     expect(mockRQUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe("process-review — editorial V2-A shadow sampling cap", () => {
+  it("shadow + max=0 → planner 0 times, all V1 items processed", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("shadow");
+    mockGetShadowMax.mockResolvedValue(0);
+    mockRQFindMany.mockResolvedValue(items(4));
+    await GET(req());
+    expect(mockPlanEditorial).not.toHaveBeenCalled();
+    expect(mockWriteReview).toHaveBeenCalledTimes(4);
+    expect(mockMarkProcessed).toHaveBeenCalledTimes(4);
+  });
+
+  it("shadow + max=1 with 3 items → planner once, all 3 V1 processed", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("shadow");
+    mockGetShadowMax.mockResolvedValue(1);
+    mockRQFindMany.mockResolvedValue(items(3));
+    await GET(req());
+    expect(mockPlanEditorial).toHaveBeenCalledTimes(1);
+    expect(mockWriteReview).toHaveBeenCalledTimes(3);
+    expect(mockMarkProcessed).toHaveBeenCalledTimes(3);
+  });
+
+  it("shadow + max=3 with 5 items → planner exactly 3, V1 called 5", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("shadow");
+    mockGetShadowMax.mockResolvedValue(3);
+    mockRQFindMany.mockResolvedValue(items(5));
+    await GET(req());
+    expect(mockPlanEditorial).toHaveBeenCalledTimes(3);
+    expect(mockWriteReview).toHaveBeenCalledTimes(5);
+    expect(mockMarkProcessed).toHaveBeenCalledTimes(5);
+  });
+
+  it("a failed planner attempt counts toward the cap (attempts, not successes)", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("shadow");
+    mockGetShadowMax.mockResolvedValue(1);
+    mockRQFindMany.mockResolvedValue(items(2));
+    mockPlanEditorial.mockRejectedValueOnce(new Error("boom")); // first attempt fails
+    await GET(req());
+    expect(mockPlanEditorial).toHaveBeenCalledTimes(1); // cap consumed by the failed attempt
+    expect(mockWriteReview).toHaveBeenCalledTimes(2);   // both V1 items still processed
+    expect(mockMarkProcessed).toHaveBeenCalledTimes(2);
+  });
+
+  it("on mode obeys the same cap; still no A3 (writeReview 3 args)", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("on");
+    mockGetShadowMax.mockResolvedValue(1);
+    mockRQFindMany.mockResolvedValue(items(3));
+    await GET(req());
+    expect(mockPlanEditorial).toHaveBeenCalledTimes(1);
+    expect(mockWriteReview).toHaveBeenCalledTimes(3);
+    expect(mockWriteReview.mock.calls[0]).toHaveLength(3);
+  });
+
+  it("off → shadow cap accessor is not even read", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("off");
+    mockRQFindMany.mockResolvedValue(items(3));
+    await GET(req());
+    expect(mockGetShadowMax).not.toHaveBeenCalled();
+    expect(mockPlanEditorial).not.toHaveBeenCalled();
+    expect(mockWriteReview).toHaveBeenCalledTimes(3);
   });
 });

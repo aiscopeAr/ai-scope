@@ -13,7 +13,7 @@ import {
 } from "@/lib/review-queue";
 import { generateReviewImage } from "@/lib/images";
 import type { AuthorSlug } from "@/lib/authors";
-import { getSetting, SETTING_KEYS, getEditorialV2Mode } from "@/lib/settings";
+import { getSetting, SETTING_KEYS, getEditorialV2Mode, getEditorialV2ShadowMaxPerRun } from "@/lib/settings";
 import { planEditorial, buildShadowDiagnostics } from "@/lib/editorial/planner";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +44,19 @@ export async function GET(request: Request) {
   // Editorial V2-A rollout flag — read ONCE per run (config read, not a
   // per-item query). "off" (default) = exact V1 behavior, planner never runs.
   const editorialV2Mode = await getEditorialV2Mode();
+
+  // Shadow-sampling cap: how many items THIS run may execute the planner.
+  // Independent of maxPerRun (V1 throughput). Read once, and ONLY when shadow
+  // is engaged, so the default off path adds no DB read. Never exceeds the
+  // number of V1 items handled this run.
+  const shadowMaxPerRun =
+    editorialV2Mode === "off" ? 0 : Math.min(await getEditorialV2ShadowMaxPerRun(), maxPerRun);
+  let shadowAttempts = 0;   // planner attempts (successes + fallbacks + failures) — counts toward the cap
+  let shadowEligible = 0;   // items that reached the shadow decision point
+  let shadowSuccesses = 0;
+  let shadowFallbacks = 0;
+  let shadowFailures = 0;
+  let shadowSkipped = 0;    // eligible but over the per-run cap
 
   const items = await prisma.reviewQueue.findMany({
     where: {
@@ -105,20 +118,34 @@ export async function GET(request: Request) {
       // hence the fully-guarded try/catch. "on" is not implemented yet (A3),
       // so it behaves as shadow with a warning.
       if (editorialV2Mode !== "off") {
-        try {
-          const outcome = await planEditorial(item.topic, sources, item.authorSlug as AuthorSlug);
-          const diagnostics = buildShadowDiagnostics(item.id, item.topic, outcome, draft.contentAr);
-          console.log(`[editorial-v2:shadow] ${JSON.stringify(diagnostics)}`);
-          if (editorialV2Mode === "on") {
-            console.warn("[editorial-v2] mode=on is not implemented (A3 writer consumption pending) — behaving as shadow; V1 output unchanged.");
+        shadowEligible++;
+        if (shadowAttempts < shadowMaxPerRun) {
+          // Count the ATTEMPT toward the cap BEFORE running — the cap exists to
+          // bound latency/API calls, so a failed attempt still counts.
+          shadowAttempts++;
+          try {
+            const outcome = await planEditorial(item.topic, sources, item.authorSlug as AuthorSlug);
+            const diagnostics = buildShadowDiagnostics(item.id, item.topic, outcome, draft.contentAr);
+            console.log(`[editorial-v2:shadow] ${JSON.stringify(diagnostics)}`);
+            if (outcome.status === "success" || outcome.status === "retry_success") shadowSuccesses++;
+            else if (outcome.status === "fallback") shadowFallbacks++;
+            else shadowFailures++; // failed_nonblocking
+            if (editorialV2Mode === "on") {
+              console.warn("[editorial-v2] mode=on is not implemented (A3 writer consumption pending) — behaving as shadow; V1 output unchanged.");
+            }
+          } catch (shadowErr) {
+            // Shadow planning is strictly best-effort — it must never affect the
+            // V1 article that was already generated and stored above.
+            shadowFailures++;
+            console.error(
+              `[editorial-v2:shadow] non-blocking planner/diagnostics failure for queue item ${item.id}:`,
+              shadowErr instanceof Error ? shadowErr.message : shadowErr,
+            );
           }
-        } catch (shadowErr) {
-          // Shadow planning is strictly best-effort — it must never affect the
-          // V1 article that was already generated and stored above.
-          console.error(
-            `[editorial-v2:shadow] non-blocking planner/diagnostics failure for queue item ${item.id}:`,
-            shadowErr instanceof Error ? shadowErr.message : shadowErr,
-          );
+        } else {
+          // Over the per-run shadow cap — skip the planner for this item. V1
+          // processing already completed above and is unaffected.
+          shadowSkipped++;
         }
       }
 
@@ -144,6 +171,22 @@ export async function GET(request: Request) {
       await markReviewFailed(item.id, message);
       results.push({ id: item.id, status: "failed", error: message });
     }
+  }
+
+  // One bounded per-run shadow summary (only when shadow is engaged).
+  if (editorialV2Mode !== "off") {
+    console.log(
+      `[editorial-v2:shadow-summary] ${JSON.stringify({
+        mode: editorialV2Mode,
+        shadowMaxPerRun,
+        eligibleItems: shadowEligible,
+        plannerAttempts: shadowAttempts,
+        plannerSuccesses: shadowSuccesses,
+        plannerFallbacks: shadowFallbacks,
+        plannerFailures: shadowFailures,
+        skippedDueToLimit: shadowSkipped,
+      })}`,
+    );
   }
 
   return NextResponse.json({
