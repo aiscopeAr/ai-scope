@@ -412,7 +412,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ slug: s
                 </div>
                 <p className="mb-1.5 text-xs" style={{ color: "var(--text-muted)" }}>{author.titleAr}</p>
                 <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                  كُتب هذا التقرير بمساعدة {author.nameAr}، متخصص في {author.specialtyAr}، استناداً إلى {sources.length} مصدر موثوق مع مراجعة تحريرية.
+                  كُتب هذا التقرير بواسطة {author.nameAr}، نظام ذكاء اصطناعي متخصص في {author.specialtyAr}، استناداً إلى {sources.length} مصدر، ضمن إشراف تحريري.
                 </p>
                 <Link href={`/author/${author.slug}`} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold hover:underline" style={{ color: author.accentColor }}>
                   جميع تقارير {author.nameAr}

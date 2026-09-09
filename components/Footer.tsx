@@ -140,7 +140,7 @@ export default function Footer() {
 
         <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t pt-6 md:flex-row" style={{ borderColor: "var(--border-subtle)" }}>
           <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>© 2026 Lumiq. جميع الحقوق محفوظة.</p>
-          <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>مبني على Next.js · محتوى آلي مع مراجعة تحريرية</p>
+          <p className="text-[12px]" style={{ color: "var(--text-muted)" }}>مبني على Next.js · محتوى مُولّد بالذكاء الاصطناعي بإشراف تحريري</p>
         </div>
       </div>
     </footer>
