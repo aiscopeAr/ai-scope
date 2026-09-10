@@ -13,7 +13,7 @@ import {
 } from "@/lib/review-queue";
 import { generateReviewImage } from "@/lib/images";
 import type { AuthorSlug } from "@/lib/authors";
-import { getSetting, SETTING_KEYS, getEditorialV2Mode, getEditorialV2ShadowMaxPerRun } from "@/lib/settings";
+import { getSetting, SETTING_KEYS, getEditorialV2Mode, getEditorialV2ShadowMaxPerRun, getEditorialV2OnMaxPerRun } from "@/lib/settings";
 import { planEditorial, buildShadowDiagnostics } from "@/lib/editorial/planner";
 
 export const dynamic = "force-dynamic";
@@ -45,18 +45,27 @@ export async function GET(request: Request) {
   // per-item query). "off" (default) = exact V1 behavior, planner never runs.
   const editorialV2Mode = await getEditorialV2Mode();
 
-  // Shadow-sampling cap: how many items THIS run may execute the planner.
-  // Independent of maxPerRun (V1 throughput). Read once, and ONLY when shadow
-  // is engaged, so the default off path adds no DB read. Never exceeds the
+  // Shadow-sampling cap: how many items THIS run may execute the planner in
+  // SHADOW mode. Independent of maxPerRun (V1 throughput). Read once, and ONLY
+  // when shadow is engaged, so off/on paths add no DB read. Never exceeds the
   // number of V1 items handled this run.
   const shadowMaxPerRun =
-    editorialV2Mode === "off" ? 0 : Math.min(await getEditorialV2ShadowMaxPerRun(), maxPerRun);
+    editorialV2Mode === "shadow" ? Math.min(await getEditorialV2ShadowMaxPerRun(), maxPerRun) : 0;
   let shadowAttempts = 0;   // planner attempts (successes + fallbacks + failures) — counts toward the cap
   let shadowEligible = 0;   // items that reached the shadow decision point
   let shadowSuccesses = 0;
   let shadowFallbacks = 0;
   let shadowFailures = 0;
   let shadowSkipped = 0;    // eligible but over the per-run cap
+
+  // A3 canary cap: how many items THIS run may be written via the plan-driven
+  // (mode="on") path. Read once, and ONLY when on-mode is engaged. Never exceeds
+  // maxPerRun. Independent of the shadow cap.
+  const onMaxPerRun =
+    editorialV2Mode === "on" ? Math.min(await getEditorialV2OnMaxPerRun(), maxPerRun) : 0;
+  let onAttempts = 0;       // on-path attempts — counted BEFORE the planner call so a failure can't exceed the canary
+  let onPlanWrites = 0;     // items actually written via the plan-driven writer
+  let onV1Fallbacks = 0;    // on-attempts that degraded to the V1 writer
 
   const items = await prisma.reviewQueue.findMany({
     where: {
@@ -97,7 +106,79 @@ export async function GET(request: Request) {
         name: n.sourceName,
       }));
 
-      const draft = await writeReview(item.topic, sources, item.authorSlug as AuthorSlug);
+      // ── Writer selection ────────────────────────────────────────────────
+      // OFF / SHADOW / on-beyond-cap → exact V1 writer (unchanged path).
+      // ON (canary-eligible) → plan BEFORE writing; use the plan-driven writer
+      // only when the planner returns a VALID, non-fallback plan; otherwise
+      // degrade safely to the exact V1 writer. A3 failure never fails the item —
+      // it falls back to V1.
+      let draft;
+      if (editorialV2Mode === "on" && onAttempts < onMaxPerRun) {
+        // Count the attempt BEFORE the planner call so a planner/writer failure
+        // can never let the canary exceed its cap.
+        onAttempts++;
+        const onStarted = Date.now();
+        let plan: Awaited<ReturnType<typeof planEditorial>>["plan"] | null = null;
+        let plannerFallback = false;
+        let usedV1Fallback = false;
+        let planWriteSucceeded = false;
+
+        try {
+          const outcome = await planEditorial(item.topic, sources, item.authorSlug as AuthorSlug);
+          if ((outcome.status === "success" || outcome.status === "retry_success") && !outcome.fallbackUsed) {
+            plan = outcome.plan;
+          } else {
+            plannerFallback = true; // conservative fallback / invalid / failed_nonblocking
+          }
+        } catch (plannerErr) {
+          plannerFallback = true;
+          console.error(
+            `[editorial-v2:on] planner threw for queue item ${item.id}; will use V1 writer:`,
+            plannerErr instanceof Error ? plannerErr.message : plannerErr,
+          );
+        }
+
+        if (plan) {
+          try {
+            draft = await writeReview(item.topic, sources, item.authorSlug as AuthorSlug, plan);
+            planWriteSucceeded = true;
+          } catch (writeErr) {
+            usedV1Fallback = true;
+            console.error(
+              `[editorial-v2:on] plan-driven writer threw for queue item ${item.id}; falling back to V1:`,
+              writeErr instanceof Error ? writeErr.message : writeErr,
+            );
+          }
+        } else {
+          usedV1Fallback = true;
+        }
+
+        if (!draft) {
+          // V1 fallback — identical to the default path.
+          draft = await writeReview(item.topic, sources, item.authorSlug as AuthorSlug);
+        }
+        if (planWriteSucceeded) onPlanWrites++;
+        if (usedV1Fallback) onV1Fallbacks++;
+
+        // Bounded on-mode diagnostics — no prompts, no body, no source text.
+        console.log(
+          `[editorial-v2:on] ${JSON.stringify({
+            reviewQueueId: item.id,
+            topic: item.topic.slice(0, 120),
+            storyType: plan?.storyType ?? null,
+            depth: plan?.depth ?? null,
+            sectionCount: plan?.sections.length ?? 0,
+            includeFaq: plan?.includeFaq ?? null,
+            includeComparison: plan?.includeComparison ?? null,
+            includeMena: plan?.includeMena ?? null,
+            plannerFallback,
+            usedV1Fallback,
+            latencyMs: Date.now() - onStarted,
+          })}`,
+        );
+      } else {
+        draft = await writeReview(item.topic, sources, item.authorSlug as AuthorSlug);
+      }
 
       if (!draft.isAiRelated) {
         await prisma.reviewQueue.update({
@@ -111,13 +192,13 @@ export async function GET(request: Request) {
       await markReviewProcessed(item.id, draft);
 
       // ── Editorial V2-A SHADOW MODE ──────────────────────────────────────
-      // When enabled, run the lightweight planner on the SAME in-memory
+      // SHADOW mode only: run the lightweight planner on the SAME in-memory
       // sources and log a structured diagnostics event comparing the proposed
       // V2 plan to the V1 draft. This NEVER changes the V1 draft/output above,
       // runs NO second writer, persists NOTHING, and must never break V1 —
-      // hence the fully-guarded try/catch. "on" is not implemented yet (A3),
-      // so it behaves as shadow with a warning.
-      if (editorialV2Mode !== "off") {
+      // hence the fully-guarded try/catch. (ON mode handles the planner above
+      // and does not enter this block.)
+      if (editorialV2Mode === "shadow") {
         shadowEligible++;
         if (shadowAttempts < shadowMaxPerRun) {
           // Count the ATTEMPT toward the cap BEFORE running — the cap exists to
@@ -130,9 +211,6 @@ export async function GET(request: Request) {
             if (outcome.status === "success" || outcome.status === "retry_success") shadowSuccesses++;
             else if (outcome.status === "fallback") shadowFallbacks++;
             else shadowFailures++; // failed_nonblocking
-            if (editorialV2Mode === "on") {
-              console.warn("[editorial-v2] mode=on is not implemented (A3 writer consumption pending) — behaving as shadow; V1 output unchanged.");
-            }
           } catch (shadowErr) {
             // Shadow planning is strictly best-effort — it must never affect the
             // V1 article that was already generated and stored above.
@@ -173,8 +251,8 @@ export async function GET(request: Request) {
     }
   }
 
-  // One bounded per-run shadow summary (only when shadow is engaged).
-  if (editorialV2Mode !== "off") {
+  // One bounded per-run shadow summary (shadow mode only).
+  if (editorialV2Mode === "shadow") {
     console.log(
       `[editorial-v2:shadow-summary] ${JSON.stringify({
         mode: editorialV2Mode,
@@ -185,6 +263,19 @@ export async function GET(request: Request) {
         plannerFallbacks: shadowFallbacks,
         plannerFailures: shadowFailures,
         skippedDueToLimit: shadowSkipped,
+      })}`,
+    );
+  }
+
+  // One bounded per-run A3 on-mode summary (on mode only).
+  if (editorialV2Mode === "on") {
+    console.log(
+      `[editorial-v2:on-summary] ${JSON.stringify({
+        mode: editorialV2Mode,
+        onMaxPerRun,
+        onAttempts,
+        onPlanWrites,
+        onV1Fallbacks,
       })}`,
     );
   }

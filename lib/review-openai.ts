@@ -2,6 +2,8 @@ import OpenAI from "openai";
 import { AUTHORS, pickAuthor, type AuthorSlug } from "@/lib/authors";
 import { findSimilarReviews, type SimilarReview } from "@/lib/embeddings";
 import { getAuthorMemoryBlock } from "@/lib/author-memory";
+import type { EditorialPlan } from "@/lib/editorial/plan-types";
+import { buildPlanDrivenUserPrompt } from "@/lib/editorial/plan-to-prompt";
 
 let _client: OpenAI | null = null;
 function getClient(): OpenAI {
@@ -171,6 +173,7 @@ export async function writeReview(
   topic: string,
   sources: Array<{ title: string; content: string; url: string; name: string }>,
   authorSlugHint?: AuthorSlug,
+  plan?: EditorialPlan,
 ): Promise<ReviewDraft> {
   const client = getClient();
 
@@ -196,8 +199,13 @@ export async function writeReview(
   }
 
   const memoryBlock = buildMemoryBlock(pastReviews) + accumulatedMemory;
-  const headlineStyle = pickHeadlineStyle(topic);
-  const userPrompt = buildUserPrompt(sources, memoryBlock, headlineStyle);
+  // Editorial V2-A3: when a validated EditorialPlan is supplied, the writer
+  // follows the plan's sections/flags instead of the legacy fixed skeleton.
+  // With NO plan, behavior is byte-for-byte the V1 path (headline-style engine
+  // + buildUserPrompt) — A3 is strictly additive.
+  const userPrompt = plan
+    ? buildPlanDrivenUserPrompt(sources, memoryBlock, plan)
+    : buildUserPrompt(sources, memoryBlock, pickHeadlineStyle(topic));
 
   const response = await client.chat.completions.create({
     model: process.env.OPENAI_MODEL ?? "gpt-4o",

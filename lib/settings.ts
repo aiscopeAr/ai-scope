@@ -10,12 +10,20 @@ export const SETTING_KEYS = {
   MAX_PER_RUN:                    "pipeline.maxPerRun",
   EDITORIAL_V2_MODE:              "pipeline.editorialV2Mode",
   EDITORIAL_V2_SHADOW_MAX_PER_RUN: "pipeline.editorialV2ShadowMaxPerRun",
+  EDITORIAL_V2_ON_MAX_PER_RUN:     "pipeline.editorialV2OnMaxPerRun",
 } as const;
 
 /** How many items per process-review run may execute the V2 shadow planner.
  *  Independent of MAX_PER_RUN (which governs V1 throughput and is untouched). */
 export const DEFAULT_EDITORIAL_V2_SHADOW_MAX_PER_RUN = 3;
 const EDITORIAL_V2_SHADOW_MAX_CEILING = 25;
+
+/** A3 canary cap: how many items per process-review run may be written via the
+ *  plan-driven (mode="on") path. Deliberately tiny by default so the first live
+ *  exposure of A3 is a single article/run. Independent of MAX_PER_RUN and of the
+ *  shadow cap. */
+export const DEFAULT_EDITORIAL_V2_ON_MAX_PER_RUN = 1;
+const EDITORIAL_V2_ON_MAX_CEILING = 10;
 
 // Editorial V2 rollout flag (string-valued, unlike the numeric pipeline
 // settings). "off" = V1 only (default); "shadow" = run the planner and log
@@ -74,6 +82,27 @@ export async function getEditorialV2ShadowMaxPerRun(): Promise<number> {
     // fall through to default
   }
   return DEFAULT_EDITORIAL_V2_SHADOW_MAX_PER_RUN;
+}
+
+/**
+ * A3 canary cap (mode="on"). Same robust pattern as getEditorialV2ShadowMaxPerRun:
+ * HONORS an explicit stored 0, clamps to [0, 10], falls back to the default 1 on
+ * a missing row, a non-numeric value, or a DB error. One `systemSetting.findUnique`
+ * per call — the route reads it once per run and ONLY when mode === "on", so the
+ * off/shadow production paths add no read. Not routed through getSetting(), whose
+ * `parseInt || DEFAULT` would coerce a stored 0 back to the default.
+ */
+export async function getEditorialV2OnMaxPerRun(): Promise<number> {
+  try {
+    const row = await prisma.systemSetting.findUnique({ where: { key: SETTING_KEYS.EDITORIAL_V2_ON_MAX_PER_RUN } });
+    if (row) {
+      const n = parseInt(row.value, 10);
+      if (Number.isFinite(n)) return Math.max(0, Math.min(n, EDITORIAL_V2_ON_MAX_CEILING));
+    }
+  } catch {
+    // fall through to default
+  }
+  return DEFAULT_EDITORIAL_V2_ON_MAX_PER_RUN;
 }
 
 export async function setSetting(key: string, value: number): Promise<void> {

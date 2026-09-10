@@ -12,6 +12,7 @@ const mockBuildShadowDiagnostics = vi.fn();
 const mockGetSetting = vi.fn();
 const mockGetEditorialV2Mode = vi.fn();
 const mockGetShadowMax = vi.fn();
+const mockGetOnMax = vi.fn();
 const mockMarkProcessing = vi.fn();
 const mockMarkProcessed = vi.fn();
 const mockMarkFailed = vi.fn();
@@ -40,6 +41,7 @@ vi.mock("@/lib/settings", () => ({
   getSetting: (...a: unknown[]) => mockGetSetting(...a),
   getEditorialV2Mode: (...a: unknown[]) => mockGetEditorialV2Mode(...a),
   getEditorialV2ShadowMaxPerRun: (...a: unknown[]) => mockGetShadowMax(...a),
+  getEditorialV2OnMaxPerRun: (...a: unknown[]) => mockGetOnMax(...a),
   SETTING_KEYS: { MAX_PER_RUN: "pipeline.maxPerRun" },
 }));
 vi.mock("@/lib/editorial/planner", () => ({
@@ -71,6 +73,14 @@ beforeEach(() => {
   mockPlanEditorial.mockResolvedValue({ status: "success", plan: { sections: [] }, hint: "STANDARD_NEWS", fallbackUsed: false });
   mockBuildShadowDiagnostics.mockReturnValue({ reviewQueueId: "q1" });
   mockGetShadowMax.mockResolvedValue(3);
+  mockGetOnMax.mockResolvedValue(1);
+  // On-mode needs a plan with a sections array for diagnostics/section-count.
+  mockPlanEditorial.mockResolvedValue({
+    status: "success",
+    plan: { sections: [{ workingTitle: "ما الذي حدث", purpose: "p" }], storyType: "STANDARD_NEWS", depth: "standard", includeFaq: false, includeComparison: false, includeMena: false },
+    hint: "STANDARD_NEWS",
+    fallbackUsed: false,
+  });
 });
 
 function items(n: number) {
@@ -108,12 +118,15 @@ describe("process-review — editorial V2-A shadow integration", () => {
     expect(res.status).toBeLessThan(500);
   });
 
-  it("P: mode=on does NOT activate A3 — writeReview called with 3 args (no plan); planner runs as shadow", async () => {
+  it("P: mode=on (A3) — valid plan → plan-driven writer (4 args); shadow diagnostics NOT run", async () => {
     mockGetEditorialV2Mode.mockResolvedValue("on");
     await GET(req());
     expect(mockPlanEditorial).toHaveBeenCalledTimes(1);
     expect(mockWriteReview).toHaveBeenCalledTimes(1);
-    expect(mockWriteReview.mock.calls[0]).toHaveLength(3); // (topic, sources, authorSlug) — no 4th plan arg
+    expect(mockWriteReview.mock.calls[0]).toHaveLength(4); // (topic, sources, authorSlug, plan)
+    expect(mockWriteReview.mock.calls[0][3]).toHaveProperty("sections"); // the plan
+    expect(mockBuildShadowDiagnostics).not.toHaveBeenCalled(); // on mode skips the shadow block
+    expect(mockMarkProcessed).toHaveBeenCalledTimes(1);
   });
 
   it("Q: no EditorialPlan persisted — markReviewProcessed gets only the V1 draft", async () => {
@@ -169,22 +182,118 @@ describe("process-review — editorial V2-A shadow sampling cap", () => {
     expect(mockMarkProcessed).toHaveBeenCalledTimes(2);
   });
 
-  it("on mode obeys the same cap; still no A3 (writeReview 3 args)", async () => {
+  it("on mode obeys the ON canary cap: onMax=1 with 3 items → 1 plan-driven + 2 V1 writes", async () => {
     mockGetEditorialV2Mode.mockResolvedValue("on");
-    mockGetShadowMax.mockResolvedValue(1);
+    mockGetOnMax.mockResolvedValue(1);
     mockRQFindMany.mockResolvedValue(items(3));
     await GET(req());
     expect(mockPlanEditorial).toHaveBeenCalledTimes(1);
     expect(mockWriteReview).toHaveBeenCalledTimes(3);
-    expect(mockWriteReview.mock.calls[0]).toHaveLength(3);
+    expect(mockWriteReview.mock.calls[0]).toHaveLength(4); // first = plan-driven
+    expect(mockWriteReview.mock.calls[1]).toHaveLength(3); // rest = V1
+    expect(mockWriteReview.mock.calls[2]).toHaveLength(3);
   });
 
-  it("off → shadow cap accessor is not even read", async () => {
+  it("off → shadow AND on cap accessors are not even read", async () => {
     mockGetEditorialV2Mode.mockResolvedValue("off");
     mockRQFindMany.mockResolvedValue(items(3));
     await GET(req());
     expect(mockGetShadowMax).not.toHaveBeenCalled();
+    expect(mockGetOnMax).not.toHaveBeenCalled();
     expect(mockPlanEditorial).not.toHaveBeenCalled();
     expect(mockWriteReview).toHaveBeenCalledTimes(3);
+  });
+
+  it("shadow mode does not read the ON cap accessor", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("shadow");
+    mockRQFindMany.mockResolvedValue(items(2));
+    await GET(req());
+    expect(mockGetOnMax).not.toHaveBeenCalled();
+  });
+});
+
+describe("process-review — editorial V2-A3 on-mode (plan-driven writer)", () => {
+  beforeEach(() => mockGetEditorialV2Mode.mockResolvedValue("on"));
+
+  it("onMax=0 → no plan-driven items, planner never called, all V1", async () => {
+    mockGetOnMax.mockResolvedValue(0);
+    mockRQFindMany.mockResolvedValue(items(3));
+    await GET(req());
+    expect(mockPlanEditorial).not.toHaveBeenCalled();
+    expect(mockWriteReview).toHaveBeenCalledTimes(3);
+    mockWriteReview.mock.calls.forEach((c) => expect(c).toHaveLength(3));
+    expect(mockMarkProcessed).toHaveBeenCalledTimes(3);
+  });
+
+  it("onMax=1, first eligible item only → plan writer once, rest V1", async () => {
+    mockGetOnMax.mockResolvedValue(1);
+    mockRQFindMany.mockResolvedValue(items(3));
+    await GET(req());
+    expect(mockPlanEditorial).toHaveBeenCalledTimes(1);
+    expect(mockWriteReview.mock.calls[0]).toHaveLength(4);
+    expect(mockWriteReview.mock.calls[1]).toHaveLength(3);
+  });
+
+  it("planner success (non-fallback) → plan-driven writer gets the plan", async () => {
+    mockGetOnMax.mockResolvedValue(1);
+    await GET(req());
+    expect(mockWriteReview.mock.calls[0]).toHaveLength(4);
+    expect(mockWriteReview.mock.calls[0][3]).toHaveProperty("storyType", "STANDARD_NEWS");
+  });
+
+  it("planner throws → degrade to V1 writer (3 args), item still processed", async () => {
+    mockGetOnMax.mockResolvedValue(1);
+    mockPlanEditorial.mockRejectedValue(new Error("planner boom"));
+    const res = await GET(req());
+    expect(mockPlanEditorial).toHaveBeenCalledTimes(1);
+    expect(mockWriteReview).toHaveBeenCalledTimes(1);
+    expect(mockWriteReview.mock.calls[0]).toHaveLength(3);
+    expect(mockMarkProcessed).toHaveBeenCalledTimes(1);
+    expect(mockMarkFailed).not.toHaveBeenCalled();
+    expect(res.status).toBeLessThan(500);
+  });
+
+  it("planner conservative fallback (fallbackUsed) → V1 writer", async () => {
+    mockGetOnMax.mockResolvedValue(1);
+    mockPlanEditorial.mockResolvedValue({ status: "fallback", plan: { sections: [] }, hint: "STANDARD_NEWS", fallbackUsed: true });
+    await GET(req());
+    expect(mockWriteReview).toHaveBeenCalledTimes(1);
+    expect(mockWriteReview.mock.calls[0]).toHaveLength(3);
+  });
+
+  it("failed_nonblocking planner status → V1 writer", async () => {
+    mockGetOnMax.mockResolvedValue(1);
+    mockPlanEditorial.mockResolvedValue({ status: "failed_nonblocking", plan: { sections: [] }, hint: "STANDARD_NEWS", fallbackUsed: true });
+    await GET(req());
+    expect(mockWriteReview.mock.calls[0]).toHaveLength(3);
+  });
+
+  it("plan-driven writer throws → falls back to V1 writer, item still processed", async () => {
+    mockGetOnMax.mockResolvedValue(1);
+    mockWriteReview
+      .mockRejectedValueOnce(new Error("plan write boom")) // plan-driven attempt
+      .mockResolvedValueOnce({ isAiRelated: true, contentAr: "## X\nن", featuredImagePrompt: null, titleAr: "t" }); // V1 fallback
+    await GET(req());
+    expect(mockWriteReview).toHaveBeenCalledTimes(2);
+    expect(mockWriteReview.mock.calls[0]).toHaveLength(4); // plan attempt
+    expect(mockWriteReview.mock.calls[1]).toHaveLength(3); // V1 fallback
+    expect(mockMarkProcessed).toHaveBeenCalledTimes(1);
+    expect(mockMarkFailed).not.toHaveBeenCalled();
+  });
+
+  it("a failed on-attempt consumes the canary cap", async () => {
+    mockGetOnMax.mockResolvedValue(1);
+    mockRQFindMany.mockResolvedValue(items(2));
+    mockPlanEditorial.mockRejectedValueOnce(new Error("boom")); // first attempt fails
+    await GET(req());
+    expect(mockPlanEditorial).toHaveBeenCalledTimes(1); // cap consumed by the failed attempt
+    expect(mockWriteReview).toHaveBeenCalledTimes(2);   // both items written via V1
+    mockWriteReview.mock.calls.forEach((c) => expect(c).toHaveLength(3));
+  });
+
+  it("happy path performs no extra reviewQueue.update (no plan persisted)", async () => {
+    mockGetOnMax.mockResolvedValue(1);
+    await GET(req());
+    expect(mockRQUpdate).not.toHaveBeenCalled();
   });
 });
