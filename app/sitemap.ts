@@ -11,6 +11,13 @@ import { getLiveTools } from "@/lib/tools/registry";
 // unchanged; on-demand publishes still surface within the hour.
 export const revalidate = 3600;
 
+// Exclude non-public test/draft/temp artifacts from the sitemap. ANCHORED to the
+// start of the slug (with a "-"/"_" boundary) so a legitimate slug that merely
+// CONTAINS one of these words is never dropped — e.g. "ai-blood-test-future-medicine"
+// must stay indexed; only "test-…", "draft-…", "tmp-…", "temp-…" are excluded.
+const JUNK_SLUG = /^(test|draft|tmp|temp)[-_]/i;
+const isPublicSlug = (slug: string) => !JUNK_SLUG.test(slug);
+
 const staticPages: MetadataRoute.Sitemap = [
   { url: SITE_URL,                  lastModified: new Date(), changeFrequency: "hourly",  priority: 1.0 },
   { url: `${SITE_URL}/reviews`,    lastModified: new Date(), changeFrequency: "daily",   priority: 0.95 },
@@ -77,6 +84,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }),
     ]);
 
+    // Drop test/draft/temp review slugs (defense-in-depth alongside publish
+    // status) — also excludes their tags from the tag-summary set below.
+    const publicReviews = reviews.filter((r) => isPublicSlug(r.slug));
+
     return [
       ...staticPages,
       ...categories.filter((c) => c._count.reviews > 0).map((c) => ({
@@ -85,7 +96,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "daily" as const,
         priority: 0.8,
       })),
-      ...reviews.map((r) => ({
+      ...publicReviews.map((r) => ({
         url: `${SITE_URL}/reviews/${r.slug}`,
         lastModified: r.updatedAt,
         changeFrequency: "weekly" as const,
@@ -109,7 +120,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "monthly" as const,
         priority: 0.6,
       })),
-      ...buildTagSummaries(reviews.map((r) => r.tags)).map((tag) => ({
+      ...buildTagSummaries(publicReviews.map((r) => r.tags)).map((tag) => ({
         url: `${SITE_URL}/tag/${tagToSlug(tag.label)}`,
         lastModified: new Date(),
         changeFrequency: "weekly" as const,

@@ -35,6 +35,33 @@ function slugify(text: string): string {
     .slice(0, 80);
 }
 
+/** Short deterministic hash, used only as a slug tiebreaker (never a -N counter). */
+function shortHash(s: string): string {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h.toString(36).slice(0, 6);
+}
+
+/** True if a prompt with the same title already exists (either language). This is
+ *  the real fix for the -1..-N slug explosion: the generator kept re-emitting the
+ *  SAME title, so we now SKIP creation instead of minting a near-duplicate URL. */
+async function promptTitleExists(title: string, titleAr: string): Promise<boolean> {
+  const existing = await prisma.prompt.findFirst({
+    where: { OR: [{ title }, { titleAr }] },
+    select: { id: true },
+  });
+  return !!existing;
+}
+
+/** Unique slug WITHOUT an incrementing "-N" suffix. Falls back to a content-hash
+ *  suffix only on a genuine slug collision from a *different* title. */
+async function uniqueSlug(base: string, seed: string): Promise<string> {
+  if (!(await prisma.prompt.findUnique({ where: { slug: base }, select: { id: true } }))) return base;
+  const hashed = `${base}-${shortHash(seed)}`.slice(0, 80);
+  if (!(await prisma.prompt.findUnique({ where: { slug: hashed }, select: { id: true } }))) return hashed;
+  return `${base}-${Date.now().toString(36)}`.slice(0, 80);
+}
+
 const SYSTEM_PROMPT = (context: string) => `أنت خبير في كتابة الـ prompts للذكاء الاصطناعي.
 ${context}
 أعد JSON بهذا الشكل بالضبط:
@@ -63,11 +90,13 @@ export async function GET(request: Request) {
 
   const generated: string[] = [];
   const failed: string[] = [];
+  let skipped = 0; // duplicate-title prompts we declined to create (the -N fix)
 
   for (const tool of shuffled) {
     try {
       const result = await generatePromptForTool(tool);
-      if (result) generated.push(result);
+      if (result === "skipped") skipped++;
+      else if (result) generated.push(result);
     } catch (err) {
       console.error(`[generate-prompts] Failed for tool ${tool.name}:`, err);
       failed.push(tool.name);
@@ -78,7 +107,8 @@ export async function GET(request: Request) {
     try {
       const category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
       const result = await generateGeneralPrompt(category);
-      if (result) generated.push(result);
+      if (result === "skipped") skipped++;
+      else if (result) generated.push(result);
     } catch (err) {
       console.error("[generate-prompts] Failed for general prompt:", err);
       failed.push("general");
@@ -87,7 +117,7 @@ export async function GET(request: Request) {
 
   if (generated.length > 0) revalidateNow(CACHE_TAGS.prompts);
 
-  return NextResponse.json({ ok: true, generated: generated.length, failed: failed.length });
+  return NextResponse.json({ ok: true, generated: generated.length, skipped, failed: failed.length });
 }
 
 async function generatePromptForTool(tool: { id: string; name: string; tagline: string | null; toolCategory: string }) {
@@ -114,8 +144,11 @@ async function generatePromptForTool(tool: { id: string; name: string; tagline: 
   const data = JSON.parse(raw);
   if (!data.title || !data.titleAr || !data.body) return null;
 
+  // Skip if this exact title already exists — prevents the -1..-N duplicate URLs.
+  if (await promptTitleExists(data.title, data.titleAr)) return "skipped";
+
   const baseSlug = slugify(data.title);
-  const slug = await ensureUniqueSlug(baseSlug);
+  const slug = await uniqueSlug(baseSlug, data.body ?? data.title);
 
   await prisma.prompt.create({
     data: {
@@ -157,8 +190,11 @@ async function generateGeneralPrompt(category: Category) {
   const data = JSON.parse(raw);
   if (!data.title || !data.titleAr || !data.body) return null;
 
+  // Skip if this exact title already exists — prevents the -1..-N duplicate URLs.
+  if (await promptTitleExists(data.title, data.titleAr)) return "skipped";
+
   const baseSlug = slugify(data.title);
-  const slug = await ensureUniqueSlug(baseSlug);
+  const slug = await uniqueSlug(baseSlug, data.body ?? data.title);
 
   await prisma.prompt.create({
     data: {
@@ -175,15 +211,6 @@ async function generateGeneralPrompt(category: Category) {
     },
   });
 
-  return slug;
-}
-
-async function ensureUniqueSlug(base: string): Promise<string> {
-  let slug = base;
-  let i = 1;
-  while (await prisma.prompt.findUnique({ where: { slug } })) {
-    slug = `${base}-${i++}`;
-  }
   return slug;
 }
 

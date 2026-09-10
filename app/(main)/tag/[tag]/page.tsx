@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR } from "@/lib/seo";
-import { normalizeTag, reviewHasTag, slugToTag } from "@/lib/tags";
+import { normalizeTag, reviewHasTag, slugToTag, tagToSlug } from "@/lib/tags";
 import { CACHE_TAGS, DEFAULT_REVALIDATE_SECONDS } from "@/lib/cache";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
 import ReviewCard from "@/components/ReviewCard";
@@ -61,7 +61,11 @@ export async function generateMetadata({
   const data = await getTagPageData(tag, page);
   if (!data) return {};
 
-  const url = absoluteUrl(page > 1 ? `/tag/${tag}?page=${page}` : `/tag/${tag}`);
+  // Canonicalize to the NORMALIZED tag slug so every encoding variant
+  // (underscores, definite-article/morphological spellings, brand casing) of the
+  // same tag points at one canonical URL instead of splitting ranking signals.
+  const canonicalSlug = tagToSlug(data.canonical);
+  const url = absoluteUrl(page > 1 ? `/tag/${canonicalSlug}?page=${page}` : `/tag/${canonicalSlug}`);
   const description = `كل التقارير والتحليلات المتعلقة بـ ${data.label} على ${SITE_NAME_AR}.`;
   const title = page > 1
     ? `${data.label} — صفحة ${page} | ${SITE_NAME_AR}`
@@ -88,15 +92,16 @@ export default async function TagPage({
   const data = await getTagPageData(tag, page);
   if (!data) notFound();
 
-  const { label, reviews, totalCount } = data;
+  const { label, canonical, reviews, totalCount } = data;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const canonicalSlug = tagToSlug(canonical);
 
   const collectionJsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: `#${label}`,
     description: `كل التقارير والتحليلات المتعلقة بـ ${label} على ${SITE_NAME_AR}`,
-    url: absoluteUrl(page > 1 ? `/tag/${tag}?page=${page}` : `/tag/${tag}`),
+    url: absoluteUrl(page > 1 ? `/tag/${canonicalSlug}?page=${page}` : `/tag/${canonicalSlug}`),
     inLanguage: "ar",
   };
 
