@@ -10,6 +10,7 @@ import {
   DEFAULT_EDITORIAL_V2_SHADOW_MAX_PER_RUN,
   getEditorialV2OnMaxPerRun,
   DEFAULT_EDITORIAL_V2_ON_MAX_PER_RUN,
+  getEditorialV2GateMode,
 } from "./settings";
 
 beforeEach(() => vi.clearAllMocks());
@@ -86,5 +87,36 @@ describe("getEditorialV2OnMaxPerRun (A3 canary cap)", () => {
   it("falls back to default on DB error", async () => {
     mockFindUnique.mockRejectedValue(new Error("db down"));
     expect(await getEditorialV2OnMaxPerRun()).toBe(DEFAULT_EDITORIAL_V2_ON_MAX_PER_RUN);
+  });
+});
+
+describe("getEditorialV2GateMode (A5-lite quality gate)", () => {
+  it("defaults to off when no row exists", async () => {
+    mockFindUnique.mockResolvedValue(null);
+    expect(await getEditorialV2GateMode()).toBe("off");
+  });
+  it("parses shadow", async () => {
+    mockFindUnique.mockResolvedValue({ value: "shadow" });
+    expect(await getEditorialV2GateMode()).toBe("shadow");
+  });
+  it("parses enforce (reserved; phase 1 treats as shadow at the route)", async () => {
+    mockFindUnique.mockResolvedValue({ value: "enforce" });
+    expect(await getEditorialV2GateMode()).toBe("enforce");
+  });
+  it("is case-insensitive and trims", async () => {
+    mockFindUnique.mockResolvedValue({ value: "  SHADOW  " });
+    expect(await getEditorialV2GateMode()).toBe("shadow");
+  });
+  it("fails safe to off on an unknown value", async () => {
+    mockFindUnique.mockResolvedValue({ value: "blcok" });
+    expect(await getEditorialV2GateMode()).toBe("off");
+  });
+  it("fails safe to off on explicit 'off'", async () => {
+    mockFindUnique.mockResolvedValue({ value: "off" });
+    expect(await getEditorialV2GateMode()).toBe("off");
+  });
+  it("fails safe to off on DB error", async () => {
+    mockFindUnique.mockRejectedValue(new Error("db down"));
+    expect(await getEditorialV2GateMode()).toBe("off");
   });
 });

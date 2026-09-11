@@ -13,8 +13,9 @@ import {
 } from "@/lib/review-queue";
 import { generateReviewImage } from "@/lib/images";
 import type { AuthorSlug } from "@/lib/authors";
-import { getSetting, SETTING_KEYS, getEditorialV2Mode, getEditorialV2ShadowMaxPerRun, getEditorialV2OnMaxPerRun } from "@/lib/settings";
+import { getSetting, SETTING_KEYS, getEditorialV2Mode, getEditorialV2ShadowMaxPerRun, getEditorialV2OnMaxPerRun, getEditorialV2GateMode } from "@/lib/settings";
 import { planEditorial, buildShadowDiagnostics } from "@/lib/editorial/planner";
+import { evaluateDraftQuality, GATE_PIPELINE_VERSION, type WriterPath } from "@/lib/editorial/quality-gate";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -67,6 +68,15 @@ export async function GET(request: Request) {
   let onPlanWrites = 0;     // items actually written via the plan-driven writer
   let onV1Fallbacks = 0;    // on-attempts that degraded to the V1 writer
 
+  // A5-lite quality gate (phase 1) — read ONCE per run. "off" (default) = gate
+  // never runs. "shadow"/"enforce" = gate runs and LOGS ONLY; phase 1 performs
+  // NO lifecycle enforcement, so "enforce" behaves as shadow (logged once below).
+  const gateMode = await getEditorialV2GateMode();
+  const GATE_WRITER_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o";
+  let gateEvaluated = 0;
+  const gateOutcomes: Record<string, number> = { PASS: 0, PASS_WITH_WARNINGS: 0, EDITOR_REVIEW: 0, REJECT_DRAFT: 0 };
+  let gateEnforceNoticeLogged = false;
+
   const items = await prisma.reviewQueue.findMany({
     where: {
       OR: [
@@ -113,6 +123,9 @@ export async function GET(request: Request) {
       // degrade safely to the exact V1 writer. A3 failure never fails the item —
       // it falls back to V1.
       let draft;
+      // Which writer actually produced `draft` (for the quality gate + its log).
+      let writerPath: WriterPath = "v1";
+      let gatePlan: Awaited<ReturnType<typeof planEditorial>>["plan"] | undefined;
       if (editorialV2Mode === "on" && onAttempts < onMaxPerRun) {
         // Count the attempt BEFORE the planner call so a planner/writer failure
         // can never let the canary exceed its cap.
@@ -159,6 +172,7 @@ export async function GET(request: Request) {
         }
         if (planWriteSucceeded) onPlanWrites++;
         if (usedV1Fallback) onV1Fallbacks++;
+        if (planWriteSucceeded) { writerPath = "a3"; gatePlan = plan ?? undefined; }
 
         // Bounded on-mode diagnostics — no prompts, no body, no source text.
         console.log(
@@ -190,6 +204,59 @@ export async function GET(request: Request) {
       }
 
       await markReviewProcessed(item.id, draft);
+
+      // ── A5-lite QUALITY GATE (phase 1 — SHADOW / log-only) ──────────────
+      // Runs AFTER markReviewProcessed so it can NEVER affect the lifecycle: the
+      // item is already processed and publish-eligible regardless of the gate's
+      // verdict. Pure, deterministic, best-effort (guarded) — it only logs a
+      // bounded diagnostic. "enforce" is reserved for phase 2 and behaves as
+      // shadow here (no blocking), with a one-time per-run notice.
+      if (gateMode !== "off") {
+        try {
+          if (gateMode === "enforce" && !gateEnforceNoticeLogged) {
+            gateEnforceNoticeLogged = true;
+            console.warn("[editorial-v2:gate] mode=enforce has no enforcement in phase 1 — behaving as shadow; lifecycle unchanged.");
+          }
+          const gate = evaluateDraftQuality({
+            plan: gatePlan,
+            draft: { titleAr: draft.titleAr, summaryAr: draft.summaryAr, contentAr: draft.contentAr, faq: draft.faq },
+            writerPath,
+            sourceCount: sources.length,
+          });
+          gateEvaluated++;
+          gateOutcomes[gate.outcome] = (gateOutcomes[gate.outcome] ?? 0) + 1;
+          console.log(
+            `[editorial-v2:gate] ${JSON.stringify({
+              reviewQueueId: item.id,
+              writerPath,
+              pipelineVersion: GATE_PIPELINE_VERSION,
+              model: GATE_WRITER_MODEL,
+              planSummary: gatePlan
+                ? {
+                    storyType: gatePlan.storyType,
+                    depth: gatePlan.depth,
+                    sectionCount: gatePlan.sections.length,
+                    includeFaq: gatePlan.includeFaq,
+                    includeComparison: gatePlan.includeComparison,
+                    includeMena: gatePlan.includeMena,
+                  }
+                : null,
+              draftMetrics: gate.metrics,
+              outcome: gate.outcome,
+              hardFailCodes: gate.hardFailCodes,
+              reviewCodes: gate.reviewCodes,
+              warningCodes: gate.warningCodes,
+            })}`,
+          );
+        } catch (gateErr) {
+          // The gate is strictly best-effort — it must never affect the item that
+          // was already processed above.
+          console.error(
+            `[editorial-v2:gate] non-blocking gate failure for queue item ${item.id}:`,
+            gateErr instanceof Error ? gateErr.message : gateErr,
+          );
+        }
+      }
 
       // ── Editorial V2-A SHADOW MODE ──────────────────────────────────────
       // SHADOW mode only: run the lightweight planner on the SAME in-memory
@@ -276,6 +343,17 @@ export async function GET(request: Request) {
         onAttempts,
         onPlanWrites,
         onV1Fallbacks,
+      })}`,
+    );
+  }
+
+  // One bounded per-run A5-lite quality-gate summary (gate engaged only).
+  if (gateMode !== "off") {
+    console.log(
+      `[editorial-v2:gate-summary] ${JSON.stringify({
+        gateMode,
+        evaluated: gateEvaluated,
+        outcomes: gateOutcomes,
       })}`,
     );
   }

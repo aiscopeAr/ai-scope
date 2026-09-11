@@ -13,6 +13,8 @@ const mockGetSetting = vi.fn();
 const mockGetEditorialV2Mode = vi.fn();
 const mockGetShadowMax = vi.fn();
 const mockGetOnMax = vi.fn();
+const mockGetGateMode = vi.fn();
+const mockEvaluateGate = vi.fn();
 const mockMarkProcessing = vi.fn();
 const mockMarkProcessed = vi.fn();
 const mockMarkFailed = vi.fn();
@@ -42,11 +44,16 @@ vi.mock("@/lib/settings", () => ({
   getEditorialV2Mode: (...a: unknown[]) => mockGetEditorialV2Mode(...a),
   getEditorialV2ShadowMaxPerRun: (...a: unknown[]) => mockGetShadowMax(...a),
   getEditorialV2OnMaxPerRun: (...a: unknown[]) => mockGetOnMax(...a),
+  getEditorialV2GateMode: (...a: unknown[]) => mockGetGateMode(...a),
   SETTING_KEYS: { MAX_PER_RUN: "pipeline.maxPerRun" },
 }));
 vi.mock("@/lib/editorial/planner", () => ({
   planEditorial: (...a: unknown[]) => mockPlanEditorial(...a),
   buildShadowDiagnostics: (...a: unknown[]) => mockBuildShadowDiagnostics(...a),
+}));
+vi.mock("@/lib/editorial/quality-gate", () => ({
+  evaluateDraftQuality: (...a: unknown[]) => mockEvaluateGate(...a),
+  GATE_PIPELINE_VERSION: "a5lite.phase1",
 }));
 
 import { GET } from "./route";
@@ -74,6 +81,8 @@ beforeEach(() => {
   mockBuildShadowDiagnostics.mockReturnValue({ reviewQueueId: "q1" });
   mockGetShadowMax.mockResolvedValue(3);
   mockGetOnMax.mockResolvedValue(1);
+  mockGetGateMode.mockResolvedValue("off");
+  mockEvaluateGate.mockReturnValue({ outcome: "PASS", hardFailCodes: [], reviewCodes: [], warningCodes: [], metrics: { wordCount: 300, h2Count: 4, faqCount: 0, sourceCount: 1, plannedSectionCount: 4 } });
   // On-mode needs a plan with a sections array for diagnostics/section-count.
   mockPlanEditorial.mockResolvedValue({
     status: "success",
@@ -295,5 +304,91 @@ describe("process-review — editorial V2-A3 on-mode (plan-driven writer)", () =
     mockGetOnMax.mockResolvedValue(1);
     await GET(req());
     expect(mockRQUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe("process-review — A5-lite quality gate (phase 1, shadow/log-only)", () => {
+  it("gate OFF → evaluator NOT invoked", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("off");
+    mockGetGateMode.mockResolvedValue("off");
+    await GET(req());
+    expect(mockEvaluateGate).not.toHaveBeenCalled();
+    expect(mockMarkProcessed).toHaveBeenCalledTimes(1);
+  });
+
+  it("gate SHADOW → evaluator runs once per processed item", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("off");
+    mockGetGateMode.mockResolvedValue("shadow");
+    mockRQFindMany.mockResolvedValue(items(3));
+    await GET(req());
+    expect(mockEvaluateGate).toHaveBeenCalledTimes(3);
+    expect(mockMarkProcessed).toHaveBeenCalledTimes(3);
+  });
+
+  it("diagnostic REJECT_DRAFT does NOT change lifecycle (still processed, no fail, not rejected)", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("off");
+    mockGetGateMode.mockResolvedValue("shadow");
+    mockEvaluateGate.mockReturnValue({ outcome: "REJECT_DRAFT", hardFailCodes: ["LEAKAGE"], reviewCodes: [], warningCodes: [], metrics: {} });
+    const res = await GET(req());
+    expect(mockMarkProcessed).toHaveBeenCalledTimes(1);
+    expect(mockMarkFailed).not.toHaveBeenCalled();
+    expect(mockRQUpdate).not.toHaveBeenCalled(); // no rejected status write
+    expect(res.status).toBeLessThan(500);
+  });
+
+  it("diagnostic EDITOR_REVIEW does NOT change lifecycle", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("off");
+    mockGetGateMode.mockResolvedValue("shadow");
+    mockEvaluateGate.mockReturnValue({ outcome: "EDITOR_REVIEW", hardFailCodes: [], reviewCodes: ["MENA_AGAINST_PLAN"], warningCodes: [], metrics: {} });
+    await GET(req());
+    expect(mockMarkProcessed).toHaveBeenCalledTimes(1);
+    expect(mockMarkFailed).not.toHaveBeenCalled();
+  });
+
+  it("PASS_WITH_WARNINGS still markReviewProcessed", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("off");
+    mockGetGateMode.mockResolvedValue("shadow");
+    mockEvaluateGate.mockReturnValue({ outcome: "PASS_WITH_WARNINGS", hardFailCodes: [], reviewCodes: [], warningCodes: ["TOO_SHORT"], metrics: {} });
+    await GET(req());
+    expect(mockMarkProcessed).toHaveBeenCalledTimes(1);
+  });
+
+  it("a thrown gate evaluator is non-blocking — item still processed, no throw", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("off");
+    mockGetGateMode.mockResolvedValue("shadow");
+    mockEvaluateGate.mockImplementation(() => { throw new Error("gate boom"); });
+    const res = await GET(req());
+    expect(mockMarkProcessed).toHaveBeenCalledTimes(1);
+    expect(mockMarkFailed).not.toHaveBeenCalled();
+    expect(res.status).toBeLessThan(500);
+  });
+
+  it("enforce mode behaves as shadow in phase 1 (evaluator runs, lifecycle unchanged)", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("off");
+    mockGetGateMode.mockResolvedValue("enforce");
+    mockEvaluateGate.mockReturnValue({ outcome: "REJECT_DRAFT", hardFailCodes: ["EMPTY_CONTENT"], reviewCodes: [], warningCodes: [], metrics: {} });
+    await GET(req());
+    expect(mockEvaluateGate).toHaveBeenCalledTimes(1);
+    expect(mockMarkProcessed).toHaveBeenCalledTimes(1); // NOT blocked
+    expect(mockMarkFailed).not.toHaveBeenCalled();
+  });
+
+  it("on-path A3 item: gate receives writerPath a3 and the plan", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("on");
+    mockGetOnMax.mockResolvedValue(1);
+    mockGetGateMode.mockResolvedValue("shadow");
+    await GET(req());
+    const arg = mockEvaluateGate.mock.calls[0][0] as { writerPath: string; plan?: unknown };
+    expect(arg.writerPath).toBe("a3");
+    expect(arg.plan).toBeTruthy();
+  });
+
+  it("gate does not run for non-AI-related (rejected) drafts", async () => {
+    mockGetEditorialV2Mode.mockResolvedValue("off");
+    mockGetGateMode.mockResolvedValue("shadow");
+    mockWriteReview.mockResolvedValue({ isAiRelated: false, contentAr: "", featuredImagePrompt: null, titleAr: "t" });
+    await GET(req());
+    expect(mockEvaluateGate).not.toHaveBeenCalled();
+    expect(mockMarkProcessed).not.toHaveBeenCalled();
   });
 });

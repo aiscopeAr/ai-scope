@@ -11,6 +11,7 @@ export const SETTING_KEYS = {
   EDITORIAL_V2_MODE:              "pipeline.editorialV2Mode",
   EDITORIAL_V2_SHADOW_MAX_PER_RUN: "pipeline.editorialV2ShadowMaxPerRun",
   EDITORIAL_V2_ON_MAX_PER_RUN:     "pipeline.editorialV2OnMaxPerRun",
+  EDITORIAL_V2_GATE_MODE:          "pipeline.editorialV2GateMode",
 } as const;
 
 /** How many items per process-review run may execute the V2 shadow planner.
@@ -31,6 +32,13 @@ const EDITORIAL_V2_ON_MAX_CEILING = 10;
 // consumption (NOT implemented yet — treated as "shadow" with a warning).
 export const EDITORIAL_V2_MODES = ["off", "shadow", "on"] as const;
 export type EditorialV2Mode = (typeof EDITORIAL_V2_MODES)[number];
+
+// A5-lite quality-gate rollout flag (string-valued). "off" (default) = gate
+// never runs; "shadow" = gate runs and logs diagnostics but NEVER changes the
+// ReviewQueue lifecycle; "enforce" is RESERVED (phase-2) and in phase 1 behaves
+// as shadow (the route logs a notice) — it must never block content yet.
+export const EDITORIAL_V2_GATE_MODES = ["off", "shadow", "enforce"] as const;
+export type EditorialV2GateMode = (typeof EDITORIAL_V2_GATE_MODES)[number];
 
 // Default values — used when no DB record exists
 const DEFAULTS: Record<string, number> = {
@@ -103,6 +111,24 @@ export async function getEditorialV2OnMaxPerRun(): Promise<number> {
     // fall through to default
   }
   return DEFAULT_EDITORIAL_V2_ON_MAX_PER_RUN;
+}
+
+/**
+ * Read the A5-lite quality-gate mode (string-valued). Defaults to "off" so the
+ * gate never runs until an admin opts in. One `systemSetting.findUnique` per
+ * call — the route reads it once per run. Unknown values fail safe to "off".
+ * NOTE: "enforce" is accepted/parsed but phase 1 has no enforcement wired — the
+ * route treats it as shadow (logs a notice); it must never block content yet.
+ */
+export async function getEditorialV2GateMode(): Promise<EditorialV2GateMode> {
+  try {
+    const row = await prisma.systemSetting.findUnique({ where: { key: SETTING_KEYS.EDITORIAL_V2_GATE_MODE } });
+    const v = row?.value?.trim().toLowerCase();
+    if (v === "shadow" || v === "enforce") return v;
+  } catch {
+    // fail closed to "off"
+  }
+  return "off";
 }
 
 export async function setSetting(key: string, value: number): Promise<void> {
