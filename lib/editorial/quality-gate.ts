@@ -179,11 +179,14 @@ export function evaluateDraftQuality(input: GateInput): GateResult {
   }
 
   // ── SOFT warnings (advisory; never change outcome beyond PASS_WITH_WARNINGS) ──
-  // Length: diagnostic ONLY. Suppressed when the planner already downgraded depth.
-  const depth: Depth | undefined = plan?.depth;
-  const shortThreshold = depth ? DEPTH_SHORT_WARN[depth] : DEPTH_SHORT_WARN.standard;
+  // Depth / TOO_SHORT is PLAN-DRIVEN ONLY. A V1 (no-plan) draft has no depth
+  // contract, so applying an implicit STANDARD band flagged ~every V1 article
+  // (3-run shadow evidence: 7/8 V1 flagged vs 3/3 justified on A3). With NO plan
+  // we emit no depth diagnostic; WITH a plan the per-depth behavior is unchanged,
+  // and a planner-declared depthDowngradedReason still suppresses it. Length is
+  // diagnostic only and never hard-fails.
   const depthDowngraded = !!(plan?.depthDowngradedReason && plan.depthDowngradedReason.trim());
-  if (content.trim().length > 0 && wordCount < shortThreshold && !depthDowngraded) {
+  if (plan && content.trim().length > 0 && !depthDowngraded && wordCount < DEPTH_SHORT_WARN[plan.depth]) {
     warningCodes.push("TOO_SHORT");
   }
 

@@ -161,3 +161,40 @@ describe("evaluateDraftQuality — V1 path (no plan) invents no plan failures", 
     expect(evaluateDraftQuality({ draft: { contentAr: "نص\n\nجرّبنا الأداة بأنفسنا" }, writerPath: "v1", sourceCount: 0 }).hardFailCodes).toContain("FIRST_HAND");
   });
 });
+
+describe("evaluateDraftQuality — TUNING PATCH: depth/TOO_SHORT is plan-driven only", () => {
+  it("V1/no-plan ~200-word otherwise-valid draft → NO TOO_SHORT", () => {
+    const r = evaluateDraftQuality({ plan: undefined, draft: { contentAr: content(["أولاً", "ثانياً", "ثالثاً"], 67), faq: [] }, writerPath: "v1", sourceCount: 3 });
+    expect(r.warningCodes).not.toContain("TOO_SHORT");
+    expect(r.outcome).toBe("PASS");
+  });
+  it("V1/no-plan ~400-word otherwise-valid draft → NO TOO_SHORT", () => {
+    const r = evaluateDraftQuality({ plan: undefined, draft: { contentAr: content(["أولاً", "ثانياً", "ثالثاً", "رابعاً"], 100), faq: [] }, writerPath: "v1", sourceCount: 3 });
+    expect(r.warningCodes).not.toContain("TOO_SHORT");
+    expect(r.outcome).toBe("PASS");
+  });
+  it("V1/no-plan STILL detects EMPTY_CONTENT / LEAKAGE / FIRST_HAND", () => {
+    expect(evaluateDraftQuality({ plan: undefined, draft: { contentAr: "" }, writerPath: "v1", sourceCount: 0 }).hardFailCodes).toContain("EMPTY_CONTENT");
+    expect(evaluateDraftQuality({ plan: undefined, draft: { contentAr: "نص\n\n## الكلمات المفتاحية\n- x" }, writerPath: "v1", sourceCount: 0 }).hardFailCodes).toContain("LEAKAGE");
+    expect(evaluateDraftQuality({ plan: undefined, draft: { contentAr: "نص\n\nجرّبنا الأداة بأنفسنا" }, writerPath: "v1", sourceCount: 0 }).hardFailCodes).toContain("FIRST_HAND");
+  });
+
+  it("A3 STANDARD 240 words → TOO_SHORT remains", () => {
+    const r = evaluateDraftQuality(input({ plan: plan({ depth: "standard", sections: plan().sections.slice(0, 3) }), draft: { contentAr: content(["أولاً", "ثانياً", "ثالثاً"], 80), faq: [] } }));
+    expect(r.warningCodes).toContain("TOO_SHORT");
+  });
+  it("A3 BREAKING unchanged: ≥band → no TOO_SHORT; below band → TOO_SHORT", () => {
+    const ok = evaluateDraftQuality(input({ plan: plan({ depth: "breaking" }), draft: { contentAr: content(["أ", "ب", "ج", "د"], 70), faq: [] } })); // ~280 ≥ 250
+    expect(ok.warningCodes).not.toContain("TOO_SHORT");
+    const thin = evaluateDraftQuality(input({ plan: plan({ depth: "breaking", sections: plan().sections.slice(0, 3) }), draft: { contentAr: content(["أ", "ب", "ج"], 50), faq: [] } })); // ~150 < 250
+    expect(thin.warningCodes).toContain("TOO_SHORT");
+  });
+  it("A3 DEEP unchanged: thin draft → TOO_SHORT", () => {
+    const r = evaluateDraftQuality(input({ plan: plan({ depth: "deep" }), draft: { contentAr: content(["أ", "ب", "ج", "د"], 70), faq: [] } })); // ~280 < 900
+    expect(r.warningCodes).toContain("TOO_SHORT");
+  });
+  it("A3 depthDowngradedReason still suppresses TOO_SHORT", () => {
+    const r = evaluateDraftQuality(input({ plan: plan({ depth: "standard", sections: plan().sections.slice(0, 3), depthDowngradedReason: "أدلة غير كافية" }), draft: { contentAr: content(["أولاً", "ثانياً", "ثالثاً"], 80), faq: [] } }));
+    expect(r.warningCodes).not.toContain("TOO_SHORT");
+  });
+});
