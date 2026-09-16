@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db";
 import { absoluteUrl, SITE_NAME_AR, truncate } from "@/lib/seo";
 import { CACHE_TAGS } from "@/lib/cache";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
+import { promptExperimentRobots } from "@/lib/prompts/indexation-experiment";
 import PromptBodyTabs from "@/components/PromptBodyTabs";
 import ArticleTracker from "@/components/ArticleTracker";
 import ViewPing from "@/components/ViewPing";
@@ -70,10 +71,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ogImage = absoluteUrl(
     `/api/og?${new URLSearchParams({ title: prompt.titleAr, category: "مكتبة البرومبتس" }).toString()}`,
   );
+  // PROMPT_INDEXATION_001 experiment: only a frozen treatment slug, and only when
+  // the flag is on, receives `noindex, follow`. Otherwise `robots` is omitted and
+  // the page stays indexable exactly as before. Title/description/canonical/OG/
+  // content are never touched by the experiment.
+  const experimentRobots = promptExperimentRobots(prompt.slug);
   return {
     title: `${prompt.titleAr} | ${SITE_NAME_AR}`,
     description,
     alternates: { canonical: absoluteUrl(`/prompts/${prompt.slug}`) },
+    ...(experimentRobots ? { robots: experimentRobots } : {}),
     openGraph: {
       title: prompt.titleAr,
       description,

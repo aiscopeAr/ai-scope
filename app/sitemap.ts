@@ -5,6 +5,7 @@ import { TOOL_CATEGORIES } from "@/lib/tool-categories";
 import { buildTagSummaries, tagToSlug } from "@/lib/tags";
 import { AUTHORS } from "@/lib/authors";
 import { getLiveTools } from "@/lib/tools/registry";
+import { shouldIncludePromptInSitemap } from "@/lib/prompts/indexation-experiment";
 
 // ISR: regenerate at most once per hour instead of querying Neon on every
 // crawler request (was force-dynamic). URL, hostname, and URL set are
@@ -114,7 +115,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "monthly" as const,
         priority: 0.7,
       })),
-      ...prompts.map((p) => ({
+      // PROMPT_INDEXATION_001 experiment: when the flag is on, the frozen treatment
+      // slugs are omitted so sitemap membership stays in lockstep with indexability
+      // (shared decision in lib/prompts/indexation-experiment). Flag off → no-op.
+      ...prompts.filter((p) => shouldIncludePromptInSitemap(p.slug)).map((p) => ({
         url: `${SITE_URL}/prompts/${p.slug}`,
         lastModified: p.updatedAt,
         changeFrequency: "monthly" as const,
