@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { EditorialPlan } from "./plan-types";
-import { buildPlanDirectives, buildPlanDrivenUserPrompt, buildIntegrityRules } from "./plan-to-prompt";
+import { buildPlanDirectives, buildPlanDrivenUserPrompt, buildIntegrityRules, buildHumanVoiceRules } from "./plan-to-prompt";
 
 function basePlan(overrides: Partial<EditorialPlan> = {}): EditorialPlan {
   return {
@@ -26,6 +26,26 @@ function basePlan(overrides: Partial<EditorialPlan> = {}): EditorialPlan {
 }
 
 const LEGACY_STEMS = ["السياق", "التفاصيل", "التحليل", "المقارنة", "التداعيات"];
+
+describe("buildHumanVoiceRules (anti-AI-feel)", () => {
+  it("bans known robotic clichés and demands author voice + varied rhythm", () => {
+    const out = buildHumanVoiceRules();
+    expect(out).toContain("الصوت البشري");
+    expect(out).toContain("في الختام");          // listed as banned filler
+    expect(out).toContain("تجدر الإشارة إلى");    // banned filler
+    expect(out).toContain("نوّع إيقاع الجُمل");    // varied sentence rhythm
+  });
+  it("is included in the full plan-driven user prompt", () => {
+    const src = [{ title: "t", content: "c", url: "https://a/1", name: "TC" }];
+    const out = buildPlanDrivenUserPrompt(src, "", basePlan());
+    expect(out).toContain("الصوت البشري");
+  });
+  it("adds no word quota (quality, not quantity)", () => {
+    const out = buildHumanVoiceRules();
+    expect(out).not.toContain("لا تقل عن");
+    expect(out).not.toMatch(/حد أدنى/);
+  });
+});
 
 describe("buildPlanDirectives", () => {
   it("includes the core plan fields", () => {
