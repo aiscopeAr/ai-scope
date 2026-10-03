@@ -13,7 +13,7 @@ import {
 } from "@/lib/review-queue";
 import { generateReviewImage } from "@/lib/images";
 import type { AuthorSlug } from "@/lib/authors";
-import { getSetting, SETTING_KEYS, getEditorialV2Mode, getEditorialV2ShadowMaxPerRun, getEditorialV2OnMaxPerRun, getEditorialV2GateMode } from "@/lib/settings";
+import { getSetting, SETTING_KEYS, getEditorialV2Mode, getEditorialV2ShadowMaxPerRun, getEditorialV2OnMaxPerRun, getEditorialV2GateMode, getWriterMultiModelMode } from "@/lib/settings";
 import { planEditorial, buildShadowDiagnostics } from "@/lib/editorial/planner";
 import { evaluateDraftQuality, GATE_PIPELINE_VERSION, type WriterPath } from "@/lib/editorial/quality-gate";
 
@@ -45,6 +45,11 @@ export async function GET(request: Request) {
   // Editorial V2-A rollout flag — read ONCE per run (config read, not a
   // per-item query). "off" (default) = exact V1 behavior, planner never runs.
   const editorialV2Mode = await getEditorialV2Mode();
+
+  // Multi-model writer flag — read ONCE per run. "off" (default) = every author
+  // uses the OpenAI writer unchanged. "on" = the mapped author (lina) writes via
+  // Gemini on the V2 plan path, with a grounding gate that falls back to OpenAI.
+  const multiModelEnabled = (await getWriterMultiModelMode()) === "on";
 
   // Shadow-sampling cap: how many items THIS run may execute the planner in
   // SHADOW mode. Independent of maxPerRun (V1 throughput). Read once, and ONLY
@@ -153,7 +158,7 @@ export async function GET(request: Request) {
 
         if (plan) {
           try {
-            draft = await writeReview(item.topic, sources, item.authorSlug as AuthorSlug, plan);
+            draft = await writeReview(item.topic, sources, item.authorSlug as AuthorSlug, plan, { multiModelEnabled });
             planWriteSucceeded = true;
           } catch (writeErr) {
             usedV1Fallback = true;

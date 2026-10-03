@@ -4,6 +4,8 @@ import { findSimilarReviews, type SimilarReview } from "@/lib/embeddings";
 import { getAuthorMemoryBlock } from "@/lib/author-memory";
 import type { EditorialPlan } from "@/lib/editorial/plan-types";
 import { buildPlanDrivenUserPrompt } from "@/lib/editorial/plan-to-prompt";
+import { resolveWriterRoute, getGeminiClient } from "@/lib/editorial/writer-model";
+import { checkGrounding } from "@/lib/editorial/grounding";
 
 let _client: OpenAI | null = null;
 function getClient(): OpenAI {
@@ -174,6 +176,7 @@ export async function writeReview(
   sources: Array<{ title: string; content: string; url: string; name: string }>,
   authorSlugHint?: AuthorSlug,
   plan?: EditorialPlan,
+  opts?: { multiModelEnabled?: boolean },
 ): Promise<ReviewDraft> {
   const client = getClient();
 
@@ -207,24 +210,53 @@ export async function writeReview(
     ? buildPlanDrivenUserPrompt(sources, memoryBlock, plan)
     : buildUserPrompt(sources, memoryBlock, pickHeadlineStyle(topic));
 
-  const response = await client.chat.completions.create({
-    model: process.env.OPENAI_MODEL ?? "gpt-4o",
-    messages: [
-      { role: "system", content: author.systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-    temperature: 0.8,
-    max_tokens: 12000,
-  });
+  const messages = [
+    { role: "system" as const, content: author.systemPrompt },
+    { role: "user" as const, content: userPrompt },
+  ];
+  const openaiModel = process.env.OPENAI_MODEL ?? "gpt-4o";
 
-  const raw = response.choices[0]?.message?.content ?? "";
-  const jsonText = raw
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/```\s*$/i, "")
-    .trim();
+  // Generate with the given client/model and tolerantly parse the JSON object
+  // (handles code fences AND any prose preamble/suffix some providers add).
+  const generate = async (c: OpenAI, model: string): Promise<Partial<ReviewDraft>> => {
+    const resp = await c.chat.completions.create({ model, messages, temperature: 0.8, max_tokens: 12000 });
+    const raw = resp.choices[0]?.message?.content ?? "";
+    const start = raw.indexOf("{");
+    const end = raw.lastIndexOf("}");
+    const jsonText =
+      start >= 0 && end > start
+        ? raw.slice(start, end + 1)
+        : raw.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
+    return JSON.parse(jsonText) as Partial<ReviewDraft>;
+  };
 
-  const parsed = JSON.parse(jsonText) as Partial<ReviewDraft>;
+  // Multi-model routing (flag-gated, V2 plan path, mapped author only). The
+  // alternate writer (Gemini) must clear the grounding gate; otherwise we fall
+  // back to the default OpenAI writer so an invented-fact draft never ships.
+  const route = plan && opts?.multiModelEnabled ? resolveWriterRoute(authorSlug, true) : null;
+  let parsed: Partial<ReviewDraft>;
+  if (route?.provider === "gemini") {
+    try {
+      const g = await generate(getGeminiClient(), route.model);
+      const grounding = checkGrounding(g.contentAr ?? "", sources);
+      if (grounding.ok) {
+        parsed = g;
+      } else {
+        console.warn(
+          `[writer:multimodel] gemini draft failed grounding (ungrounded nums=${grounding.ungroundedNumbers.length}, names=${grounding.ungroundedNames.length}) — falling back to OpenAI`,
+        );
+        parsed = await generate(client, openaiModel);
+      }
+    } catch (err) {
+      console.error(
+        `[writer:multimodel] gemini writer threw — falling back to OpenAI:`,
+        err instanceof Error ? err.message : err,
+      );
+      parsed = await generate(client, openaiModel);
+    }
+  } else {
+    parsed = await generate(client, openaiModel);
+  }
 
   const faq: FaqItem[] = Array.isArray(parsed.faq)
     ? parsed.faq

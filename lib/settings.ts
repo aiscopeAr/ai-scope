@@ -12,6 +12,7 @@ export const SETTING_KEYS = {
   EDITORIAL_V2_SHADOW_MAX_PER_RUN: "pipeline.editorialV2ShadowMaxPerRun",
   EDITORIAL_V2_ON_MAX_PER_RUN:     "pipeline.editorialV2OnMaxPerRun",
   EDITORIAL_V2_GATE_MODE:          "pipeline.editorialV2GateMode",
+  WRITER_MULTIMODEL_MODE:          "pipeline.writerMultiModelMode",
 } as const;
 
 /** How many items per process-review run may execute the V2 shadow planner.
@@ -125,6 +126,22 @@ export async function getEditorialV2GateMode(): Promise<EditorialV2GateMode> {
     const row = await prisma.systemSetting.findUnique({ where: { key: SETTING_KEYS.EDITORIAL_V2_GATE_MODE } });
     const v = row?.value?.trim().toLowerCase();
     if (v === "shadow" || v === "enforce") return v;
+  } catch {
+    // fail closed to "off"
+  }
+  return "off";
+}
+
+// Multi-model writer flag (string-valued). "off" (default) = every author uses
+// the OpenAI writer unchanged; "on" = the mapped author (see
+// writer-model.MULTIMODEL_WRITER_BY_AUTHOR) writes via Gemini, with a grounding
+// gate that falls back to the OpenAI writer if the draft invents facts. Fails
+// closed to "off" on any error.
+export type WriterMultiModelMode = "off" | "on";
+export async function getWriterMultiModelMode(): Promise<WriterMultiModelMode> {
+  try {
+    const row = await prisma.systemSetting.findUnique({ where: { key: SETTING_KEYS.WRITER_MULTIMODEL_MODE } });
+    if (row?.value?.trim().toLowerCase() === "on") return "on";
   } catch {
     // fail closed to "off"
   }
