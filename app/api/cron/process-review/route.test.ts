@@ -45,6 +45,7 @@ vi.mock("@/lib/settings", () => ({
   getEditorialV2ShadowMaxPerRun: (...a: unknown[]) => mockGetShadowMax(...a),
   getEditorialV2OnMaxPerRun: (...a: unknown[]) => mockGetOnMax(...a),
   getEditorialV2GateMode: (...a: unknown[]) => mockGetGateMode(...a),
+  getWriterMultiModelMode: async () => "off",
   SETTING_KEYS: { MAX_PER_RUN: "pipeline.maxPerRun" },
 }));
 vi.mock("@/lib/editorial/planner", () => ({
@@ -132,7 +133,7 @@ describe("process-review — editorial V2-A shadow integration", () => {
     await GET(req());
     expect(mockPlanEditorial).toHaveBeenCalledTimes(1);
     expect(mockWriteReview).toHaveBeenCalledTimes(1);
-    expect(mockWriteReview.mock.calls[0]).toHaveLength(4); // (topic, sources, authorSlug, plan)
+    expect(mockWriteReview.mock.calls[0]).toHaveLength(5); // (topic, sources, authorSlug, plan, opts)
     expect(mockWriteReview.mock.calls[0][3]).toHaveProperty("sections"); // the plan
     expect(mockBuildShadowDiagnostics).not.toHaveBeenCalled(); // on mode skips the shadow block
     expect(mockMarkProcessed).toHaveBeenCalledTimes(1);
@@ -198,7 +199,7 @@ describe("process-review — editorial V2-A shadow sampling cap", () => {
     await GET(req());
     expect(mockPlanEditorial).toHaveBeenCalledTimes(1);
     expect(mockWriteReview).toHaveBeenCalledTimes(3);
-    expect(mockWriteReview.mock.calls[0]).toHaveLength(4); // first = plan-driven
+    expect(mockWriteReview.mock.calls[0]).toHaveLength(5); // first = plan-driven
     expect(mockWriteReview.mock.calls[1]).toHaveLength(3); // rest = V1
     expect(mockWriteReview.mock.calls[2]).toHaveLength(3);
   });
@@ -239,14 +240,14 @@ describe("process-review — editorial V2-A3 on-mode (plan-driven writer)", () =
     mockRQFindMany.mockResolvedValue(items(3));
     await GET(req());
     expect(mockPlanEditorial).toHaveBeenCalledTimes(1);
-    expect(mockWriteReview.mock.calls[0]).toHaveLength(4);
+    expect(mockWriteReview.mock.calls[0]).toHaveLength(5);
     expect(mockWriteReview.mock.calls[1]).toHaveLength(3);
   });
 
   it("planner success (non-fallback) → plan-driven writer gets the plan", async () => {
     mockGetOnMax.mockResolvedValue(1);
     await GET(req());
-    expect(mockWriteReview.mock.calls[0]).toHaveLength(4);
+    expect(mockWriteReview.mock.calls[0]).toHaveLength(5);
     expect(mockWriteReview.mock.calls[0][3]).toHaveProperty("storyType", "STANDARD_NEWS");
   });
 
@@ -284,7 +285,7 @@ describe("process-review — editorial V2-A3 on-mode (plan-driven writer)", () =
       .mockResolvedValueOnce({ isAiRelated: true, contentAr: "## X\nن", featuredImagePrompt: null, titleAr: "t" }); // V1 fallback
     await GET(req());
     expect(mockWriteReview).toHaveBeenCalledTimes(2);
-    expect(mockWriteReview.mock.calls[0]).toHaveLength(4); // plan attempt
+    expect(mockWriteReview.mock.calls[0]).toHaveLength(5); // plan attempt
     expect(mockWriteReview.mock.calls[1]).toHaveLength(3); // V1 fallback
     expect(mockMarkProcessed).toHaveBeenCalledTimes(1);
     expect(mockMarkFailed).not.toHaveBeenCalled();
