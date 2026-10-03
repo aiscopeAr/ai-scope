@@ -18,6 +18,8 @@ import {
   type EditorialPlan,
   type StoryType,
   type Depth,
+  type OpeningStrategy,
+  OPENING_STRATEGIES,
   validateEditorialPlan,
   isLegacySkeleton,
 } from "@/lib/editorial/plan-types";
@@ -56,6 +58,18 @@ export function deterministicStoryTypeHint(topic: string, sources: PlannerSource
   return "STANDARD_NEWS";
 }
 
+/** Deterministic opening-strategy hint — spreads topics across ALL 8 strategies
+ *  so the feed never collapses onto FACT_FIRST (the exact tic the comparison
+ *  found: the planner defaulted to FACT_FIRST ~every time, so openings felt
+ *  identical). NOT authoritative — the planner may override when the story truly
+ *  demands another, but it must not silently default. Mirrors the proven
+ *  pickHeadlineStyle spreader in review-openai.ts. */
+export function pickOpeningStrategyHint(topic: string): OpeningStrategy {
+  let hash = 0;
+  for (let i = 0; i < topic.length; i++) hash = (hash * 31 + topic.charCodeAt(i)) >>> 0;
+  return OPENING_STRATEGIES[hash % OPENING_STRATEGIES.length];
+}
+
 // ─── Prompt ──────────────────────────────────────────────────────────────────
 
 const MAX_SNIPPET = 300;
@@ -73,7 +87,8 @@ export function buildPlannerSystemPrompt(): string {
 - المقارنة اختيارية: فعّلها فقط عند وجود مرجع/منافس محدد يُسمّى في comparisonTarget.
 - زاوية الشرق الأوسط اختيارية ومبنية على دليل محدد (دعم العربية، توفر إقليمي، تسعير، تنظيم…) يُذكر في menaReason — لا فقرة عامة.
 - عدم اليقين: سجّله؛ اجعله material فقط إن كان جوهرياً.
-- العمق (depth) مبني على الأدلة: لا تختر "deep" ما لم تدعمه مصادر كافية. لا تحشُ لبلوغ عدد كلمات.
+- العمق (depth) يطابق ثراء القصة والأدلة: اختر "deep" للقصص التحليلية أو دائمة الخضرة التي تدعمها مصادر كافية وتستحق معالجة موسّعة ومعمّقة؛ "standard" للأخبار المعتادة؛ "breaking" للعاجل المحدود. المعيار هو الجودة والعمق التحليلي الحقيقي، لا عدد الكلمات — لا تحشُ ولا تختر عمقاً أكبر مما تدعمه الأدلة.
+- استراتيجية الافتتاح (openingStrategy) تُختار لتناسب هذه القصة تحديداً وتتنوّع بين المقالات؛ لا تلجأ افتراضياً إلى FACT_FIRST. ستتلقّى اقتراحاً للتنويع — استخدمه ما لم تكن القصة تقتضي استراتيجية أنسب.
 - ممنوع تماماً افتراض أن Lumiq جرّبت/استخدمت/اشتركت/قاست/التقطت لقطات شاشة لأي منتج. لا تفترض تجربة مباشرة إطلاقاً.
 - أنت تُنتج الخطة فقط، لا نص المقال.
 
@@ -103,6 +118,7 @@ export function buildPlannerUserPrompt(
   sources: PlannerSource[],
   authorSlug: AuthorSlug,
   hint: StoryType,
+  openingHint?: OpeningStrategy,
 ): string {
   const srcText = sources
     .map((s, i) => {
@@ -113,7 +129,7 @@ export function buildPlannerUserPrompt(
   return `الموضوع: ${topic}
 عدد المصادر: ${sources.length}
 الكاتب/العدسة التحريرية (authorLens): ${authorSlug}
-تلميح مبدئي لنوع القصة (غير مُلزِم، يمكنك تجاوزه): ${hint}
+تلميح مبدئي لنوع القصة (غير مُلزِم، يمكنك تجاوزه): ${hint}${openingHint ? `\nاقتراح لاستراتيجية الافتتاح (للتنويع عبر الموقع، غير مُلزِم لكن تجنّب العودة الافتراضية إلى FACT_FIRST): ${openingHint}` : ""}
 
 المصادر (مقتطفات قصيرة):
 ${srcText}
@@ -201,11 +217,12 @@ export async function planEditorial(
   opts?: { createCompletion?: CreateCompletion },
 ): Promise<PlannerOutcome> {
   const hint = deterministicStoryTypeHint(topic, sources);
+  const openingHint = pickOpeningStrategyHint(topic);
   const createCompletion = opts?.createCompletion ?? defaultCreateCompletion;
   const started = Date.now();
 
   const system = buildPlannerSystemPrompt();
-  const user = buildPlannerUserPrompt(topic, sources, authorSlug, hint);
+  const user = buildPlannerUserPrompt(topic, sources, authorSlug, hint, openingHint);
 
   const fallback = (status: PlannerStatus, reason: string): PlannerOutcome => ({
     status,

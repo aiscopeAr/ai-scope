@@ -2,13 +2,15 @@ import { describe, it, expect } from "vitest";
 import {
   planEditorial,
   deterministicStoryTypeHint,
+  pickOpeningStrategyHint,
+  buildPlannerUserPrompt,
   conservativeFallbackPlan,
   buildShadowDiagnostics,
   extractH2Headings,
   type PlannerSource,
   type CreateCompletion,
 } from "./planner";
-import { validateEditorialPlan, type EditorialPlan } from "./plan-types";
+import { validateEditorialPlan, OPENING_STRATEGIES, type EditorialPlan } from "./plan-types";
 
 const sources: PlannerSource[] = [
   { title: "OpenAI launches GPT-6", content: "OpenAI announced its new model today with a lower price.", url: "https://a.com/1", name: "TechCrunch" },
@@ -37,6 +39,24 @@ function goodPlanJson(overrides: Partial<EditorialPlan> = {}): string {
   };
   return JSON.stringify(plan);
 }
+
+describe("pickOpeningStrategyHint (opening variety)", () => {
+  it("is deterministic and returns a valid strategy", () => {
+    const a = pickOpeningStrategyHint("GPT-6 launch");
+    expect(a).toBe(pickOpeningStrategyHint("GPT-6 launch"));
+    expect(OPENING_STRATEGIES).toContain(a);
+  });
+  it("spreads across strategies — not collapsed onto FACT_FIRST", () => {
+    const topics = ["GPT-6 launch","EU AI Act vote","Anthropic funding round","new safety benchmark","Shopify AI rollout","arXiv reasoning paper","Meta model leak","pricing war in LLMs","robotics demo","chip supply shift"];
+    const picks = new Set(topics.map(pickOpeningStrategyHint));
+    expect(picks.size).toBeGreaterThanOrEqual(4); // real variety, not one default
+  });
+  it("is surfaced in the planner user prompt as a non-binding suggestion", () => {
+    const out = buildPlannerUserPrompt("GPT-6 launch", sources, "zayd", "PRODUCT_LAUNCH", "CONSEQUENCE_FIRST");
+    expect(out).toContain("CONSEQUENCE_FIRST");
+    expect(out).toContain("FACT_FIRST"); // the "don't default to FACT_FIRST" guidance
+  });
+});
 
 describe("deterministicStoryTypeHint (C: hybrid hint)", () => {
   it("classifies by keyword family", () => {
