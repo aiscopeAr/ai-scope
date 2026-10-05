@@ -41,16 +41,22 @@ export const TOOLS: ToolDefinition[] = [
     nameAr: "تحويل التاريخ الهجري والميلادي",
     shortDescriptionAr: "حوّل أي تاريخ بين الهجري والميلادي فورًا.",
     category: "التاريخ",
-    comingSoon: true,
-    seo: { titleAr: "", descriptionAr: "" },
+    seo: {
+      titleAr: "تحويل التاريخ الهجري والميلادي — محوّل التقويم أونلاين",
+      descriptionAr:
+        "حوّل أي تاريخ بين التقويم الهجري (أم القرى) والميلادي فورًا ومجانًا — أدخل التاريخ لتعرف ما يقابله واليوم من أيام الأسبوع، مباشرة في متصفحك دون تسجيل.",
+    },
   },
   {
     slug: "qr-code-generator",
     nameAr: "إنشاء رمز QR",
     shortDescriptionAr: "أنشئ رمز QR لأي رابط أو نص خلال ثوانٍ.",
     category: "النصوص",
-    comingSoon: true,
-    seo: { titleAr: "", descriptionAr: "" },
+    seo: {
+      titleAr: "إنشاء رمز QR مجانًا — مولّد باركود QR لأي رابط أو نص",
+      descriptionAr:
+        "أنشئ رمز QR لأي رابط أو نص خلال ثوانٍ وحمّله صورة PNG عالية الدقة مجانًا — يعمل مباشرة في متصفحك دون تسجيل ودون رفع بياناتك لأي خادم.",
+    },
   },
 ];
 
