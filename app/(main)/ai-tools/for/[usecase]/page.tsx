@@ -9,7 +9,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
 import ToolCard from "@/components/ToolCard";
 
-export const revalidate = 600;
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   return TOOL_CATEGORIES.map((c) => ({ usecase: c.value }));

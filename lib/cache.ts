@@ -16,7 +16,11 @@ export const CACHE_TAGS = {
 } as const;
 
 /** Default revalidation window (seconds) as a safety net behind on-demand revalidation. */
-export const DEFAULT_REVALIDATE_SECONDS = 300;
+// 1 hour. Publishes/edits refresh content IMMEDIATELY via revalidateNow() (tag
+// invalidation), so this time-based value is only a safety-net fallback — kept
+// long to minimize ISR-write churn (short fallbacks regenerated ~1000 ISR pages
+// far too often and blew Vercel's ISR-write quota).
+export const DEFAULT_REVALIDATE_SECONDS = 3600;
 
 /**
  * Next.js 16's revalidateTag(tag) alone is deprecated stale-while-revalidate —

@@ -9,7 +9,7 @@ import { prisma } from "@/lib/db";
 import { AUTHORS, type AuthorSlug } from "@/lib/authors";
 import { SITE_NAME, SITE_NAME_AR, SITE_URL, SITE_TWITTER_HANDLE, absoluteUrl } from "@/lib/seo";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   return Object.keys(AUTHORS).map((slug) => ({ slug }));

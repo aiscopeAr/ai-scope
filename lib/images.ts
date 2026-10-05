@@ -1,5 +1,6 @@
 import Replicate from "replicate";
 import { uploadImageFromUrl, type ImagePipelineContext } from "@/lib/cloudinary";
+import { buildStyledImagePrompt } from "@/lib/image-style";
 
 let client: Replicate | null = null;
 
@@ -121,7 +122,9 @@ export async function generateReviewImage(
   logStage("replicate_generation", "start", ctx);
   try {
     const replicate = getClient();
-    const safePrompt = `${prompt}, digital art, dark background, cinematic lighting, high quality, no text, no watermark`;
+    // Rotate a visual style per article (deterministic by reviewId, falling back
+    // to the scene prompt) so the feed varies instead of one uniform dark look.
+    const safePrompt = buildStyledImagePrompt(prompt, ctx.reviewId ?? prompt);
 
     const prediction = await replicate.predictions.create({
       model: "black-forest-labs/flux-schnell",
