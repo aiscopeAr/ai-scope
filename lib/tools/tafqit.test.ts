@@ -87,6 +87,38 @@ describe("fraction forms (هللة, feminine)", () => {
   }
 });
 
+describe("approved cross-currency forms (locked after review)", () => {
+  const t = (n: string, c: "AED" | "EGP" | "USD" | "EUR" | "ILS") => {
+    const r = tafqit(n, { currency: c, chequeSuffix: false });
+    return r.ok ? r.text : `ERR:${r.error}`;
+  };
+  it("main unit, count 3", () => {
+    expect(t("3", "AED")).toBe("ثلاثة دراهم إماراتية");
+    expect(t("3", "EGP")).toBe("ثلاثة جنيهات مصرية");
+    expect(t("3", "USD")).toBe("ثلاثة دولارات أمريكية");
+    expect(t("3", "EUR")).toBe("ثلاثة يورو");
+    expect(t("3", "ILS")).toBe("ثلاثة شواكل إسرائيلية");
+  });
+  it("1250.75 endings", () => {
+    expect(t("1250.75", "AED")).toBe("ألف ومائتان وخمسون درهمًا إماراتيًا وخمسة وسبعون فلسًا");
+    expect(t("1250.75", "EGP")).toBe("ألف ومائتان وخمسون جنيهًا مصريًا وخمسة وسبعون قرشًا");
+    expect(t("1250.75", "USD")).toBe("ألف ومائتان وخمسون دولارًا أمريكيًا وخمسة وسبعون سنتًا");
+    expect(t("1250.75", "EUR")).toBe("ألف ومائتان وخمسون يورو وخمسة وسبعون سنتًا");
+    expect(t("1250.75", "ILS")).toBe("ألف ومائتان وخمسون شيكلًا إسرائيليًا وخمس وسبعون أغورة");
+  });
+  it("EUR invariable across counts", () => {
+    expect(t("1", "EUR")).toBe("يورو واحد");
+    expect(t("2", "EUR")).toBe("اثنان يورو");
+    expect(t("11", "EUR")).toBe("أحد عشر يورو");
+  });
+  it("fraction 3–10 forms", () => {
+    expect(t("0.03", "AED")).toBe("ثلاثة فلوس");
+    expect(t("0.03", "EGP")).toBe("ثلاثة قروش");
+    expect(t("0.03", "USD")).toBe("ثلاثة سنتات");
+    expect(t("0.03", "ILS")).toBe("ثلاث أغورات");
+  });
+});
+
 describe("rounding carry", () => {
   it("999.995 SAR → ألف ريال سعودي (half up, carry into major)", () => {
     expect(sar("999.995")).toBe("ألف ريال سعودي");

@@ -75,7 +75,8 @@ interface Currency {
   fraction: Unit;
 }
 
-const INVARIABLE_EUR: Unit = { gender: "m", one: "يورو", two: "يورو", plural: "يورو", acc: "يورو", genitive: "يورو" };
+// EUR is treated as invariable; the count stays explicit even for 2 (اثنان يورو).
+const INVARIABLE_EUR: Unit = { gender: "m", one: "يورو", two: "اثنان يورو", plural: "يورو", acc: "يورو", genitive: "يورو" };
 
 export const CURRENCIES: Record<Exclude<CurrencyCode, "none">, Currency> = {
   SAR: {
@@ -99,7 +100,7 @@ export const CURRENCIES: Record<Exclude<CurrencyCode, "none">, Currency> = {
     fraction: { gender: "m", one: "سنت", two: "سنتان", plural: "سنتات", acc: "سنتًا", genitive: "سنت" },
   },
   ILS: {
-    main: { gender: "m", one: "شيكل إسرائيلي", two: "شيكلان إسرائيليان", plural: "شيكلات إسرائيلية", acc: "شيكلًا إسرائيليًا", genitive: "شيكل إسرائيلي" },
+    main: { gender: "m", one: "شيكل إسرائيلي", two: "شيكلان إسرائيليان", plural: "شواكل إسرائيلية", acc: "شيكلًا إسرائيليًا", genitive: "شيكل إسرائيلي" },
     fraction: { gender: "f", one: "أغورة", two: "أغورتان", plural: "أغورات", acc: "أغورة", genitive: "أغورة" },
   },
 };
