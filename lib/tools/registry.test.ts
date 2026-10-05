@@ -8,9 +8,17 @@ describe("getToolBySlug", () => {
     expect(tool?.comingSoon).toBeUndefined();
   });
 
-  it("returns undefined for a coming-soon tool — must never be linkable as a live page", () => {
-    expect(getToolBySlug("hijri-date-converter")).toBeUndefined();
-    expect(getToolBySlug("qr-code-generator")).toBeUndefined();
+  it("returns the now-live hijri + qr tools", () => {
+    expect(getToolBySlug("hijri-date-converter")?.slug).toBe("hijri-date-converter");
+    expect(getToolBySlug("qr-code-generator")?.slug).toBe("qr-code-generator");
+  });
+
+  it("never returns a comingSoon entry as a live page", () => {
+    // Invariant, data-independent: if a comingSoon tool is ever added back,
+    // getToolBySlug must not resolve it to a linkable live page.
+    for (const t of TOOLS.filter((x) => x.comingSoon)) {
+      expect(getToolBySlug(t.slug)).toBeUndefined();
+    }
   });
 
   it("returns undefined for an unknown slug", () => {
@@ -30,10 +38,9 @@ describe("getLiveTools", () => {
 });
 
 describe("getComingSoonTools", () => {
-  it("includes only comingSoon entries", () => {
+  it("returns only comingSoon entries (currently none — all tools shipped)", () => {
     const upcoming = getComingSoonTools();
     expect(upcoming.every((t) => t.comingSoon)).toBe(true);
-    expect(upcoming.length).toBeGreaterThan(0);
   });
 });
 
