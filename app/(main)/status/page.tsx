@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { SITE_NAME_AR, absoluteUrl } from "@/lib/seo";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: `حالة النظام | ${SITE_NAME_AR}`,
@@ -47,7 +47,7 @@ const getData = unstable_cache(
   } catch { return null; }
   },
   ["status-page"],
-  { revalidate: 300 },
+  { revalidate: 3600 },
 );
 
 export default async function StatusPage() {

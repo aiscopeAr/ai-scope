@@ -80,7 +80,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }),
       prisma.prompt.findMany({
         where: { published: true },
-        select: { slug: true, updatedAt: true },
+        select: { slug: true, updatedAt: true, featured: true },
         take: 2000,
       }),
     ]);
@@ -118,7 +118,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // PROMPT_INDEXATION_001 experiment: when the flag is on, the frozen treatment
       // slugs are omitted so sitemap membership stays in lockstep with indexability
       // (shared decision in lib/prompts/indexation-experiment). Flag off → no-op.
-      ...prompts.filter((p) => shouldIncludePromptInSitemap(p.slug)).map((p) => ({
+      ...prompts.filter((p) => shouldIncludePromptInSitemap(p.slug, p.featured)).map((p) => ({
         url: `${SITE_URL}/prompts/${p.slug}`,
         lastModified: p.updatedAt,
         changeFrequency: "monthly" as const,

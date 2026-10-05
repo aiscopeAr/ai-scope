@@ -13,7 +13,7 @@ import PromptBodyTabs from "@/components/PromptBodyTabs";
 import ArticleTracker from "@/components/ArticleTracker";
 import ViewPing from "@/components/ViewPing";
 
-export const revalidate = 600;
+export const revalidate = 3600;
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -34,7 +34,7 @@ const getPromptCached = unstable_cache(
       include: { tool: { select: { id: true, name: true, slug: true, logoUrl: true, tagline: true } } },
     }),
   ["prompt-by-slug"],
-  { tags: [CACHE_TAGS.prompts], revalidate: 600 },
+  { tags: [CACHE_TAGS.prompts], revalidate: 3600 },
 );
 
 // React cache() dedupes the two calls within one request (generateMetadata +
@@ -58,7 +58,7 @@ const getRelated = unstable_cache(
       },
     }),
   ["prompt-related"],
-  { tags: [CACHE_TAGS.prompts], revalidate: 600 },
+  { tags: [CACHE_TAGS.prompts], revalidate: 3600 },
 );
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -75,7 +75,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // the flag is on, receives `noindex, follow`. Otherwise `robots` is omitted and
   // the page stays indexable exactly as before. Title/description/canonical/OG/
   // content are never touched by the experiment.
-  const experimentRobots = promptExperimentRobots(prompt.slug);
+  const experimentRobots = promptExperimentRobots(prompt.slug, prompt.featured);
   return {
     title: `${prompt.titleAr} | ${SITE_NAME_AR}`,
     description,
