@@ -38,7 +38,6 @@ const CATEGORIES = [
   { value: "writing", label: "الكتابة" },
   { value: "code", label: "البرمجة" },
   { value: "marketing", label: "التسويق" },
-  { value: "general", label: "عام" },
 ];
 
 const PAGE_SIZE = 24;
