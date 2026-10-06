@@ -443,6 +443,18 @@ model Prompt {
   featured    Boolean  @default(false)
   published   Boolean  @default(true)
   viewCount   Int      @default(0)
+
+  // ── Enrichment (prompts-library redesign, 2026-10). All optional/defaulted
+  // so existing rows are unaffected; the page renders each section only when
+  // present. Populated for curated (featured) prompts.
+  exampleImageUrl String? // Cloudinary URL — example output (image prompts)
+  imagePrompt     String?  @db.Text // exact gen prompt behind the example image
+  modelHint       String? // e.g. "Midjourney v6", "DALL·E 3", "ChatGPT / Claude"
+  variations      Json? // [{ "label": string, "text": string }]
+  tips            String[] @default([]) // pro tips
+  useCases        String[] @default([]) // use-case chips
+  quality         Int      @default(0) // 0 raw · 1 reviewed · 2 featured-grade
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
