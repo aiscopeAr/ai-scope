@@ -87,11 +87,15 @@ async function classify(p: { titleAr: string; title: string; body: string; tags:
 }
 
 async function remap() {
-  const generals = await prisma.prompt.findMany({
+  const all = await prisma.prompt.findMany({
     where: { category: "general", published: true },
     select: { id: true, slug: true, titleAr: true, title: true, body: true, tags: true },
   });
-  console.log(`REMAP: ${generals.length} published "general" prompts to classify.\n`);
+  // Dry-run previews a cheap sample (default 30) unless --limit given; a real
+  // run classifies all of them.
+  const limit = val("--limit") ? Number.parseInt(val("--limit")!, 10) : DRY ? 30 : all.length;
+  const generals = all.slice(0, limit);
+  console.log(`REMAP: ${all.length} published "general" prompts${DRY ? ` — previewing ${generals.length}` : " to classify"}.\n`);
 
   const counts: Record<string, number> = {};
   let i = 0;
