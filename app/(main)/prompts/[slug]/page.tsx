@@ -172,68 +172,77 @@ export default async function PromptPage({ params }: Props) {
             {/* ── Main ─────────────────────────────────────────────── */}
             <div className="lg:col-span-2 space-y-5">
 
-              {/* Header card */}
-              <div className="rounded-[6px] border p-6"
-                style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
-                <div className="mb-4 flex flex-wrap items-center gap-2">
-                  <span className="rounded-[3px] border px-2.5 py-0.5 text-xs font-semibold"
-                    style={{ backgroundColor: badge.bg, color: badge.color, borderColor: badge.border }}>
-                    {CATEGORY_LABELS[prompt.category] ?? prompt.category}
-                  </span>
-                  {prompt.featured && (
-                    <span className="rounded-[3px] border px-2.5 py-0.5 text-xs font-semibold"
-                      style={{ backgroundColor: "#fffbeb", color: "#b45309", borderColor: "#fde68a" }}>
-                      ⭐ مميز
-                    </span>
-                  )}
-                </div>
-
-                <h1 className="mb-1 text-2xl font-bold leading-snug md:text-3xl"
-                  style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
-                  {prompt.titleAr}
-                </h1>
-                <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>{prompt.title}</p>
-
-                {prompt.description && (
-                  <p className="leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                    {prompt.description}
-                  </p>
-                )}
-
-                {prompt.modelHint && (
-                  <p className="mt-3 text-sm" style={{ color: "var(--text-muted)" }}>
-                    يعمل مع: <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>{prompt.modelHint}</span>
-                  </p>
-                )}
-
-                {prompt.useCases.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {prompt.useCases.map((u) => (
-                      <span key={u} className="rounded-[3px] px-2.5 py-1 text-xs font-medium"
-                        style={{ backgroundColor: "var(--bg-subtle)", color: "var(--text-secondary)" }}>
-                        {u}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Example output image (enriched/featured prompts) */}
-              {prompt.exampleImageUrl && (
-                <figure className="overflow-hidden rounded-[6px] border"
-                  style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+              {/* ── Hero ───────────────────────────────────────────── */}
+              {prompt.exampleImageUrl ? (
+                // Image prompts: full-width showcase image with the title laid
+                // over a gradient — the result is the first thing you see.
+                <div className="relative overflow-hidden rounded-[8px] border" style={{ borderColor: "var(--border-subtle)" }}>
                   <Image src={prompt.exampleImageUrl} alt={`مثال ناتج: ${prompt.titleAr}`}
-                    width={1200} height={675} className="h-auto w-full" />
-                  {prompt.imagePrompt && (
-                    <figcaption className="px-4 py-3 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                      <span style={{ fontWeight: 600 }}>البرومبت المستخدم للصورة:</span> {prompt.imagePrompt}
-                    </figcaption>
-                  )}
-                </figure>
+                    width={1200} height={675} className="h-auto w-full" priority />
+                  <div className="pointer-events-none absolute inset-0"
+                    style={{ background: "linear-gradient(to top, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.30) 46%, rgba(0,0,0,0) 72%)" }} />
+                  <div className="absolute inset-x-0 bottom-0 p-5 md:p-7">
+                    <div className="mb-2.5 flex flex-wrap items-center gap-2">
+                      <span className="rounded-[3px] px-2.5 py-0.5 text-xs font-semibold"
+                        style={{ backgroundColor: badge.bg, color: badge.color }}>
+                        {CATEGORY_LABELS[prompt.category] ?? prompt.category}
+                      </span>
+                      {prompt.featured && (
+                        <span className="rounded-[3px] px-2.5 py-0.5 text-xs font-semibold"
+                          style={{ backgroundColor: "#fffbeb", color: "#b45309" }}>⭐ مميز</span>
+                      )}
+                    </div>
+                    <h1 className="text-2xl font-bold leading-snug text-white md:text-4xl" style={{ fontFamily: "var(--font-serif)" }}>
+                      {prompt.titleAr}
+                    </h1>
+                    <p className="mt-1 text-sm text-white/70">{prompt.title}</p>
+                  </div>
+                </div>
+              ) : (
+                // Text prompts: a clean title header (no image).
+                <div className="rounded-[6px] border p-6"
+                  style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                  <div className="mb-4 flex flex-wrap items-center gap-2">
+                    <span className="rounded-[3px] border px-2.5 py-0.5 text-xs font-semibold"
+                      style={{ backgroundColor: badge.bg, color: badge.color, borderColor: badge.border }}>
+                      {CATEGORY_LABELS[prompt.category] ?? prompt.category}
+                    </span>
+                    {prompt.featured && (
+                      <span className="rounded-[3px] border px-2.5 py-0.5 text-xs font-semibold"
+                        style={{ backgroundColor: "#fffbeb", color: "#b45309", borderColor: "#fde68a" }}>⭐ مميز</span>
+                    )}
+                  </div>
+                  <h1 className="mb-1 text-2xl font-bold leading-snug md:text-3xl"
+                    style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                    {prompt.titleAr}
+                  </h1>
+                  <p className="text-sm" style={{ color: "var(--text-muted)" }}>{prompt.title}</p>
+                </div>
               )}
 
-              {/* Prompt body with language tabs */}
+              {/* Prompt — the deliverable, right under the hero */}
               <PromptBodyTabs body={prompt.body} bodyAr={prompt.bodyAr ?? null} slug={prompt.slug} category={prompt.category} />
+
+              {/* Why it works + model hint (+ the image's own prompt) */}
+              {(prompt.description || prompt.modelHint || (prompt.exampleImageUrl && prompt.imagePrompt)) && (
+                <div className="rounded-[6px] border p-6"
+                  style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                  {prompt.modelHint && (
+                    <p className="mb-2 text-sm" style={{ color: "var(--text-muted)" }}>
+                      يعمل مع: <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>{prompt.modelHint}</span>
+                    </p>
+                  )}
+                  {prompt.description && (
+                    <p className="leading-relaxed" style={{ color: "var(--text-secondary)" }}>{prompt.description}</p>
+                  )}
+                  {prompt.exampleImageUrl && prompt.imagePrompt && (
+                    <p className="mt-3 border-t pt-3 text-xs leading-relaxed"
+                      style={{ borderColor: "var(--border-subtle)", color: "var(--text-muted)" }}>
+                      <span style={{ fontWeight: 600 }}>برومبت الصورة المثال:</span> {prompt.imagePrompt}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Variations */}
               {variations.length > 0 && (
@@ -275,16 +284,29 @@ export default async function PromptPage({ params }: Props) {
                 </section>
               )}
 
-              {/* Tags */}
-              {prompt.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {prompt.tags.map(tag => (
-                    <span key={tag}
-                      className="rounded-[3px] border px-3 py-1 text-xs"
-                      style={{ borderColor: "var(--border-medium)", color: "var(--text-muted)", backgroundColor: "var(--bg-subtle)" }}>
-                      #{tag}
-                    </span>
-                  ))}
+              {/* Use cases + tags (compact) */}
+              {(prompt.useCases.length > 0 || prompt.tags.length > 0) && (
+                <div className="space-y-4 rounded-[6px] border p-5"
+                  style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                  {prompt.useCases.length > 0 && (
+                    <div>
+                      <p className="mb-2 text-xs font-semibold" style={{ color: "var(--text-muted)" }}>أمثلة استخدام</p>
+                      <div className="flex flex-wrap gap-2">
+                        {prompt.useCases.map((u) => (
+                          <span key={u} className="rounded-[3px] px-2.5 py-1 text-xs font-medium"
+                            style={{ backgroundColor: "var(--bg-subtle)", color: "var(--text-secondary)" }}>{u}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {prompt.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {prompt.tags.map((tag) => (
+                        <span key={tag} className="rounded-[3px] border px-3 py-1 text-xs"
+                          style={{ borderColor: "var(--border-medium)", color: "var(--text-muted)", backgroundColor: "var(--bg-subtle)" }}>#{tag}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
