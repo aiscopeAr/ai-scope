@@ -10,6 +10,7 @@ import { CACHE_TAGS } from "@/lib/cache";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
 import { promptExperimentRobots } from "@/lib/prompts/indexation-experiment";
 import PromptBodyTabs from "@/components/PromptBodyTabs";
+import CopyPromptButton from "@/components/CopyPromptButton";
 import ArticleTracker from "@/components/ArticleTracker";
 import ViewPing from "@/components/ViewPing";
 
@@ -124,6 +125,14 @@ export default async function PromptPage({ params }: Props) {
   const related = await getRelated(prompt.category, prompt.slug);
   const badge = CATEGORY_BADGE[prompt.category] ?? CATEGORY_BADGE.general;
 
+  // Enrichment (redesign): render each section only when present → no change
+  // for un-enriched prompts.
+  const variations = Array.isArray(prompt.variations)
+    ? (prompt.variations as { label?: string; text?: string }[]).filter(
+        (v): v is { label?: string; text: string } => !!v && typeof v.text === "string" && v.text.trim().length > 0,
+      )
+    : [];
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "HowTo",
@@ -190,10 +199,81 @@ export default async function PromptPage({ params }: Props) {
                     {prompt.description}
                   </p>
                 )}
+
+                {prompt.modelHint && (
+                  <p className="mt-3 text-sm" style={{ color: "var(--text-muted)" }}>
+                    يعمل مع: <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>{prompt.modelHint}</span>
+                  </p>
+                )}
+
+                {prompt.useCases.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {prompt.useCases.map((u) => (
+                      <span key={u} className="rounded-[3px] px-2.5 py-1 text-xs font-medium"
+                        style={{ backgroundColor: "var(--bg-subtle)", color: "var(--text-secondary)" }}>
+                        {u}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
+
+              {/* Example output image (enriched/featured prompts) */}
+              {prompt.exampleImageUrl && (
+                <figure className="overflow-hidden rounded-[6px] border"
+                  style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                  <Image src={prompt.exampleImageUrl} alt={`مثال ناتج: ${prompt.titleAr}`}
+                    width={1200} height={675} className="h-auto w-full" />
+                  {prompt.imagePrompt && (
+                    <figcaption className="px-4 py-3 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                      <span style={{ fontWeight: 600 }}>البرومبت المستخدم للصورة:</span> {prompt.imagePrompt}
+                    </figcaption>
+                  )}
+                </figure>
+              )}
 
               {/* Prompt body with language tabs */}
               <PromptBodyTabs body={prompt.body} bodyAr={prompt.bodyAr ?? null} slug={prompt.slug} category={prompt.category} />
+
+              {/* Variations */}
+              {variations.length > 0 && (
+                <section className="rounded-[6px] border p-6"
+                  style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                  <h2 className="mb-4 text-base font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                    تنويعات
+                  </h2>
+                  <div className="space-y-3">
+                    {variations.map((v, i) => (
+                      <div key={i} className="rounded-[6px] border p-4"
+                        style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }}>
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          {v.label && <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{v.label}</span>}
+                          <CopyPromptButton text={v.text} slug={prompt.slug} category={prompt.category} />
+                        </div>
+                        <p className="text-sm leading-relaxed" dir="auto" style={{ color: "var(--text-secondary)" }}>{v.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Pro tips */}
+              {prompt.tips.length > 0 && (
+                <section className="rounded-[6px] border p-6"
+                  style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }}>
+                  <h2 className="mb-4 text-base font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                    نصائح احترافية
+                  </h2>
+                  <ul className="space-y-2">
+                    {prompt.tips.map((t, i) => (
+                      <li key={i} className="flex gap-2 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                        <span style={{ color: "var(--accent)" }}>•</span>
+                        <span>{t}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
               {/* Tags */}
               {prompt.tags.length > 0 && (
