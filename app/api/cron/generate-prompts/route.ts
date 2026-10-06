@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { CACHE_TAGS, revalidateNow } from "@/lib/cache";
+import { getPromptsAutoGenerateMode } from "@/lib/settings";
 import OpenAI from "openai";
 
 export const dynamic = "force-dynamic";
@@ -77,6 +78,15 @@ ${context}
 export async function GET(request: Request) {
   if (!verifyCronSecret(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Prompts-library redesign P1: the auto-generator is OFF by default. It
+  // produced thin, noindexed, ~1-view prompts while burning OpenAI credits.
+  // Gated behind a flag so it can be re-enabled (or replaced by the v2
+  // quality-gated generator) without reverting this. No OpenAI calls or DB
+  // writes happen while disabled.
+  if ((await getPromptsAutoGenerateMode()) !== "on") {
+    return NextResponse.json({ ok: true, disabled: true, generated: 0, skipped: 0, failed: 0 });
   }
 
   const tools = await prisma.aITool.findMany({

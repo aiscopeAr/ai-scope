@@ -13,6 +13,7 @@ export const SETTING_KEYS = {
   EDITORIAL_V2_ON_MAX_PER_RUN:     "pipeline.editorialV2OnMaxPerRun",
   EDITORIAL_V2_GATE_MODE:          "pipeline.editorialV2GateMode",
   WRITER_MULTIMODEL_MODE:          "pipeline.writerMultiModelMode",
+  PROMPTS_AUTO_GENERATE:           "prompts.autoGenerate",
 } as const;
 
 /** How many items per process-review run may execute the V2 shadow planner.
@@ -141,6 +142,21 @@ export type WriterMultiModelMode = "off" | "on";
 export async function getWriterMultiModelMode(): Promise<WriterMultiModelMode> {
   try {
     const row = await prisma.systemSetting.findUnique({ where: { key: SETTING_KEYS.WRITER_MULTIMODEL_MODE } });
+    if (row?.value?.trim().toLowerCase() === "on") return "on";
+  } catch {
+    // fail closed to "off"
+  }
+  return "off";
+}
+
+// Prompts auto-generation flag (string-valued). "off" (default) = the
+// generate-prompts cron does NOTHING (no OpenAI calls, no DB writes) — it stops
+// the thin-content firehose without a deploy or DB write, since the default is
+// off. "on" re-enables generation. Fails closed to "off" on any error.
+export type PromptsAutoGenerateMode = "off" | "on";
+export async function getPromptsAutoGenerateMode(): Promise<PromptsAutoGenerateMode> {
+  try {
+    const row = await prisma.systemSetting.findUnique({ where: { key: SETTING_KEYS.PROMPTS_AUTO_GENERATE } });
     if (row?.value?.trim().toLowerCase() === "on") return "on";
   } catch {
     // fail closed to "off"
