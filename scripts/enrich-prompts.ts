@@ -168,10 +168,14 @@ async function main() {
           exampleImageUrl,
           featured: true,
           quality: 2,
+          // Image prompts stay unpublished until a human approves the hero
+          // image (review/replace via scripts/prompt-images.ts). Text prompts
+          // have nothing to review, so they publish immediately.
+          ...(p.category === "image" ? { published: false } : {}),
         },
       });
       done++;
-      console.log(`✓ ${p.slug}${exampleImageUrl ? " (+image)" : ""}`);
+      console.log(`✓ ${p.slug}${exampleImageUrl ? " (+image)" : ""}${p.category === "image" ? " [draft — needs image review]" : ""}`);
     } catch (err) {
       console.error(`✗ ${p.slug}:`, err instanceof Error ? err.message : err);
     }
