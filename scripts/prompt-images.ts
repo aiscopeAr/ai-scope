@@ -21,6 +21,7 @@ import { PrismaClient } from "@prisma/client";
 import { v2 as cloudinary } from "cloudinary";
 import { existsSync } from "node:fs";
 import { uploadImageFromUrl } from "../lib/cloudinary";
+import { generateReviewImage } from "../lib/images";
 
 process.loadEnvFile?.(".env");
 const prisma = new PrismaClient();
@@ -65,12 +66,28 @@ async function unpublishPending() {
 async function setOne() {
   const slug = val("--slug")!;
   const uploadArg = val("--upload");
-  const p = await prisma.prompt.findFirst({ where: { slug }, select: { id: true } });
+  const p = await prisma.prompt.findFirst({ where: { slug }, select: { id: true, imagePrompt: true } });
   if (!p) {
     console.log("NOT FOUND:", slug);
     return;
   }
   const data: { exampleImageUrl?: string; published?: boolean } = {};
+
+  // Regenerate the Replicate example image from the stored imagePrompt (for
+  // ones whose generation failed/timed out). Mutually exclusive with --upload.
+  if (has("--gen") && !uploadArg) {
+    if (!p.imagePrompt) {
+      console.log("no imagePrompt stored for", slug);
+      return;
+    }
+    const url = await generateReviewImage(p.imagePrompt, { reviewId: slug });
+    if (!url) {
+      console.log("generation failed — retry, or use --upload with a manual image.");
+      return;
+    }
+    data.exampleImageUrl = url;
+    console.log("generated:", url);
+  }
 
   if (uploadArg) {
     let url: string | null = null;
