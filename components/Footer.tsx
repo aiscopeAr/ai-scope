@@ -63,10 +63,9 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {[
                 { href: "/category/ai-models",    label: "نماذج AI" },
-                { href: "/category/research",      label: "البحوث" },
-                { href: "/category/ai-companies",  label: "الشركات" },
+                { href: "/category/companies",     label: "الشركات" },
                 { href: "/category/ai-tools",      label: "الأدوات" },
-                { href: "/category/ai-policy",     label: "السياسات" },
+                { href: "/category/research",      label: "البحوث" },
               ].map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} className="group flex items-center gap-2 text-[13px] transition-colors"
