@@ -44,7 +44,7 @@ const PAGE_SIZE = 24;
 
 const getData = unstable_cache(
   async (page: number) => {
-    const [prompts, total, featured] = await Promise.all([
+    const [prompts, total] = await Promise.all([
       prisma.prompt.findMany({
         where: { published: true },
         orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
@@ -53,25 +53,14 @@ const getData = unstable_cache(
         select: {
           id: true, title: true, titleAr: true, description: true,
           category: true, tags: true, slug: true, featured: true,
-          viewCount: true, createdAt: true,
+          viewCount: true, createdAt: true, exampleImageUrl: true,
           tool: { select: { name: true, slug: true, logoUrl: true } },
         },
       }),
       prisma.prompt.count({ where: { published: true } }),
-      prisma.prompt.findMany({
-        where: { published: true, featured: true },
-        orderBy: { viewCount: "desc" },
-        take: 6,  // always fills 2 full rows of 3
-        select: {
-          id: true, title: true, titleAr: true, description: true,
-          category: true, tags: true, slug: true, featured: true,
-          viewCount: true, createdAt: true,
-          tool: { select: { name: true, slug: true, logoUrl: true } },
-        },
-      }),
     ]);
 
-    return { prompts, total, featured };
+    return { prompts, total };
   },
   ["prompts-index"],
   { tags: [CACHE_TAGS.prompts], revalidate: DEFAULT_REVALIDATE_SECONDS },
@@ -84,7 +73,7 @@ export default async function PromptsPage({
 }) {
   const { page: pageParam } = await searchParams;
   const page = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
-  const { prompts, total, featured } = await getData(page);
+  const { prompts, total } = await getData(page);
 
   const collectionJsonLd = {
     "@context": "https://schema.org",
@@ -135,7 +124,6 @@ export default async function PromptsPage({
         initialPrompts={prompts}
         initialTotal={total}
         initialPage={page}
-        featuredPrompts={featured}
         categories={CATEGORIES}
       />
       </main>

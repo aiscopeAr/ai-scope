@@ -42,6 +42,7 @@ export async function GET(request: Request) {
         featured: true,
         viewCount: true,
         createdAt: true,
+        exampleImageUrl: true,
         tool: { select: { name: true, slug: true, logoUrl: true } },
       },
     }),
