@@ -15,6 +15,7 @@ type PromptItem = {
   featured: boolean;
   viewCount: number;
   createdAt: Date | string;
+  exampleImageUrl?: string | null;
   tool: { name: string; slug: string; logoUrl: string | null } | null;
 };
 
@@ -40,11 +41,10 @@ interface Props {
   initialPrompts: PromptItem[];
   initialTotal: number;
   initialPage?: number;
-  featuredPrompts: PromptItem[];
   categories: Category[];
 }
 
-export default function PromptsLibrary({ initialPrompts, initialTotal, initialPage = 1, featuredPrompts, categories }: Props) {
+export default function PromptsLibrary({ initialPrompts, initialTotal, initialPage = 1, categories }: Props) {
   const [prompts, setPrompts] = useState(initialPrompts);
   const [total, setTotal] = useState(initialTotal);
   const [activeCategory, setActiveCategory] = useState("all");
@@ -87,7 +87,10 @@ export default function PromptsLibrary({ initialPrompts, initialTotal, initialPa
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const showFeatured = activeCategory === "all" && !search && page === 1 && featuredPrompts.length > 0;
+  // Keep cards with example images together (a gallery) and text-only prompts
+  // together, so a grid row never mixes a tall image card with short text cards.
+  const imageItems = prompts.filter((p) => p.exampleImageUrl);
+  const textItems = prompts.filter((p) => !p.exampleImageUrl);
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-10">
@@ -139,45 +142,48 @@ export default function PromptsLibrary({ initialPrompts, initialTotal, initialPa
         ))}
       </div>
 
-      {/* Featured section */}
-      {showFeatured && (
-        <section className="mb-10">
-          <h2 className="mb-4 text-lg font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
-            ⭐ مميزة
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredPrompts.slice(0, 6).map(p => <PromptCard key={p.id} prompt={p} />)}
-          </div>
-        </section>
+      {loading ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="h-44 animate-pulse rounded-[6px] border"
+              style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }} />
+          ))}
+        </div>
+      ) : prompts.length === 0 ? (
+        <div className="py-24 text-center" style={{ color: "var(--text-muted)" }}>
+          <p className="text-4xl mb-4">🔍</p>
+          <p className="text-lg font-medium" style={{ color: "var(--text-secondary)" }}>لا توجد نتائج</p>
+          <p className="text-sm mt-1">جرّب كلمة بحث مختلفة أو اختر فئة أخرى</p>
+        </div>
+      ) : (
+        <>
+          {/* Gallery — prompts that have an example image */}
+          {imageItems.length > 0 && (
+            <section className="mb-10">
+              <h2 className="mb-4 text-lg font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                ⭐ مميزة
+              </h2>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {imageItems.map(p => <PromptCard key={p.id} prompt={p} />)}
+              </div>
+            </section>
+          )}
+
+          {/* Text prompts */}
+          {textItems.length > 0 && (
+            <section>
+              {imageItems.length > 0 && (
+                <h2 className="mb-4 text-lg font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                  جميع البرومبتس
+                </h2>
+              )}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {textItems.map(p => <PromptCard key={p.id} prompt={p} />)}
+              </div>
+            </section>
+          )}
+        </>
       )}
-
-      {/* All prompts grid */}
-      <section>
-        {showFeatured && (
-          <h2 className="mb-4 text-lg font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
-            جميع البرومبتس
-          </h2>
-        )}
-
-        {loading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="h-44 animate-pulse rounded-[6px] border"
-                style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" }} />
-            ))}
-          </div>
-        ) : prompts.length === 0 ? (
-          <div className="py-24 text-center" style={{ color: "var(--text-muted)" }}>
-            <p className="text-4xl mb-4">🔍</p>
-            <p className="text-lg font-medium" style={{ color: "var(--text-secondary)" }}>لا توجد نتائج</p>
-            <p className="text-sm mt-1">جرّب كلمة بحث مختلفة أو اختر فئة أخرى</p>
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {prompts.map(p => <PromptCard key={p.id} prompt={p} />)}
-          </div>
-        )}
-      </section>
 
       {/* Pagination — real <Link> when unfiltered so crawlers can reach every page;
           falls back to JS-driven buttons once a search/category filter is active,
@@ -245,20 +251,31 @@ function PromptCard({ prompt }: { prompt: PromptItem }) {
   return (
     <Link
       href={`/prompts/${prompt.slug}`}
-      className="group relative flex flex-col rounded-[6px] border p-5 transition-all"
+      className="group relative flex flex-col overflow-hidden rounded-[6px] border transition-all"
       style={{
         borderColor: "var(--border-subtle)",
         backgroundColor: "var(--bg-surface)",
       }}
       onMouseEnter={e => {
         (e.currentTarget as HTMLElement).style.borderColor = "var(--accent)";
-        (e.currentTarget as HTMLElement).style.backgroundColor = "var(--bg-subtle)";
       }}
       onMouseLeave={e => {
         (e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)";
-        (e.currentTarget as HTMLElement).style.backgroundColor = "var(--bg-surface)";
       }}
     >
+      {/* Thumbnail (image prompts) — turns the grid into a gallery */}
+      {prompt.exampleImageUrl && (
+        <div className="relative aspect-[16/9] w-full overflow-hidden" style={{ backgroundColor: "var(--bg-subtle)" }}>
+          <Image src={prompt.exampleImageUrl} alt={prompt.titleAr} fill sizes="(max-width:640px) 100vw, 33vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105" />
+          {prompt.featured && (
+            <span className="absolute left-2 top-2 rounded-[3px] px-1.5 py-0.5 text-[10px] font-bold"
+              style={{ backgroundColor: "#fffbeb", color: "#b45309" }}>⭐ مميز</span>
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-1 flex-col p-5">
       {/* Category badge */}
       <span className="mb-3 inline-flex w-fit items-center gap-1 rounded-[3px] border px-2 py-0.5 text-xs font-semibold"
         style={{ backgroundColor: catStyle.bg, color: catStyle.color, borderColor: catStyle.border }}>
@@ -290,8 +307,10 @@ function PromptCard({ prompt }: { prompt: PromptItem }) {
         )}
         <span className="text-xs" style={{ color: "var(--accent)" }}>نسخ ←</span>
       </div>
+      </div>
 
-      {prompt.featured && (
+      {/* Featured badge for text cards (image cards show it on the thumbnail) */}
+      {prompt.featured && !prompt.exampleImageUrl && (
         <span className="absolute left-3 top-3 rounded-[3px] border px-1.5 py-0.5 text-[10px] font-bold"
           style={{ backgroundColor: "#fffbeb", color: "#b45309", borderColor: "#fde68a" }}>
           مميز
