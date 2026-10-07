@@ -59,19 +59,23 @@ export default function AdminPromptsPage() {
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const [deleting, setDeleting] = React.useState(false);
   const [filterCat, setFilterCat] = React.useState("all");
+  const [filterStatus, setFilterStatus] = React.useState("published");
   const [search, setSearch] = React.useState("");
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
 
-  const load = React.useCallback(async () => {
+  const load = React.useCallback(async (status: string) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/prompts?limit=200");
+      const res = await fetch(`/api/admin/prompts?limit=200&status=${status}`);
       if (res.ok) { const d = await res.json(); setPrompts(d.prompts ?? []); }
     } catch { toast("فشل التحميل", "error"); }
     finally { setLoading(false); }
   }, [toast]);
 
-  React.useEffect(() => { load(); }, [load]);
+  React.useEffect(() => {
+    const id = setTimeout(() => load(filterStatus), 0);
+    return () => clearTimeout(id);
+  }, [load, filterStatus]);
 
   function set(k: keyof FormState, v: string | boolean) {
     setForm(f => ({ ...f, [k]: v }));
@@ -111,7 +115,7 @@ export default function AdminPromptsPage() {
       if (!res.ok) { const e = await res.json(); toast(e.error ?? "فشل الحفظ", "error"); return; }
       toast(editId ? "✅ تم التحديث" : "✅ تم الإنشاء");
       setShowForm(false);
-      load();
+      load(filterStatus);
     } catch { toast("فشل الحفظ", "error"); }
     finally { setSaving(false); }
   }
@@ -121,7 +125,7 @@ export default function AdminPromptsPage() {
     setDeleting(true);
     try {
       await fetch(`/api/admin/prompts/${deleteId}`, { method: "DELETE" });
-      toast("✅ تم الحذف"); setDeleteId(null); load();
+      toast("✅ تم الحذف"); setDeleteId(null); load(filterStatus);
     } catch { toast("فشل الحذف", "error"); }
     finally { setDeleting(false); }
   }
@@ -132,7 +136,7 @@ export default function AdminPromptsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ published: !p.published }),
     });
-    load();
+    load(filterStatus);
   }
 
   async function toggleFeatured(p: Prompt) {
@@ -141,7 +145,7 @@ export default function AdminPromptsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ featured: !p.featured }),
     });
-    load();
+    load(filterStatus);
   }
 
   async function runGenerate() {
@@ -150,7 +154,7 @@ export default function AdminPromptsPage() {
       const data = await res.json();
       if (!res.ok) { toast(data.error ?? "فشل التوليد", "error"); return; }
       toast(`✅ تم توليد ${data.generated ?? 0} برومبت${data.failed ? ` (${data.failed} فشل)` : ""}`);
-      load();
+      load(filterStatus);
     } catch { toast("فشل التوليد", "error"); }
   }
 
@@ -202,6 +206,15 @@ export default function AdminPromptsPage() {
         >
           <option value="all">كل الفئات</option>
           {PROMPT_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+        </select>
+        <select
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value)}
+          className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-700 outline-none focus:border-indigo-400"
+        >
+          <option value="published">منشورة فقط</option>
+          <option value="draft">مسودّات فقط</option>
+          <option value="all">الكل</option>
         </select>
         <span className="self-center text-sm text-slate-400">{filtered.length} نتيجة</span>
       </div>

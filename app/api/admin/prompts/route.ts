@@ -17,12 +17,14 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
   const toolId = searchParams.get("toolId");
+  const status = searchParams.get("status"); // "published" | "draft" | "all" (default published)
   const page = parseInt(searchParams.get("page") ?? "1", 10);
   const limit = 50;
 
   const where = {
     ...(category ? { category } : {}),
     ...(toolId ? { toolId } : {}),
+    ...(status === "draft" ? { published: false } : status === "all" ? {} : { published: true }),
   };
 
   const [prompts, total] = await Promise.all([
