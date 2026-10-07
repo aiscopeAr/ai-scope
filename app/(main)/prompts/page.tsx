@@ -114,7 +114,7 @@ export default async function PromptsPage({
               أفضل الـ prompts للذكاء الاصطناعي — مجاناً، منسّقة، وجاهزة للاستخدام
             </p>
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              تُضاف prompts جديدة تلقائياً كل يوم
+              مجموعة مختارة بعناية — جودة لا كمية
             </p>
           </div>
         </div>
