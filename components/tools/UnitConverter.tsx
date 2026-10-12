@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useToolUsage } from "@/lib/tools/use-tool-usage";
 import {
   LENGTH,
   WEIGHT,
@@ -35,6 +36,7 @@ function defaults(cat: CategoryId): { from: string; to: string } {
 
 export default function UnitConverter() {
   const [category, setCategory] = useState<CategoryId>("length");
+  const markUsed = useToolUsage("unit-converter");
   const [value, setValue] = useState("1");
   const [from, setFrom] = useState("m");
   const [to, setTo] = useState("cm");
@@ -95,7 +97,7 @@ export default function UnitConverter() {
             type="number"
             inputMode="decimal"
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => { markUsed(); setValue(e.target.value); }}
             className={inputClass}
             style={inputStyle}
             aria-label="القيمة"

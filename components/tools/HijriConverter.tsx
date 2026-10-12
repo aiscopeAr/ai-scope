@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useToolUsage } from "@/lib/tools/use-tool-usage";
 import {
   gregorianToHijri,
   hijriToGregorian,
@@ -28,6 +29,7 @@ const SURFACE = { borderColor: "var(--border-subtle)", backgroundColor: "var(--b
 
 export default function HijriConverter() {
   const [direction, setDirection] = useState<Direction>("g2h");
+  const markUsed = useToolUsage("hijri-date-converter");
 
   // Gregorian input (native date picker, UTC-normalized)
   const [gregValue, setGregValue] = useState<string>(() => toInputValue(todayUtc()));
@@ -76,7 +78,7 @@ export default function HijriConverter() {
           <button
             key={val}
             type="button"
-            onClick={() => setDirection(val)}
+            onClick={() => { markUsed(); setDirection(val); }}
             className="rounded-[6px] px-4 py-2.5 text-sm font-semibold transition"
             style={
               direction === val
@@ -100,7 +102,7 @@ export default function HijriConverter() {
             <input
               type="date"
               value={gregValue}
-              onChange={(e) => setGregValue(e.target.value)}
+              onChange={(e) => { markUsed(); setGregValue(e.target.value); }}
               className={inputClass}
               style={inputStyle}
               aria-label="التاريخ الميلادي"

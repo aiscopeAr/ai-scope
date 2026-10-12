@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useToolUsage } from "@/lib/tools/use-tool-usage";
 import { tafqit, type CurrencyCode } from "@/lib/tools/tafqit";
 
 const SURFACE = { borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" };
@@ -17,6 +18,7 @@ const CURRENCIES: { id: CurrencyCode; label: string }[] = [
 
 export default function Tafqit() {
   const [value, setValue] = useState("");
+  const markUsed = useToolUsage("tafqit");
   const [currency, setCurrency] = useState<CurrencyCode>("none");
   const [suffix, setSuffix] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -54,7 +56,7 @@ export default function Tafqit() {
               type="text"
               inputMode="decimal"
               value={value}
-              onChange={(e) => setValue(e.target.value)}
+              onChange={(e) => { markUsed(); setValue(e.target.value); }}
               placeholder="مثال: 1250.75"
               dir="ltr"
               className={`${inputClass} text-right`}
