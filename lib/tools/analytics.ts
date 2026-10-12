@@ -15,6 +15,13 @@ export function trackToolView(toolSlug: string) {
   track("tool_view", { tool_slug: toolSlug });
 }
 
+/** Fired the first time a visitor actually interacts with a tool (typed,
+ *  computed, converted, copied, downloaded) — distinguishes real usage from a
+ *  bounce. Call once per session via useToolUsage(). */
+export function trackToolUse(toolSlug: string) {
+  track("tool_use", { tool_slug: toolSlug });
+}
+
 export function trackToolStyleChange(toolSlug: string, style: string) {
   track("tool_style_change", { tool_slug: toolSlug, selected_style: style });
 }

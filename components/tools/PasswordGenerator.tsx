@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useToolUsage } from "@/lib/tools/use-tool-usage";
 import {
   generatePassword,
   estimateStrength,
@@ -26,6 +27,7 @@ export default function PasswordGenerator() {
   const [opts, setOpts] = useState<PasswordOptions>(DEFAULT_OPTS);
   const [password, setPassword] = useState("");
   const [copied, setCopied] = useState(false);
+  const markUsed = useToolUsage("password-generator");
 
   // Generate the first password only on the client (deferred via setTimeout,
   // so it neither runs during SSR — avoiding a hydration mismatch on random
@@ -45,12 +47,14 @@ export default function PasswordGenerator() {
     const next = { ...opts, ...patch };
     // Never let every character set be disabled (empty pool).
     if (!buildCharset(next)) return;
+    markUsed();
     setOpts(next);
     regenerate(next);
   }
 
   async function copy() {
     if (!password) return;
+    markUsed();
     try {
       await navigator.clipboard.writeText(password);
       setCopied(true);
@@ -93,7 +97,7 @@ export default function PasswordGenerator() {
         <span style={{ color: "var(--text-muted)" }}>
           القوة: <span style={{ color: strengthColor, fontWeight: 600 }}>{strength.label}</span> ({strength.bits} بِت)
         </span>
-        <button type="button" onClick={() => regenerate()} className="font-medium hover:underline" style={{ color: "var(--accent)" }}>
+        <button type="button" onClick={() => { markUsed(); regenerate(); }} className="font-medium hover:underline" style={{ color: "var(--accent)" }}>
           توليد كلمة جديدة ↻
         </button>
       </div>

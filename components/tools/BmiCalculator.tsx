@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useToolUsage } from "@/lib/tools/use-tool-usage";
 import { computeBmi, bmiCategory, healthyWeightRange } from "@/lib/tools/bmi";
 
 const SURFACE = { borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" };
@@ -22,6 +23,7 @@ function toNum(v: string): number {
 export default function BmiCalculator() {
   const [weight, setWeight] = useState("");
   const [height, setHeight] = useState("");
+  const markUsed = useToolUsage("bmi-calculator");
 
   const result = useMemo(() => {
     const w = toNum(weight);
@@ -46,7 +48,7 @@ export default function BmiCalculator() {
               type="number"
               inputMode="decimal"
               value={weight}
-              onChange={(e) => setWeight(e.target.value)}
+              onChange={(e) => { markUsed(); setWeight(e.target.value); }}
               placeholder="70"
               dir="ltr"
               className={inputClass}
@@ -62,7 +64,7 @@ export default function BmiCalculator() {
               type="number"
               inputMode="decimal"
               value={height}
-              onChange={(e) => setHeight(e.target.value)}
+              onChange={(e) => { markUsed(); setHeight(e.target.value); }}
               placeholder="175"
               dir="ltr"
               className={inputClass}

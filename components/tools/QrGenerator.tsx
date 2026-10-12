@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useToolUsage } from "@/lib/tools/use-tool-usage";
 import QRCode from "qrcode";
 import { trackToolExport } from "@/lib/tools/analytics";
 
@@ -19,6 +20,7 @@ type SizeId = (typeof SIZES)[number]["id"];
 
 export default function QrGenerator() {
   const [text, setText] = useState("https://www.lumiq.news");
+  const markUsed = useToolUsage("qr-code-generator");
   const [sizeId, setSizeId] = useState<SizeId>("medium");
   const [dataUrl, setDataUrl] = useState<string>("");
   const [error, setError] = useState(false);
@@ -77,7 +79,7 @@ export default function QrGenerator() {
           </span>
           <textarea
             value={text}
-            onChange={(e) => setText(e.target.value.slice(0, MAX_INPUT_LENGTH))}
+            onChange={(e) => { markUsed(); setText(e.target.value.slice(0, MAX_INPUT_LENGTH)); }}
             rows={4}
             dir="auto"
             placeholder="https://example.com أو أي نص"

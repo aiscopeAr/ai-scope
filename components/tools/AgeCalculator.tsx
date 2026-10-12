@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useToolUsage } from "@/lib/tools/use-tool-usage";
 import { computeAge } from "@/lib/tools/age";
 
 const SURFACE = { borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" };
@@ -22,6 +23,7 @@ function parseInput(value: string): Date | null {
 
 export default function AgeCalculator() {
   const [birth, setBirth] = useState("");
+  const markUsed = useToolUsage("age-calculator");
   // Start empty (same on server + client → no hydration mismatch on a
   // clock-derived value), then fill "today" on the client after mount.
   const [asOf, setAsOf] = useState("");
@@ -61,7 +63,7 @@ export default function AgeCalculator() {
             type="date"
             value={birth}
             max={asOf}
-            onChange={(e) => setBirth(e.target.value)}
+            onChange={(e) => { markUsed(); setBirth(e.target.value); }}
             className={inputClass}
             style={inputStyle}
             aria-label="تاريخ الميلاد"

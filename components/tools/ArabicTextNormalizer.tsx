@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useToolUsage } from "@/lib/tools/use-tool-usage";
 import { normalizeArabic, DEFAULT_NORMALIZE_OPTIONS, type NormalizeOptions } from "@/lib/tools/arabic-text";
 
 const SURFACE = { borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" };
@@ -20,6 +21,7 @@ const DIGIT_OPTIONS: { id: NormalizeOptions["digits"]; label: string }[] = [
 
 export default function ArabicTextNormalizer() {
   const [text, setText] = useState("");
+  const markUsed = useToolUsage("arabic-text-normalizer");
   const [opts, setOpts] = useState<NormalizeOptions>(DEFAULT_NORMALIZE_OPTIONS);
   const [copied, setCopied] = useState(false);
 
@@ -85,7 +87,7 @@ export default function ArabicTextNormalizer() {
           </span>
           <textarea
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => { markUsed(); setText(e.target.value); }}
             rows={10}
             dir="auto"
             placeholder="الصق النص العربي هنا…"

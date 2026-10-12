@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { useToolUsage } from "@/lib/tools/use-tool-usage";
 import {
   CALLIGRAPHY_STYLES,
   TEXT_COLORS,
@@ -47,6 +48,7 @@ const CHECKERBOARD_STYLE = {
 
 export default function CalligraphyStudio() {
   const [text, setText] = useState(DEFAULT_TEXT);
+  const markUsed = useToolUsage("arabic-calligraphy");
   const [styleId, setStyleId] = useState(DEFAULT_STYLE_ID);
   const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
   const [colorId, setColorId] = useState<TextColorId>(DEFAULT_TEXT_COLOR_ID);
@@ -207,7 +209,7 @@ export default function CalligraphyStudio() {
         <textarea
           id="calligraphy-text"
           value={text}
-          onChange={(e) => setText(e.target.value.slice(0, MAX_INPUT_LENGTH))}
+          onChange={(e) => { markUsed(); setText(e.target.value.slice(0, MAX_INPUT_LENGTH)); }}
           dir="rtl"
           rows={2}
           maxLength={MAX_INPUT_LENGTH}

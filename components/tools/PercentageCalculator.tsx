@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useToolUsage } from "@/lib/tools/use-tool-usage";
 import { percentOf, whatPercent, percentChange, roundSmart } from "@/lib/tools/percentage";
 
 const SURFACE = { borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" };
@@ -21,6 +22,7 @@ function toNum(v: string): number | null {
 
 export default function PercentageCalculator() {
   const [mode, setMode] = useState<Mode>("of");
+  const markUsed = useToolUsage("percentage-calculator");
   const [a, setA] = useState("");
   const [b, setB] = useState("");
 
@@ -95,7 +97,7 @@ export default function PercentageCalculator() {
                 type="number"
                 inputMode="decimal"
                 value={i === 0 ? a : b}
-                onChange={(e) => (i === 0 ? setA(e.target.value) : setB(e.target.value))}
+                onChange={(e) => { markUsed(); return i === 0 ? setA(e.target.value) : setB(e.target.value); }}
                 className={inputClass}
                 style={inputStyle}
                 aria-label={labels[i]}

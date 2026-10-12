@@ -1,12 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useToolUsage } from "@/lib/tools/use-tool-usage";
 import { analyzeText } from "@/lib/tools/word-count";
 
 const SURFACE = { borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-surface)" };
 
 export default function WordCounter() {
   const [text, setText] = useState("");
+  const markUsed = useToolUsage("word-counter");
   const stats = useMemo(() => analyzeText(text), [text]);
 
   const cards: { label: string; value: number }[] = [
@@ -39,7 +41,7 @@ export default function WordCounter() {
         </span>
         <textarea
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => { markUsed(); setText(e.target.value); }}
           rows={10}
           dir="auto"
           placeholder="ابدأ بالكتابة أو الصق نصك هنا…"
