@@ -3,7 +3,10 @@
 import * as React from "react";
 import { Plus, Pencil, Trash2, Loader2, ToggleLeft, ToggleRight } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
-import { ADMIN_POSITIONS, type AdPosition, type AdType } from "@/lib/ads/positions";
+import {
+  ADMIN_POSITIONS, ADMIN_FORMATS, AD_NETWORKS,
+  type AdPosition, type AdType, type AdFormat, type AdNetwork,
+} from "@/lib/ads/positions";
 
 interface AdSlot {
   id: string;
@@ -13,9 +16,22 @@ interface AdSlot {
   code: string;
   enabled: boolean;
   createdAt: string;
+  format: AdFormat;
+  network: AdNetwork;
+  dismissible: boolean;
+  frequencyHours: number;
+  priority: number;
 }
 
 const POSITIONS = ADMIN_POSITIONS;
+const FORMATS = ADMIN_FORMATS;
+
+const NETWORK_LABELS: Record<AdNetwork, string> = {
+  direct: "مباشر / بانر خاص",
+  adsense: "Google AdSense",
+  taboola: "Taboola",
+  outbrain: "Outbrain",
+};
 
 const TYPES: { value: AdType; label: string; hint: string }[] = [
   { value: "script", label: "Script", hint: "كود JS مثل AdSense / Taboola" },
@@ -23,7 +39,22 @@ const TYPES: { value: AdType; label: string; hint: string }[] = [
   { value: "image", label: "صورة", hint: "صورة مع رابط" },
 ];
 
-const empty = { name: "", position: "article-mid" as AdPosition, type: "script" as AdType, code: "", enabled: true };
+// Formats that overlay the page (not in-flow) can carry a close button and a
+// per-visitor frequency cap.
+const OVERLAY_FORMATS: AdFormat[] = ["sticky-bottom", "popup", "interstitial"];
+
+const empty = {
+  name: "",
+  position: "article-mid" as AdPosition,
+  type: "script" as AdType,
+  code: "",
+  enabled: true,
+  format: "inline" as AdFormat,
+  network: "direct" as AdNetwork,
+  dismissible: false,
+  frequencyHours: 0,
+  priority: 0,
+};
 
 export default function AdminAdsPage() {
   const { toast } = useToast();
@@ -58,7 +89,12 @@ export default function AdminAdsPage() {
   }
 
   function openEdit(ad: AdSlot) {
-    setForm({ name: ad.name, position: ad.position, type: ad.type, code: ad.code, enabled: ad.enabled });
+    setForm({
+      name: ad.name, position: ad.position, type: ad.type, code: ad.code, enabled: ad.enabled,
+      format: ad.format ?? "inline", network: ad.network ?? "direct",
+      dismissible: ad.dismissible ?? false, frequencyHours: ad.frequencyHours ?? 0,
+      priority: ad.priority ?? 0,
+    });
     setEditId(ad.id);
     setShowForm(true);
   }
@@ -168,7 +204,10 @@ export default function AdminAdsPage() {
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-slate-800">{ad.name}</p>
                       <p className="mt-0.5 text-xs text-slate-400">
-                        {TYPES.find((t) => t.value === ad.type)?.label} · {ad.code.length} حرف
+                        {FORMATS.find((fm) => fm.value === (ad.format ?? "inline"))?.label}
+                        {" · "}{NETWORK_LABELS[ad.network ?? "direct"]}
+                        {" · "}{TYPES.find((t) => t.value === ad.type)?.label}
+                        {ad.dismissible ? " · قابل للإغلاق" : ""}
                       </p>
                     </div>
                     <button
@@ -242,6 +281,70 @@ export default function AdminAdsPage() {
                   </select>
                 </div>
               </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">شكل العرض</label>
+                  <select
+                    value={form.format}
+                    onChange={(e) => setForm((f) => ({ ...f, format: e.target.value as AdFormat }))}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none"
+                  >
+                    {FORMATS.map((fm) => <option key={fm.value} value={fm.value}>{fm.label}</option>)}
+                  </select>
+                  <p className="mt-1 text-xs text-slate-400">{FORMATS.find((fm) => fm.value === form.format)?.hint}</p>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-slate-700">الشبكة الإعلانية</label>
+                  <select
+                    value={form.network}
+                    onChange={(e) => setForm((f) => ({ ...f, network: e.target.value as AdNetwork }))}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none"
+                  >
+                    {AD_NETWORKS.map((nw) => <option key={nw} value={nw}>{NETWORK_LABELS[nw]}</option>)}
+                  </select>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {form.network === "direct" ? "بانر خاص — يظهر دون موافقة الكوكيز" : "يُحمّل بعد موافقة الزائر على الكوكيز"}
+                  </p>
+                </div>
+              </div>
+
+              {OVERLAY_FORMATS.includes(form.format) && (
+                <div className="grid gap-4 rounded-xl bg-amber-50 p-4 sm:grid-cols-3">
+                  <div className="flex items-center gap-2 sm:col-span-3">
+                    <input
+                      id="dismissible"
+                      type="checkbox"
+                      checked={form.dismissible}
+                      onChange={(e) => setForm((f) => ({ ...f, dismissible: e.target.checked }))}
+                      className="size-4 rounded border-slate-300"
+                    />
+                    <label htmlFor="dismissible" className="text-sm font-medium text-slate-700">قابل للإغلاق (زر X)</label>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-700">كل كم ساعة يظهر للزائر</label>
+                    <input
+                      type="number" min={0} max={720}
+                      value={form.frequencyHours}
+                      onChange={(e) => setForm((f) => ({ ...f, frequencyHours: Math.max(0, parseInt(e.target.value) || 0) }))}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none"
+                      dir="ltr"
+                    />
+                    <p className="mt-1 text-xs text-slate-400">0 = في كل مرة</p>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-700">الأولوية</label>
+                    <input
+                      type="number" min={0} max={1000}
+                      value={form.priority}
+                      onChange={(e) => setForm((f) => ({ ...f, priority: Math.max(0, parseInt(e.target.value) || 0) }))}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none"
+                      dir="ltr"
+                    />
+                    <p className="mt-1 text-xs text-slate-400">الأعلى يُعرض أولًا</p>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="mb-1.5 block text-sm font-semibold text-slate-700">

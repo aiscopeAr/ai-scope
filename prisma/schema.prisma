@@ -266,7 +266,18 @@ model AdSlot {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // ── Phase 1: formats, networks, targeting ──────────────────────────────
+  format         String    @default("inline")  // inline | sticky-bottom | popup | interstitial | sidebar-sticky
+  network        String    @default("direct")  // direct | adsense | taboola | outbrain
+  dismissible    Boolean   @default(false)      // show a close (X) button (overlay formats)
+  frequencyHours Int       @default(0)          // min hours between showings per visitor; 0 = always
+  priority       Int       @default(0)          // higher wins when several match a position/format
+  startAt        DateTime?                       // schedule window start (null = immediately)
+  endAt          DateTime?                       // schedule window end (null = no end)
+  pages          String[]  @default([])          // path prefixes to include; empty = all eligible
+
   @@index([position, enabled])
+  @@index([format, enabled])
 }
 
 // ─── AI Tools Directory (kept as-is) ─────────────────────────────────────────
