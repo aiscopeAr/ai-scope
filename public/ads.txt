@@ -1,0 +1,14 @@
+# ads.txt — authorized digital sellers for lumiq.news
+# https://iabtechlab.com/ads-txt/
+#
+# Replace the placeholders below with your real publisher IDs once each ad
+# account is approved, then redeploy. Lines starting with # are ignored.
+#
+# Google AdSense (format: google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0)
+# google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
+#
+# Taboola (get your exact line from the Taboola dashboard)
+# taboola.com, 0000000, DIRECT
+#
+# Outbrain
+# outbrain.com, 00000, DIRECT

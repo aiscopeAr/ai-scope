@@ -138,6 +138,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Google Analytics 4 */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-0TS7VKFC1K" />
         <script dangerouslySetInnerHTML={{ __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-0TS7VKFC1K',{page_path:window.location.pathname});` }} />
+        {/* Google AdSense base loader — inert until NEXT_PUBLIC_ADSENSE_CLIENT
+            (ca-pub-…) is set, so no ad script loads until the account is live.
+            crossOrigin is required by AdSense. Consent gating arrives in Phase 3. */}
+        {process.env.NEXT_PUBLIC_ADSENSE_CLIENT && (
+          <script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT}`}
+            crossOrigin="anonymous"
+          />
+        )}
         {/* Preconnect to image CDNs for faster LCP */}
         <link rel="preconnect" href="https://replicate.delivery" />
         <link rel="preconnect" href="https://pbxt.replicate.delivery" />
