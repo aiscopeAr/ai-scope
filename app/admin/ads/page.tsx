@@ -3,18 +3,7 @@
 import * as React from "react";
 import { Plus, Pencil, Trash2, Loader2, ToggleLeft, ToggleRight } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
-
-type AdPosition =
-  | "header"
-  | "article-top"
-  | "article-mid"
-  | "article-bottom"
-  | "sidebar"
-  | "homepage-top"
-  | "homepage-mid"
-  | "category-top";
-
-type AdType = "script" | "image" | "iframe";
+import { ADMIN_POSITIONS, type AdPosition, type AdType } from "@/lib/ads/positions";
 
 interface AdSlot {
   id: string;
@@ -26,26 +15,13 @@ interface AdSlot {
   createdAt: string;
 }
 
-const POSITIONS: { value: AdPosition; label: string }[] = [
-  { value: "header", label: "رأس الصفحة (Header)" },
-  { value: "homepage-top", label: "الرئيسية — أعلى" },
-  { value: "homepage-mid", label: "الرئيسية — وسط" },
-  { value: "article-top", label: "المقال — أعلى" },
-  { value: "article-mid", label: "المقال — وسط" },
-  { value: "article-bottom", label: "المقال — أسفل" },
-  { value: "sidebar", label: "الشريط الجانبي" },
-  { value: "category-top", label: "صفحة التصنيف — أعلى" },
-];
+const POSITIONS = ADMIN_POSITIONS;
 
 const TYPES: { value: AdType; label: string; hint: string }[] = [
   { value: "script", label: "Script", hint: "كود JS مثل AdSense / Taboola" },
   { value: "iframe", label: "iFrame", hint: "رابط iframe مباشر" },
   { value: "image", label: "صورة", hint: "صورة مع رابط" },
 ];
-
-const POSITION_LABELS: Record<AdPosition, string> = Object.fromEntries(
-  POSITIONS.map((p) => [p.value, p.label])
-) as Record<AdPosition, string>;
 
 const empty = { name: "", position: "article-mid" as AdPosition, type: "script" as AdType, code: "", enabled: true };
 

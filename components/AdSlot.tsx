@@ -1,34 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
-
-type AdPosition =
-  | "header"
-  | "article-top"
-  | "article-mid"
-  | "article-bottom"
-  | "sidebar"
-  | "home-top"
-  | "home-mid"
-  | "home-bottom"
-  | "homepage-top"
-  | "homepage-mid"
-  | "category-top"
-  | "guides-top"
-  | "guide-top"
-  | "guide-mid"
-  | "ai-tools-top"
-  | "ai-tools-mid"
-  | "tool-top"
-  | "tool-mid"
-  | "companies-top"
-  | "company-top"
-  | "company-mid"
-  | "compare-top"
-  | "compare-page-top"
-  | "compare-page-mid"
-  | "topic-top"
-  | "alternatives-top"
-  | "search-top";
+import type { AdPosition } from "@/lib/ads/positions";
+import ScriptAd from "@/components/ads/ScriptAd";
 
 interface Props {
   position: AdPosition;
@@ -65,7 +38,9 @@ export default async function AdSlot({ position, className = "" }: Props) {
       {ads.map((ad) => (
         <div key={ad.id} className="w-full overflow-hidden">
           {ad.type === "script" && (
-            <div dangerouslySetInnerHTML={{ __html: ad.code }} />
+            // Must use ScriptAd (client) — injected <script> via innerHTML does
+            // NOT execute, so AdSense/Taboola loaders never ran before.
+            <ScriptAd code={ad.code} name={ad.name} />
           )}
           {ad.type === "iframe" && (
             <iframe
