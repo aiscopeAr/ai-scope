@@ -119,4 +119,17 @@ model AdSlot {
 - Decision on EEA CMP: Google-certified CMP vs. our banner + Consent Mode v2.
 
 ---
-_Status: Phase 0 in progress. Phases 1–3 queued._
+## 6. Build log
+
+- **Phase 0** ✅ merged (PR #33): ScriptAd fix, `lib/ads/positions.ts`, ads.txt, AdSense loader (env-gated).
+- **Phase 1** ✅ merged (PR #34) + migration applied to prod: format/network/dismissible/frequencyHours/priority/startAt/endAt/pages; admin API + UI; inline renderer serves only `inline` + schedule window + priority order.
+- **Phase 2** ✅ merged (PR #35): `/api/ads/active`, `AdManager`, `OverlayAd` (popup/interstitial always-closeable, sticky-bottom/sidebar optional X), `AdBody`; frequency cap via localStorage.
+- **Phase 3** — consent: `lib/ads/consent.ts`, `ConsentBanner`, Consent Mode v2 default in layout, `ScriptAd` gated on consent per network (`direct` never waits). Per-network config: AdSense via `NEXT_PUBLIC_ADSENSE_CLIENT`; Taboola/Outbrain publisher IDs live inside their pasted snippet (self-contained).
+
+## 7. Go-live checklist (owner)
+
+1. Set `NEXT_PUBLIC_ADSENSE_CLIENT=ca-pub-…` in Vercel env → redeploy (activates the base loader).
+2. Fill real publisher lines in `public/ads.txt` → redeploy.
+3. In `/admin/ads`, create slots: pick position/format/network, paste the network's unit snippet into `code`, set dismissible/frequency for overlays.
+4. (EEA/UK) layer a Google-certified CMP; the existing banner already feeds Consent Mode v2 `granted`/`denied`.
+5. Verify a test popup appears, closes, and respects its frequency cap.

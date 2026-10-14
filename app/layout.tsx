@@ -4,6 +4,7 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import AdManager from "@/components/ads/AdManager";
+import ConsentBanner from "@/components/ads/ConsentBanner";
 
 import {
   SITE_URL,
@@ -136,6 +137,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
         {/* Prevent dark-mode flash on load */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t===null&&d))document.documentElement.classList.add('dark')})()` }} />
+        {/* Google Consent Mode v2 default — MUST run before gtag.js. Reads the
+            stored consent cookie; defaults to denied until the ConsentBanner
+            grants it (writeConsent fires a consent 'update'). */}
+        <script dangerouslySetInnerHTML={{ __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}var m=document.cookie.match(/(?:^|; )lumiq_ad_consent=([^;]+)/);var g=m&&m[1]==='granted'?'granted':'denied';gtag('consent','default',{ad_storage:g,ad_user_data:g,ad_personalization:g,analytics_storage:g,wait_for_update:500});` }} />
         {/* Google Analytics 4 */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-0TS7VKFC1K" />
         <script dangerouslySetInnerHTML={{ __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-0TS7VKFC1K',{page_path:window.location.pathname});` }} />
@@ -158,6 +163,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans">
         {children}
         <AdManager />
+        <ConsentBanner />
         <Analytics />
         <SpeedInsights />
       </body>

@@ -11,6 +11,7 @@ export interface OverlayAdData {
   code: string;
   format: string; // popup | interstitial | sticky-bottom | sidebar-sticky
   dismissible: boolean;
+  network?: string;
 }
 
 /** How long an interstitial forces the viewer to wait before the X enables. */
@@ -67,7 +68,7 @@ export default function OverlayAd({ ad, onClose }: { ad: OverlayAdData; onClose:
           {label}
           {CloseBtn}
           <div className="flex h-full items-center justify-center overflow-auto">
-            <AdBody type={ad.type} code={ad.code} name={ad.name} />
+            <AdBody type={ad.type} code={ad.code} name={ad.name} network={ad.network} />
           </div>
         </div>
       </div>
@@ -80,7 +81,7 @@ export default function OverlayAd({ ad, onClose }: { ad: OverlayAdData; onClose:
       <div className="fixed inset-x-0 bottom-0 z-[150] border-t border-slate-200 bg-white/95 p-2 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur" dir="rtl">
         <div className="relative mx-auto flex max-w-5xl items-center justify-center">
           {ad.dismissible && CloseBtn}
-          <AdBody type={ad.type} code={ad.code} name={ad.name} />
+          <AdBody type={ad.type} code={ad.code} name={ad.name} network={ad.network} />
         </div>
       </div>
     );
@@ -91,7 +92,7 @@ export default function OverlayAd({ ad, onClose }: { ad: OverlayAdData; onClose:
     <div className="fixed bottom-4 right-4 z-[150] hidden w-[300px] rounded-2xl bg-white p-3 shadow-2xl ring-1 ring-slate-200 lg:block" dir="rtl">
       <div className="relative">
         {ad.dismissible && CloseBtn}
-        <AdBody type={ad.type} code={ad.code} name={ad.name} />
+        <AdBody type={ad.type} code={ad.code} name={ad.name} network={ad.network} />
       </div>
     </div>
   );
