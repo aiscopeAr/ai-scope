@@ -12,8 +12,10 @@ const getAds = unstable_cache(
   async (position: AdPosition) => {
     try {
       return await prisma.adSlot.findMany({
-        where: { position, enabled: true },
-        orderBy: { createdAt: "asc" },
+        // Only in-flow ("inline") slots render here; overlay formats (popup,
+        // sticky, interstitial) are mounted globally by AdManager (Phase 2).
+        where: { position, enabled: true, format: "inline" },
+        orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
       });
     } catch {
       return [];
@@ -29,7 +31,19 @@ const getAds = unstable_cache(
 );
 
 export default async function AdSlot({ position, className = "" }: Props) {
-  const ads = await getAds(position);
+  const all = await getAds(position);
+
+  // Schedule window check runs at render (not inside the 1h cache, whose clock
+  // would be frozen): hide slots before startAt or after endAt. This is an
+  // async server component, so reading the clock here is fine — the
+  // react-hooks/purity rule (meant for client render) is a false positive.
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
+  const ads = all.filter((ad) => {
+    if (ad.startAt && new Date(ad.startAt).getTime() > now) return false;
+    if (ad.endAt && new Date(ad.endAt).getTime() < now) return false;
+    return true;
+  });
 
   if (ads.length === 0) return null;
 

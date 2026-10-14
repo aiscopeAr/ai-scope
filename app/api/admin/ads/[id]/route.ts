@@ -2,15 +2,24 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { AD_POSITIONS, AD_TYPES, AD_FORMATS, AD_NETWORKS } from "@/lib/ads/positions";
 
 export const dynamic = "force-dynamic";
 
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
-  position: z.enum(["header", "article-top", "article-mid", "article-bottom", "sidebar", "homepage-top", "homepage-mid", "category-top"]).optional(),
-  type: z.enum(["script", "image", "iframe"]).optional(),
+  position: z.enum(AD_POSITIONS).optional(),
+  type: z.enum(AD_TYPES).optional(),
   code: z.string().min(1).optional(),
   enabled: z.boolean().optional(),
+  format: z.enum(AD_FORMATS).optional(),
+  network: z.enum(AD_NETWORKS).optional(),
+  dismissible: z.boolean().optional(),
+  frequencyHours: z.number().int().min(0).max(24 * 30).optional(),
+  priority: z.number().int().min(0).max(1000).optional(),
+  startAt: z.coerce.date().nullish(),
+  endAt: z.coerce.date().nullish(),
+  pages: z.array(z.string()).optional(),
 });
 
 async function requireAdmin() {
