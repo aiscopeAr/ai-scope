@@ -3,6 +3,7 @@ import { Amiri, Cairo } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import AdManager from "@/components/ads/AdManager";
 
 import {
   SITE_URL,
@@ -156,6 +157,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="font-sans">
         {children}
+        <AdManager />
         <Analytics />
         <SpeedInsights />
       </body>
