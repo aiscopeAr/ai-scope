@@ -54,7 +54,7 @@ export default async function AdSlot({ position, className = "" }: Props) {
           {ad.type === "script" && (
             // Must use ScriptAd (client) — injected <script> via innerHTML does
             // NOT execute, so AdSense/Taboola loaders never ran before.
-            <ScriptAd code={ad.code} name={ad.name} />
+            <ScriptAd code={ad.code} name={ad.name} network={ad.network} />
           )}
           {ad.type === "iframe" && (
             <iframe
