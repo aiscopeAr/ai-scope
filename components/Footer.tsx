@@ -3,12 +3,18 @@
 import Link from "next/link";
 import { track } from "@vercel/analytics";
 import { TELEGRAM_CHANNEL_URL, TELEGRAM_CTA_CLICK_EVENT } from "@/lib/telegram-cta";
+import { getLiveTools } from "@/lib/tools/registry";
+
+// Rendered on every page, so these links give Google a crawl path to the
+// evergreen tool pages from every indexed URL (the key fix for tools showing
+// as "unknown to Google" despite being in the sitemap).
+const TOOLS = getLiveTools();
 
 export default function Footer() {
   return (
     <footer className="mt-16 border-t font-sans" style={{ borderColor: "var(--border-subtle)", backgroundColor: "var(--bg-subtle)" }} dir="rtl">
       <div className="container mx-auto px-6 py-12 md:px-12">
-        <div className="grid gap-10 md:grid-cols-4">
+        <div className="grid gap-10 md:grid-cols-5">
 
           {/* Brand */}
           <div className="md:col-span-1">
@@ -40,8 +46,9 @@ export default function Footer() {
                 { href: "/",        label: "الرئيسية" },
                 { href: "/reviews", label: "التقارير" },
                 { href: "/ai-tools",label: "أدوات AI" },
+                { href: "/prompts", label: "مكتبة البرومبتس" },
+                { href: "/tools",   label: "أدوات مجانية" },
                 { href: "/compare", label: "المقارنات" },
-                { href: "/search",  label: "البحث" },
               ].map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} className="group flex items-center gap-2 text-[13px] transition-colors"
@@ -75,6 +82,25 @@ export default function Footer() {
                   >
                     <span className="h-px w-2.5" style={{ backgroundColor: "var(--border-medium)" }} />
                     {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Free tools — individual links so every page links to each tool */}
+          <div>
+            <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>أدوات مجانية</h3>
+            <ul className="space-y-2.5">
+              {TOOLS.map((tool) => (
+                <li key={tool.slug}>
+                  <Link href={`/tools/${tool.slug}`} className="group flex items-center gap-2 text-[13px] transition-colors"
+                    style={{ color: "var(--text-secondary)" }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "var(--brand)"}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)"}
+                  >
+                    <span className="h-px w-2.5" style={{ backgroundColor: "var(--border-medium)" }} />
+                    {tool.nameAr}
                   </Link>
                 </li>
               ))}

@@ -18,6 +18,7 @@ import TelegramChannelCta from "@/components/TelegramChannelCta";
 import { SITE_URL, SITE_NAME, SITE_NAME_AR, SITE_TWITTER_HANDLE, truncate, absoluteUrl } from "@/lib/seo";
 import { tagToSlug, normalizeTag, buildTagSummaries } from "@/lib/tags";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-jsonld";
+import { isReviewIndexable } from "@/lib/seo/review-indexability";
 import { INLINE_LINK_TOKEN, loadLinkableSlugSets, type LinkableSlugSets } from "@/lib/internal-links";
 import { renderWithInternalLinks } from "@/components/InternalLink";
 
@@ -67,14 +68,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!review?.published) return {};
   const url = absoluteUrl(`/reviews/${slug}`);
   const description = truncate(review.summary, 160);
+  // Crawl-budget heuristic: old, never-viewed reviews are noindex'd so Google's
+  // limited crawl budget flows to the evergreen pages (tools, featured prompts)
+  // instead of dead long-tail news. follow stays true so link equity still flows.
+  const indexable = isReviewIndexable({ publishedAt: review.publishedAt, viewCount: review.viewCount });
   return {
     title: `${review.titleAr} | ${SITE_NAME_AR}`,
     description,
     alternates: { canonical: url },
     robots: {
-      index: true,
+      index: indexable,
       follow: true,
-      googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+      googleBot: { index: indexable, follow: true, "max-image-preview": "large", "max-snippet": -1 },
     },
     openGraph: {
       type: "article",

@@ -6,6 +6,7 @@ import { buildTagSummaries, tagToSlug } from "@/lib/tags";
 import { AUTHORS } from "@/lib/authors";
 import { getLiveTools } from "@/lib/tools/registry";
 import { shouldIncludePromptInSitemap } from "@/lib/prompts/indexation-experiment";
+import { isReviewIndexable } from "@/lib/seo/review-indexability";
 
 // ISR: regenerate at most once per hour instead of querying Neon on every
 // crawler request (was force-dynamic). URL, hostname, and URL set are
@@ -30,8 +31,8 @@ const staticPages: MetadataRoute.Sitemap = [
   ...getLiveTools().map((tool) => ({
     url: `${SITE_URL}/tools/${tool.slug}`,
     lastModified: new Date(),
-    changeFrequency: "monthly" as const,
-    priority: 0.75,
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
   })),
   // /author/[slug] — derived from AUTHORS so a future author is never missed here again
   ...Object.keys(AUTHORS).map((slug) => ({
@@ -59,7 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const [reviews, categories, aiTools, comparisons, prompts] = await Promise.all([
       prisma.review.findMany({
         where: { published: true },
-        select: { slug: true, updatedAt: true, tags: true },
+        select: { slug: true, updatedAt: true, tags: true, publishedAt: true, viewCount: true },
         orderBy: { publishedAt: "desc" },
         take: 2000,
       }),
@@ -86,8 +87,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ]);
 
     // Drop test/draft/temp review slugs (defense-in-depth alongside publish
-    // status) — also excludes their tags from the tag-summary set below.
-    const publicReviews = reviews.filter((r) => isPublicSlug(r.slug));
+    // status) — also excludes their tags from the tag-summary set below. Then
+    // drop the dead long tail (old + never viewed) so the sitemap concentrates
+    // crawl budget on evergreen pages, matching the review page's noindex rule.
+    const publicReviews = reviews
+      .filter((r) => isPublicSlug(r.slug))
+      .filter((r) => isReviewIndexable({ publishedAt: r.publishedAt, viewCount: r.viewCount }));
 
     return [
       ...staticPages,
@@ -101,7 +106,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${SITE_URL}/reviews/${r.slug}`,
         lastModified: r.updatedAt,
         changeFrequency: "weekly" as const,
-        priority: 0.85,
+        // Lowered from 0.85 so crawl budget favours the evergreen pages
+        // (tools, featured prompts) over the large news long tail.
+        priority: 0.7,
       })),
       ...aiTools.map((t) => ({
         url: `${SITE_URL}/ai-tools/${t.slug}`,
@@ -122,7 +129,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${SITE_URL}/prompts/${p.slug}`,
         lastModified: p.updatedAt,
         changeFrequency: "monthly" as const,
-        priority: 0.6,
+        // Featured (curated, indexable) prompts are evergreen priorities;
+        // keep any non-featured survivors lower.
+        priority: p.featured ? 0.85 : 0.5,
       })),
       ...buildTagSummaries(publicReviews.map((r) => r.tags)).map((tag) => ({
         url: `${SITE_URL}/tag/${tagToSlug(tag.label)}`,
