@@ -4,7 +4,11 @@ import { fetchRssFeed } from "@/lib/rss";
 import { enqueueNewsItem } from "@/lib/review-queue";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// Raised from 60s: 20 sources were fetched sequentially (up to 15s each), so the
+// run was killed after ~4 feeds and only the first priority source (OpenAI Blog)
+// ever completed — making all news OpenAI-centric. Feeds are now fetched in
+// parallel (bounded by the 15s per-feed timeout), but keep headroom.
+export const maxDuration = 120;
 
 const ITEMS_PER_SOURCE = 10;
 const AI_KEYWORDS = /\b(ai|artificial intelligence|machine learning|llm|gpt|claude|gemini|openai|anthropic|deepmind|mistral|llama|neural|model|chatbot|generative|transformer)\b/i;
@@ -27,14 +31,25 @@ export async function GET(request: Request) {
 
   const results: Array<{ name: string; added: number; skipped: number; error?: string }> = [];
 
-  for (const source of sources) {
+  // Fetch every feed CONCURRENTLY (each bounded by the 15s per-feed timeout in
+  // fetchRssFeed) so total network time ≈ the slowest feed, not the sum. The
+  // old sequential loop blew past the function budget and starved all sources
+  // after the first few, leaving only OpenAI Blog.
+  const feeds = await Promise.allSettled(sources.map((s) => fetchRssFeed(s.rssUrl)));
+
+  for (let i = 0; i < sources.length; i++) {
+    const source = sources[i];
+    const feed = feeds[i];
     let added = 0;
     let skipped = 0;
     let fetched = 0;
     let errorMsg: string | undefined;
 
     try {
-      const items = await fetchRssFeed(source.rssUrl);
+      if (feed.status === "rejected") {
+        throw feed.reason instanceof Error ? feed.reason : new Error(String(feed.reason));
+      }
+      const items = feed.value;
       fetched = items.length;
       let enqueued = 0;
 
