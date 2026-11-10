@@ -73,7 +73,13 @@ export async function fetchRssFeed(rssUrl: string): Promise<RssItem[]> {
     clearTimeout(timer);
   }
 
-  const parsed = await parseStringPromise(xml, { explicitArray: true, mergeAttrs: false });
+  // Some feeds (e.g. AI News) ship malformed XML with bare ampersands that
+  // aren't valid entities, which makes the strict parser throw
+  // ("Invalid character in entity name … Char: &"). Escape any & that doesn't
+  // begin a valid entity so these feeds parse instead of being dropped.
+  const safeXml = xml.replace(/&(?!(?:[a-zA-Z][a-zA-Z0-9]*|#\d+|#x[0-9a-fA-F]+);)/g, "&amp;");
+
+  const parsed = await parseStringPromise(safeXml, { explicitArray: true, mergeAttrs: false });
 
   // Support RSS 2.0 and Atom
   const channel =
