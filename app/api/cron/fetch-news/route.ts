@@ -31,11 +31,25 @@ export async function GET(request: Request) {
 
   const results: Array<{ name: string; added: number; skipped: number; error?: string }> = [];
 
-  // Fetch every feed CONCURRENTLY (each bounded by the 15s per-feed timeout in
-  // fetchRssFeed) so total network time ≈ the slowest feed, not the sum. The
-  // old sequential loop blew past the function budget and starved all sources
-  // after the first few, leaving only OpenAI Blog.
-  const feeds = await Promise.allSettled(sources.map((s) => fetchRssFeed(s.rssUrl)));
+  // Fetch feeds with BOUNDED concurrency. Fully sequential (old code) blew past
+  // the 60s budget and left only OpenAI Blog; fully parallel (all 20 at once)
+  // OOM'd/timed-out parsing many large feeds together (OpenAI's alone has ~1000
+  // items). A small pool is fast (≈ a few waves of the 15s per-feed timeout, well
+  // under maxDuration) and memory-safe.
+  const FETCH_CONCURRENCY = 4;
+  const feeds: PromiseSettledResult<Awaited<ReturnType<typeof fetchRssFeed>>>[] = new Array(sources.length);
+  let nextIdx = 0;
+  async function worker() {
+    while (nextIdx < sources.length) {
+      const i = nextIdx++;
+      try {
+        feeds[i] = { status: "fulfilled", value: await fetchRssFeed(sources[i].rssUrl) };
+      } catch (reason) {
+        feeds[i] = { status: "rejected", reason };
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(FETCH_CONCURRENCY, sources.length) }, () => worker()));
 
   for (let i = 0; i < sources.length; i++) {
     const source = sources[i];
