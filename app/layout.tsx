@@ -107,7 +107,7 @@ const organizationJsonLd = {
   alternateName: SITE_NAME_AR,
   url: SITE_URL,
   logo: { "@type": "ImageObject", url: `${SITE_URL}/icon-192.png` },
-  sameAs: ["https://twitter.com/lumiq_news", "https://t.me/lumiq_news"],
+  sameAs: ["https://x.com/lumiq_news", "https://t.me/lumiq_news"],
   description: SITE_DESCRIPTION_AR,
   inLanguage: "ar",
 };
