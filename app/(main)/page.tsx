@@ -27,17 +27,12 @@ export const metadata: Metadata = {
 const getData = unstable_cache(
   async () => {
     try {
-      const [featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews] = await Promise.all([
-        prisma.review.findFirst({
-          where: { published: true, category: { slug: { not: "tutorials" } } },
-          orderBy: { publishedAt: "desc" },
-          include: { category: true },
-        }),
+      const [guides, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, latestNews] = await Promise.all([
+        // Evergreen guides/articles (tutorials) — now the homepage stars.
         prisma.review.findMany({
-          where: { published: true, category: { slug: { not: "tutorials" } } },
+          where: { published: true, category: { slug: "tutorials" } },
           orderBy: { publishedAt: "desc" },
-          skip: 1,
-          take: 8,
+          take: 9,
           include: { category: true },
         }),
         prisma.aITool.findMany({
@@ -69,18 +64,15 @@ const getData = unstable_cache(
             tool: { select: { name: true, slug: true, logoUrl: true } },
           },
         }),
+        // News/reports — reduced and moved lower down the page.
         prisma.review.findMany({
-          where: { published: true, category: { slug: "tutorials" } },
+          where: { published: true, category: { slug: { not: "tutorials" } } },
           orderBy: { publishedAt: "desc" },
           take: 4,
-          select: {
-            id: true, slug: true, titleAr: true, summary: true,
-            imageUrl: true, publishedAt: true, tags: true,
-            category: { select: { nameAr: true, slug: true } },
-          },
+          include: { category: true },
         }),
       ]);
-      return { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews };
+      return { guides, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, latestNews };
     } catch (error) {
       // A DB/connection failure must NOT be turned into a synthetic all-empty
       // homepage: unstable_cache would store that empty object as a valid value
@@ -99,7 +91,9 @@ const getData = unstable_cache(
 
 export default async function HomePage() {
   await connection();
-  const { featuredReview, latestReviews, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, tutorialReviews } = await getData();
+  const { guides, featuredTools, toolOfWeek, latestComparisons, featuredPrompts, latestNews } = await getData();
+  const featuredGuide = guides[0];
+  const restGuides = guides.slice(1);
 
   return (
     <main className="container mx-auto max-w-6xl px-4 py-10 md:px-6" dir="rtl">
@@ -112,26 +106,52 @@ export default async function HomePage() {
 
       <AdSlot position="home-top" className="mb-8" />
 
-      {/* Featured review */}
-      {featuredReview && (
+      {/* ★ Guides & Articles — the homepage stars (evergreen rich content) */}
+      {featuredGuide && (
         <section className="mb-14 md:mb-16">
-          <ReviewCard review={featuredReview} featured priority />
-        </section>
-      )}
-
-      {/* Latest reviews grid */}
-      {latestReviews.length > 0 && (
-        <section className="mb-14 md:mb-16">
-          <div className="mb-7 flex items-end justify-between">
-            <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>آخر التقارير</h2>
-            <Link href="/reviews" className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition hover:opacity-75 min-h-[44px]" style={{ color: "var(--brand)" }}>
-              عرض الكل ←
-            </Link>
+          <div className="mb-7 flex items-center gap-3">
+            <div
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+              style={{ backgroundColor: "var(--brand-bg)" }}
+            >
+              <Sparkles className="h-5 w-5" style={{ color: "var(--brand)" }} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold md:text-3xl" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
+                مقالات وأدلة الذكاء الاصطناعي
+              </h2>
+              <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
+                شروحات ومقارنات غنية خطوة بخطوة — محتوى يبقى مفيداً دائماً
+              </p>
+            </div>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {latestReviews.map((r) => (
-              <ReviewCard key={r.id} review={r} />
-            ))}
+
+          {/* Featured guide hero */}
+          <div
+            className="mb-8 rounded-[14px] border p-5 md:p-8"
+            style={{ borderColor: "var(--border-subtle)", background: "var(--bg-surface)" }}
+          >
+            <ReviewCard review={featuredGuide} featured priority />
+          </div>
+
+          {/* Guides grid */}
+          {restGuides.length > 0 && (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {restGuides.map((r) => (
+                <ReviewCard key={r.id} review={r} />
+              ))}
+            </div>
+          )}
+
+          <div className="mt-7 flex justify-center">
+            <Link
+              href="/category/tutorials"
+              className="inline-flex items-center gap-1.5 rounded-lg px-5 py-3 text-sm font-bold transition hover:opacity-80"
+              style={{ backgroundColor: "var(--brand-bg)", color: "var(--brand)" }}
+            >
+              عرض كل المقالات والأدلة
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
           </div>
         </section>
       )}
@@ -162,51 +182,6 @@ export default async function HomePage() {
       {toolOfWeek && (
         <section className="mb-14 md:mb-16">
           <ToolOfTheWeek tool={toolOfWeek} />
-        </section>
-      )}
-
-      {/* Tutorials — presented as AI Guides */}
-      {tutorialReviews.length > 0 && (
-        <section className="mb-14 md:mb-16">
-          <div className="mb-7 flex items-end justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-                style={{ backgroundColor: "var(--brand-bg)" }}
-              >
-                <Sparkles className="h-5 w-5" style={{ color: "var(--brand)" }} />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>أدلة الذكاء الاصطناعي</h2>
-                <p className="mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>شروحات خطوة بخطوة — محتوى يبقى مفيداً</p>
-              </div>
-            </div>
-            <Link href="/category/tutorials" className="text-sm font-semibold transition hover:opacity-70" style={{ color: "var(--brand)" }}>
-              عرض الكل ←
-            </Link>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {tutorialReviews.map((r) => (
-              <Link
-                key={r.id}
-                href={`/reviews/${r.slug}`}
-                className="group flex h-full flex-col rounded-[10px] p-5 transition-all duration-200 hover:-translate-y-0.5"
-                style={{ backgroundColor: "var(--brand-bg)" }}
-              >
-                <h3 className="mb-2 line-clamp-2 text-[15px] font-bold leading-snug transition-opacity group-hover:opacity-80"
-                  style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>
-                  {r.titleAr}
-                </h3>
-                <p className="mb-4 line-clamp-2 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>{r.summary}</p>
-                <span className="mt-auto flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--brand)" }}>
-                  اقرأ الدليل
-                  <svg className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l-7 7 7 7" />
-                  </svg>
-                </span>
-              </Link>
-            ))}
-          </div>
         </section>
       )}
 
@@ -291,6 +266,23 @@ export default async function HomePage() {
                   قرأ المقارنة ←
                 </span>
               </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Latest news — reduced and moved lower */}
+      {latestNews.length > 0 && (
+        <section className="mb-14 md:mb-16">
+          <div className="mb-7 flex items-end justify-between">
+            <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)", fontFamily: "var(--font-serif)" }}>آخر الأخبار</h2>
+            <Link href="/reviews" className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold transition hover:opacity-75 min-h-[44px]" style={{ color: "var(--brand)" }}>
+              عرض الكل ←
+            </Link>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {latestNews.map((r) => (
+              <ReviewCard key={r.id} review={r} />
             ))}
           </div>
         </section>
