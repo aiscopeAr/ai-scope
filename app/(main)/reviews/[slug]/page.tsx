@@ -67,13 +67,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const review = await getReview(slug);
   if (!review?.published) return {};
   const url = absoluteUrl(`/reviews/${slug}`);
-  const description = truncate(review.summary, 160);
+  // Prefer the curated SEO fields (keyword-optimized title & meta description)
+  // when present, falling back to the display headline/lede — same pattern as
+  // the ai-tools page. This activates the per-article seoTitle/seoDescription.
+  const description = review.seoDescription ?? truncate(review.summary, 160);
+  const metaTitle = review.seoTitle ?? `${review.titleAr} | ${SITE_NAME_AR}`;
   // Crawl-budget heuristic: old, never-viewed reviews are noindex'd so Google's
   // limited crawl budget flows to the evergreen pages (tools, featured prompts)
   // instead of dead long-tail news. follow stays true so link equity still flows.
   const indexable = isReviewIndexable({ publishedAt: review.publishedAt, viewCount: review.viewCount });
   return {
-    title: `${review.titleAr} | ${SITE_NAME_AR}`,
+    title: metaTitle,
     description,
     alternates: { canonical: url },
     robots: {
